@@ -4,176 +4,267 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>Lupus in Fabula</title>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Cinzel+Decorative:wght@700&family=Lora:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cinzel+Decorative:wght@700&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <style>
+/* ── RESET ── */
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:#080810;color:#ddd0b8;font-family:'Lora',serif;min-height:100vh}
+:root{
+  --gold:#c9a227;--gold-dim:#6a4e12;--gold-glow:rgba(201,162,39,.22);
+  --red:#c0392b;--green:#1a7a45;--blue:#2475b0;--purple:#7d3c98;
+  --text:#ddd0b8;--text-dim:#6b5a3e;--text-muted:#48392a;
+  --n-bg:#04080f;--n-s1:#08101e;--n-s2:#0d1628;
+  --d-bg:#100a04;--d-s1:#1c1106;--d-s2:#261808;
+  --r:12px;--r-sm:8px;--r-lg:18px;
+}
+body{background:var(--n-bg);color:var(--text);font-family:'EB Garamond',serif;font-size:16px;min-height:100vh;-webkit-text-size-adjust:100%}
 #root{min-height:100vh}
-#loading{position:fixed;inset:0;background:#080810;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;z-index:100}
-#loading span{font-size:3.5rem}
-#loading p{font-family:'Cinzel',serif;color:#4a3a20;font-size:0.72rem;letter-spacing:0.25em;text-transform:uppercase}
+
+/* ── LOADING ── */
+#loading{position:fixed;inset:0;background:#04080f;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;z-index:100}
+#loading span{font-size:3.5rem;animation:pulse 2s ease infinite}
+#loading p{font-family:'Cinzel',serif;color:#2e240f;font-size:.68rem;letter-spacing:.32em;text-transform:uppercase}
+@keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
+
+/* ── APP WRAPPERS ── */
 .app{position:relative;min-height:100vh}
-.app::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 70% 40% at 50% -5%,rgba(140,100,30,.15) 0%,transparent 60%),radial-gradient(ellipse 40% 50% at 85% 85%,rgba(80,20,100,.12) 0%,transparent 50%);pointer-events:none;z-index:0}
-.moon{position:fixed;top:-80px;right:-60px;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle at 38% 38%,#fffef0,#c9a96e 50%,#5a3a0a 80%,#1a0800);opacity:.07;pointer-events:none;z-index:0;filter:blur(2px)}
-.screen{position:relative;z-index:1;max-width:460px;margin:0 auto;padding:32px 20px 64px}
-.title{font-family:'Cinzel Decorative',serif;font-size:clamp(1.35rem,6vw,2rem);color:#c8a05a;text-align:center;letter-spacing:.03em;line-height:1.25}
-@keyframes glow{0%,100%{text-shadow:0 0 30px rgba(200,160,90,.25)}50%{text-shadow:0 0 60px rgba(200,160,90,.5)}}
-.glow{animation:glow 4s ease-in-out infinite}
-.subtitle{font-family:'Cinzel',serif;font-size:.67rem;color:#4a3a22;text-align:center;letter-spacing:.25em;text-transform:uppercase;margin-top:6px;margin-bottom:32px}
-.lbl{font-family:'Cinzel',serif;font-size:.67rem;letter-spacing:.2em;text-transform:uppercase;color:#6a5a40;margin-bottom:9px}
-.pill{display:inline-block;font-family:'Cinzel',serif;font-size:.67rem;letter-spacing:.18em;text-transform:uppercase;padding:4px 14px;border-radius:20px;background:rgba(200,160,90,.1);border:1px solid rgba(200,160,90,.25);color:#c8a05a}
-.pill-center{text-align:center;margin-bottom:20px}
-.card{background:rgba(255,255,255,.04);border:1px solid rgba(200,160,90,.15);border-radius:14px;padding:18px 20px;margin-bottom:14px}
+.app.night{background:var(--n-bg)}
+.app.day{background:var(--d-bg)}
+.app.night::before{content:'';position:fixed;inset:0;background:
+  radial-gradient(ellipse 65% 30% at 80% 0%,rgba(30,70,160,.14) 0%,transparent 60%),
+  radial-gradient(ellipse 30% 40% at 10% 100%,rgba(50,15,110,.1) 0%,transparent 55%);
+  pointer-events:none;z-index:0}
+.app.day::before{content:'';position:fixed;inset:0;background:
+  radial-gradient(ellipse 70% 35% at 50% 0%,rgba(180,90,15,.2) 0%,transparent 55%),
+  radial-gradient(ellipse 35% 25% at 95% 85%,rgba(100,35,5,.1) 0%,transparent 50%);
+  pointer-events:none;z-index:0}
+
+/* ── CELESTIAL BODY ── */
+.astro{position:fixed;top:-75px;right:-55px;width:260px;height:260px;border-radius:50%;pointer-events:none;z-index:0}
+.astro.moon{background:radial-gradient(circle at 36% 36%,#e8e0d0,#b0883a 42%,#3a1e06 72%,#08040e);opacity:.08;filter:blur(2px)}
+.astro.sun{background:radial-gradient(circle at 50% 50%,#fff5d0,#d47a08 48%,#6a2000);opacity:.09;width:320px;height:320px;top:-100px;right:-80px;filter:blur(4px)}
+
+/* ── SCREEN ── */
+.screen{position:relative;z-index:1;max-width:460px;margin:0 auto;padding:30px 18px 80px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.fade{animation:fadeUp .32s ease both}
+
+/* ── TYPOGRAPHY ── */
+.title{font-family:'Cinzel Decorative',serif;font-size:clamp(1.5rem,7.5vw,2.2rem);color:var(--gold);text-align:center;letter-spacing:.03em;line-height:1.2}
+.subtitle{font-family:'Cinzel',serif;font-size:.64rem;color:#3a2c14;text-align:center;letter-spacing:.28em;text-transform:uppercase;margin-top:8px;margin-bottom:28px}
+.lbl{font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold-dim);margin-bottom:9px}
+.nlbl{font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:8px}
+.muted{color:var(--text-dim);font-size:.9rem;font-style:italic}
+.warn{color:#7a5428;font-size:.83rem;font-style:italic;margin-bottom:10px}
+
+@keyframes titleGlow{0%,100%{text-shadow:0 0 25px rgba(201,162,39,.2)}50%{text-shadow:0 0 55px rgba(201,162,39,.5),0 0 110px rgba(201,162,39,.12)}}
+.glow{animation:titleGlow 4s ease-in-out infinite}
+
+/* ── PILL / BADGE ── */
+.pill{display:inline-block;font-family:'Cinzel',serif;font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;padding:4px 14px;border-radius:20px;background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.2);color:var(--gold)}
+.pill-center{text-align:center;margin-bottom:18px}
+
+/* ── CARD ── */
+.card{background:rgba(255,255,255,.04);border:1px solid rgba(201,162,39,.12);border-radius:var(--r);padding:18px 20px;margin-bottom:14px}
+.card-warm{background:rgba(255,200,80,.03);border:1px solid rgba(180,100,15,.15);border-radius:var(--r);padding:18px 20px;margin-bottom:14px}
+
+/* ── INPUTS ── */
 .input-row{display:flex;gap:8px;margin-bottom:12px}
-input[type=text]{flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(200,160,90,.25);border-radius:9px;padding:11px 14px;color:#ddd0b8;font-family:'Lora',serif;font-size:.95rem;outline:none;transition:border-color .2s}
-input[type=text]:focus{border-color:rgba(200,160,90,.55)}
-input[type=text]::placeholder{color:#3a3020}
-.btn{font-family:'Cinzel',serif;font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;border:none;border-radius:9px;padding:12px 20px;cursor:pointer;transition:transform .13s,box-shadow .13s,opacity .15s;-webkit-tap-highlight-color:transparent;display:block;width:100%;text-align:center}
-.btn:disabled{opacity:.32;cursor:not-allowed}
-.btn:active:not(:disabled){transform:scale(.97)}
-.btn-gold{background:linear-gradient(135deg,#c8a05a,#8a6830);color:#1a1000;font-weight:700}
-.btn-gold:hover:not(:disabled){box-shadow:0 4px 22px rgba(200,160,90,.35)}
-.btn-outline{background:transparent;color:#c8a05a;border:1px solid rgba(200,160,90,.35)}
-.btn-outline:hover:not(:disabled){background:rgba(200,160,90,.08)}
-.btn-red{background:linear-gradient(135deg,#c0392b,#7b241c);color:#fff;font-weight:700}
-.btn-red:hover:not(:disabled){box-shadow:0 4px 22px rgba(192,57,43,.35)}
-.btn-magic{background:linear-gradient(135deg,#3a1a6a,#1a0a3a);color:#b090e0;border:1px solid rgba(160,110,220,.4);font-weight:600}
-.btn-magic:hover:not(:disabled){box-shadow:0 4px 22px rgba(120,60,200,.35)}
-/* ── AUDIO ── */
-.mute-btn{position:fixed;top:12px;right:12px;z-index:500;width:38px;height:38px;border-radius:50%;background:rgba(8,8,16,.8);border:1px solid rgba(200,160,90,.25);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1rem;backdrop-filter:blur(6px);-webkit-tap-highlight-color:transparent;transition:border-color .2s}
-.mute-btn:hover{border-color:rgba(200,160,90,.5)}
-.btn-sm{width:auto;padding:11px 16px}
-.mt8{margin-top:8px}.mt16{margin-top:16px}.mb8{margin-bottom:8px}.mb16{margin-bottom:16px}
+input[type=text]{flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(201,162,39,.2);border-radius:var(--r-sm);padding:12px 16px;color:var(--text);font-family:'EB Garamond',serif;font-size:.98rem;outline:none;transition:border-color .2s,background .2s;-webkit-appearance:none}
+input[type=text]:focus{border-color:rgba(201,162,39,.48);background:rgba(255,255,255,.06)}
+input[type=text]::placeholder{color:#2e2214}
+
+/* ── CHIPS ── */
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
-.chip{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:5px 12px;font-size:.88rem}
-.chip button{background:none;border:none;color:#4a3a20;cursor:pointer;font-size:.75rem;padding:0;line-height:1;transition:color .15s}
-.chip button:hover{color:#c0392b}
-.reveal-tap{background:rgba(255,255,255,.04);border:2px dashed rgba(200,160,90,.22);border-radius:14px;padding:44px 24px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:12px;transition:all .2s;-webkit-tap-highlight-color:transparent}
-.reveal-tap:hover,.reveal-tap:active{background:rgba(200,160,90,.06);border-color:rgba(200,160,90,.4)}
-.reveal-hint{font-family:'Cinzel',serif;font-size:.76rem;letter-spacing:.15em;color:#6a5a40;text-transform:uppercase}
-.role-disp{text-align:center;padding:12px 0 20px}
-.re{font-size:4rem;display:block;margin-bottom:14px}
-.rn{font-family:'Cinzel',serif;font-size:1.4rem;font-weight:600;margin-bottom:10px}
-.rd{color:#8a7860;font-style:italic;line-height:1.65;font-size:.9rem;max-width:280px;margin:0 auto}
-.rt{font-family:'Cinzel',serif;font-size:.67rem;letter-spacing:.18em;text-transform:uppercase;margin-top:10px}
-.ph{text-align:center;margin-bottom:20px}
-.pi{font-size:3rem;display:block;margin-bottom:8px}
-.pt{font-family:'Cinzel',serif;font-size:1.1rem;letter-spacing:.06em}
-.instr{background:rgba(200,160,90,.07);border:1px solid rgba(200,160,90,.18);border-radius:10px;padding:13px 15px;margin-bottom:16px;font-size:.87rem;line-height:1.65;font-style:italic;color:#b09060}
-.nlbl{font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.2em;text-transform:uppercase;color:#c8a05a;margin-bottom:8px}
-.slist{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
-.sbtn{display:flex;align-items:center;gap:11px;padding:11px 14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:9px;color:#ddd0b8;font-family:'Lora',serif;font-size:.93rem;cursor:pointer;transition:all .12s;text-align:left;-webkit-tap-highlight-color:transparent;width:100%}
-.sbtn:hover{background:rgba(255,255,255,.07);border-color:rgba(200,160,90,.3)}
-.sbtn.sel{background:rgba(200,160,90,.12);border-color:rgba(200,160,90,.5)}
-.sbtn:disabled{opacity:.32;cursor:not-allowed}
-.ck{margin-left:auto;color:#c8a05a}
-.vbox{background:rgba(155,89,182,.1);border:1px solid rgba(155,89,182,.28);border-radius:12px;padding:18px 16px;text-align:center;margin-bottom:14px}
-.vlbl{font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.2em;text-transform:uppercase;color:#9b59b6;margin-bottom:10px}
-.ev{padding:12px 14px;border-radius:9px;margin-bottom:8px;font-size:.9rem;line-height:1.55}
-.ev-death{background:rgba(192,57,43,.13);border:1px solid rgba(192,57,43,.28)}
-.ev-protected{background:rgba(41,128,185,.12);border:1px solid rgba(41,128,185,.25)}
-.ev-peaceful{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}
-.ev-info{background:rgba(200,160,90,.07);border:1px solid rgba(200,160,90,.2)}
-.ev-revive{background:rgba(46,204,113,.1);border:1px solid rgba(46,204,113,.25)}
-.prow{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-radius:9px;margin-bottom:5px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);font-size:.88rem}
-.prow.dead{opacity:.35}
+.chip{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:5px 12px;font-size:.9rem;color:var(--text)}
+.chip button{background:none;border:none;color:#4a3820;cursor:pointer;font-size:.8rem;padding:0;line-height:1;transition:color .15s}
+.chip button:hover{color:var(--red)}
+
+/* ── BUTTONS ── */
+.btn{font-family:'Cinzel',serif;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;border:none;border-radius:var(--r-sm);padding:13px 20px;cursor:pointer;transition:transform .12s,box-shadow .15s,opacity .15s;-webkit-tap-highlight-color:transparent;display:block;width:100%;text-align:center}
+.btn:disabled{opacity:.26;cursor:not-allowed}
+.btn:active:not(:disabled){transform:scale(.97)}
+.btn-gold{background:linear-gradient(145deg,#c9a227 0%,#7a4e08 100%);color:#0a0700;font-weight:700;box-shadow:0 2px 14px rgba(201,162,39,.22)}
+.btn-gold:hover:not(:disabled){box-shadow:0 4px 26px rgba(201,162,39,.42)}
+.btn-outline{background:transparent;color:var(--gold);border:1px solid rgba(201,162,39,.3)}
+.btn-outline:hover:not(:disabled){background:rgba(201,162,39,.07)}
+.btn-red{background:linear-gradient(145deg,#c0392b,#7b1e15);color:#fff;font-weight:700;box-shadow:0 2px 10px rgba(192,57,43,.22)}
+.btn-red:hover:not(:disabled){box-shadow:0 4px 24px rgba(192,57,43,.42)}
+.btn-magic{background:linear-gradient(145deg,#2e1060,#12082e);color:#c0a0f0;border:1px solid rgba(160,100,240,.32);font-weight:600}
+.btn-magic:hover:not(:disabled){box-shadow:0 4px 24px rgba(120,60,200,.35)}
+.btn-sm{width:auto;padding:12px 18px}
+.mt8{margin-top:8px}.mb8{margin-bottom:8px}.mb16{margin-bottom:16px}
+
+/* ── MUTE BTN ── */
+.mute-btn{position:fixed;top:14px;right:14px;z-index:500;width:38px;height:38px;border-radius:50%;background:rgba(4,8,15,.88);border:1px solid rgba(201,162,39,.18);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.92rem;backdrop-filter:blur(8px);-webkit-tap-highlight-color:transparent;transition:border-color .2s}
+.mute-btn:hover{border-color:rgba(201,162,39,.44)}
+
+/* ── DIVIDER ── */
+.div{height:1px;background:linear-gradient(to right,transparent,rgba(201,162,39,.16),transparent);margin:22px 0}
+
+/* ────────────────────────────────────────────────────────────
+   PLAYER GRID — the big new thing for day + night status
+   ──────────────────────────────────────────────────────── */
+.player-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.p-tok{position:relative;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:10px 6px 8px;text-align:center;transition:opacity .4s,border-color .3s,filter .4s;cursor:default}
+.p-tok.alive{border-color:rgba(201,162,39,.18)}
+.p-tok.dead{opacity:.32;filter:grayscale(.8);border-color:rgba(255,255,255,.04);background:rgba(0,0,0,.12)}
+.p-tok .pt-em{font-size:1.45rem;line-height:1;display:block;margin-bottom:4px}
+.p-tok .pt-name{font-size:.78rem;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);font-family:'Cinzel',serif;font-weight:600;letter-spacing:.03em}
+.p-tok .pt-role{font-size:.65rem;font-family:'Cinzel',serif;display:block;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-dim)}
+.p-tok .pt-sindaco{position:absolute;top:4px;left:6px;font-size:.75rem;line-height:1}
+.p-tok .pt-dead-x{position:absolute;top:4px;right:6px;font-size:.7rem;color:#6b2020;font-family:'Cinzel',serif;font-weight:700}
+.p-tok.alive:hover{border-color:rgba(201,162,39,.35);background:rgba(255,255,255,.06)}
+
+/* ── SELECTION LIST ── */
+.slist{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.sbtn{display:flex;align-items:center;gap:10px;padding:12px 14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:var(--r-sm);color:var(--text);font-family:'EB Garamond',serif;font-size:.93rem;cursor:pointer;transition:all .12s;text-align:left;-webkit-tap-highlight-color:transparent;width:100%}
+.sbtn:hover{background:rgba(255,255,255,.07);border-color:rgba(201,162,39,.28)}
+.sbtn.sel{background:rgba(201,162,39,.1);border-color:rgba(201,162,39,.44)}
+.sbtn:disabled{opacity:.3;cursor:not-allowed}
+.ck{margin-left:auto;color:var(--gold);font-size:.9rem}
+
+/* ── NIGHT STEP WRAPPER ── */
+.night-hdr{text-align:center;padding:32px 16px 16px}
+.night-hdr .ni-em{font-size:3.8rem;display:block;margin-bottom:10px;filter:drop-shadow(0 0 16px var(--ni-col,#fff4))}
+.night-hdr .ni-title{font-family:'Cinzel',serif;font-size:1.12rem;letter-spacing:.06em;color:var(--ni-col,var(--gold))}
+.night-pill-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+
+/* ── INSTRUCTION BOX ── */
+.instr{background:rgba(201,162,39,.05);border:1px solid rgba(201,162,39,.14);border-radius:10px;padding:13px 16px;margin-bottom:14px;font-size:.9rem;line-height:1.7;font-style:italic;color:#a08850}
+
+/* ── VISION BOX ── */
+.vbox{background:rgba(125,60,152,.1);border:1px solid rgba(125,60,152,.24);border-radius:12px;padding:16px;text-align:center;margin-bottom:14px}
+.vlbl{font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.2em;text-transform:uppercase;color:#9b59b6;margin-bottom:8px}
+
+/* ── ROLE REVEAL ── */
+@keyframes cardIn{from{opacity:0;transform:rotateY(-22deg) scale(.94)}to{opacity:1;transform:rotateY(0) scale(1)}}
+.reveal-back{background:var(--n-s1);border:2px dashed rgba(201,162,39,.18);border-radius:18px;padding:54px 24px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:14px;transition:all .2s;-webkit-tap-highlight-color:transparent;user-select:none}
+.reveal-back:active{background:rgba(201,162,39,.06);border-color:rgba(201,162,39,.38);transform:scale(.98)}
+.reveal-hint{font-family:'Cinzel',serif;font-size:.73rem;letter-spacing:.16em;color:#4a3820;text-transform:uppercase}
+.reveal-front{background:var(--n-s1);border:1px solid rgba(201,162,39,.2);border-radius:18px;padding:30px 24px 26px;text-align:center;animation:cardIn .35s ease both}
+.re{font-size:4.5rem;display:block;margin-bottom:16px;filter:drop-shadow(0 4px 18px var(--role-glow,rgba(255,255,255,.1)))}
+.rn{font-family:'Cinzel',serif;font-size:1.45rem;font-weight:700;margin-bottom:12px}
+.rd{color:#8a7860;font-style:italic;line-height:1.7;font-size:.92rem;max-width:290px;margin:0 auto}
+.rt{font-family:'Cinzel',serif;font-size:.63rem;letter-spacing:.18em;text-transform:uppercase;margin-top:12px;padding:5px 14px;border-radius:20px;display:inline-block;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04)}
+
+/* ── EVENTS ── */
+.ev{padding:11px 14px;border-radius:9px;margin-bottom:8px;font-size:.9rem;line-height:1.6}
+.ev-death{background:rgba(176,32,32,.12);border:1px solid rgba(176,32,32,.25)}
+.ev-protected{background:rgba(36,117,176,.1);border:1px solid rgba(36,117,176,.22)}
+.ev-peaceful{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07)}
+.ev-info{background:rgba(201,162,39,.06);border:1px solid rgba(201,162,39,.17)}
+.ev-revive{background:rgba(26,122,69,.1);border:1px solid rgba(26,122,69,.22)}
+
+/* ── COMPACT PLAYER ROWS (status panel) ── */
+.prow{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:8px;margin-bottom:4px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);font-size:.87rem}
+.prow.dead{opacity:.3}
 .pl{display:flex;align-items:center;gap:9px}
 .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.da{background:#2ecc71;box-shadow:0 0 5px rgba(46,204,113,.5)}
-.dd{background:#7f3030}
-.div{height:1px;background:linear-gradient(to right,transparent,rgba(200,160,90,.2),transparent);margin:18px 0}
-.muted{color:#6a5a40;font-size:.84rem;font-style:italic}
-.wh{text-align:center;padding:16px 0 24px}
-.we{font-size:5rem;display:block;margin-bottom:14px}
-.wt{font-family:'Cinzel Decorative',serif;font-size:clamp(1.2rem,5vw,1.7rem);margin-bottom:8px}
-.ws{color:#6a5a40;font-style:italic;font-size:.9rem}
-.fr{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;margin-bottom:5px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);font-size:.88rem}
-.fr.fdead{opacity:.45}
+.da{background:#1a7a45;box-shadow:0 0 5px rgba(26,122,69,.5)}
+.dd{background:#6b2020}
+
+/* ── WIN SCREEN ── */
+.wh{text-align:center;padding:18px 0 30px}
+.we{font-size:5rem;display:block;margin-bottom:16px}
+.wt{font-family:'Cinzel Decorative',serif;font-size:clamp(1.2rem,5.5vw,1.8rem);margin-bottom:10px;line-height:1.25}
+.ws{color:#5a4830;font-style:italic;font-size:.92rem}
+.fr{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;margin-bottom:4px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);font-size:.87rem}
+.fr.fdead{opacity:.38}
 .fn{flex:1}
-.frn{font-family:'Cinzel',serif;font-size:.73rem}
-.warn{color:#7a6040;font-size:.84rem;font-style:italic;margin-bottom:12px}
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
-.modal{background:#111018;border:1px solid rgba(200,160,90,.3);border-radius:16px;padding:28px 22px;max-width:360px;width:100%;position:relative;max-height:80vh;overflow-y:auto}
-.modal-close{position:absolute;top:12px;right:14px;background:none;border:none;color:#6a5a40;font-size:1.3rem;cursor:pointer;line-height:1}
-.modal-close:hover{color:#c8a05a}
-.ibtn{width:24px;height:24px;border-radius:50%;border:1px solid rgba(200,160,90,.35);background:rgba(200,160,90,.08);color:#c8a05a;font-size:.7rem;font-family:'Cinzel',serif;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s;-webkit-tap-highlight-color:transparent}
-.ibtn:hover{background:rgba(200,160,90,.2)}
-.book-overlay{position:fixed;inset:0;z-index:300;display:flex;align-items:stretch;justify-content:center;background:#050508}
-.book-bg{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 20%,rgba(140,80,20,.18) 0%,transparent 70%);pointer-events:none}
+.frn{font-family:'Cinzel',serif;font-size:.72rem}
+
+/* ── MODAL ── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)}
+.modal{background:#0c101a;border:1px solid rgba(201,162,39,.26);border-radius:18px;padding:28px 22px;max-width:360px;width:100%;position:relative;max-height:82vh;overflow-y:auto}
+.modal-close{position:absolute;top:14px;right:16px;background:none;border:none;color:#5a4830;font-size:1.3rem;cursor:pointer;line-height:1;transition:color .15s}
+.modal-close:hover{color:var(--gold)}
+.ibtn{width:26px;height:26px;border-radius:50%;border:1px solid rgba(201,162,39,.28);background:rgba(201,162,39,.07);color:var(--gold);font-size:.7rem;font-family:'Cinzel',serif;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s;-webkit-tap-highlight-color:transparent}
+.ibtn:hover{background:rgba(201,162,39,.2)}
+
+/* ── LIBRO MAGICO ── */
+.book-overlay{position:fixed;inset:0;z-index:300;display:flex;align-items:stretch;justify-content:center;background:#040810}
+.book-bg{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 20%,rgba(130,75,15,.14) 0%,transparent 70%);pointer-events:none}
 .book-wrap{position:relative;z-index:1;width:100%;max-width:480px;display:flex;flex-direction:column;overflow:hidden}
-.book-header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 12px;border-bottom:1px solid rgba(200,160,90,.18);flex-shrink:0}
-.book-title{font-family:'Cinzel Decorative',serif;font-size:1.1rem;color:#c8a05a;letter-spacing:.04em}
-.book-close{background:none;border:1px solid rgba(200,160,90,.3);border-radius:50%;width:34px;height:34px;color:#c8a05a;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;flex-shrink:0}
-.book-close:hover{background:rgba(200,160,90,.12)}
-.book-nav{display:flex;padding:10px 20px;border-bottom:1px solid rgba(200,160,90,.12);flex-shrink:0;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:4px}
+.book-header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 12px;border-bottom:1px solid rgba(201,162,39,.14);flex-shrink:0}
+.book-title{font-family:'Cinzel Decorative',serif;font-size:1.1rem;color:var(--gold);letter-spacing:.04em}
+.book-close{background:none;border:1px solid rgba(201,162,39,.26);border-radius:50%;width:34px;height:34px;color:var(--gold);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;flex-shrink:0}
+.book-close:hover{background:rgba(201,162,39,.1)}
+.book-nav{display:flex;padding:10px 20px;border-bottom:1px solid rgba(201,162,39,.1);flex-shrink:0;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:4px}
 .book-nav::-webkit-scrollbar{display:none}
-.book-tab{font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;padding:6px 12px;border-radius:20px;border:1px solid transparent;cursor:pointer;white-space:nowrap;transition:all .15s;background:transparent;color:#4a3a22;-webkit-tap-highlight-color:transparent}
-.book-tab.active{background:rgba(200,160,90,.18);color:#c8a05a;border-color:rgba(200,160,90,.35)}
+.book-tab{font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;padding:6px 12px;border-radius:20px;border:1px solid transparent;cursor:pointer;white-space:nowrap;transition:all .15s;background:transparent;color:#3a2c14;-webkit-tap-highlight-color:transparent}
+.book-tab.active{background:rgba(201,162,39,.14);color:var(--gold);border-color:rgba(201,162,39,.28)}
 .book-content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:24px 20px 40px}
-.book-role-card{background:rgba(255,255,255,.03);border:1px solid rgba(200,160,90,.12);border-radius:14px;padding:20px 18px;margin-bottom:14px}
+.book-role-card{background:rgba(255,255,255,.03);border:1px solid rgba(201,162,39,.1);border-radius:14px;padding:20px 18px;margin-bottom:14px}
 .book-role-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
 .book-role-emoji{font-size:2.2rem;flex-shrink:0}
 .book-role-name{font-family:'Cinzel',serif;font-size:1rem;font-weight:600;margin-bottom:3px}
 .book-role-faction{font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.18em;text-transform:uppercase}
-.book-divider{height:1px;background:linear-gradient(to right,rgba(200,160,90,.2),transparent);margin:12px 0}
-.book-section{font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:#6a5a40;margin-bottom:6px}
-.book-desc{color:#8a7860;font-style:italic;line-height:1.7;font-size:.88rem}
-.book-ability{color:#b09878;line-height:1.7;font-size:.88rem}
+.book-divider{height:1px;background:linear-gradient(to right,rgba(201,162,39,.18),transparent);margin:12px 0}
+.book-section{font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:#5a4830;margin-bottom:6px}
+.book-desc{color:#8a7860;font-style:italic;line-height:1.7;font-size:.9rem}
+.book-ability{color:#b09878;line-height:1.7;font-size:.9rem}
 .book-win{display:inline-block;font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;padding:3px 10px;border-radius:12px;margin-top:8px}
 .book-intro{text-align:center;padding:32px 16px 24px}
 .book-intro-icon{font-size:4rem;display:block;margin-bottom:16px}
-.book-intro-text{color:#7a6848;font-style:italic;line-height:1.8;font-size:.9rem}
+.book-intro-text{color:#7a6848;font-style:italic;line-height:1.8;font-size:.92rem}
 @keyframes bookIn{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:scale(1)}}
-.book-anim{animation:bookIn .25s ease both}
-@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-.fade{animation:fadeUp .3s ease both}
-@keyframes coinFlip{0%{transform:rotateY(0) scale(1)}40%{transform:rotateY(720deg) scale(1.3)}100%{transform:rotateY(1440deg) scale(1)}}
-.coin-anim{animation:coinFlip .8s ease-out}
-/* ── BOOK TEXT CONTENT ─────────────────────────────────── */
-.bprose{color:#8a7860;font-style:italic;line-height:1.8;font-size:.9rem;margin-bottom:10px}
-.bch{font-family:'Cinzel',serif;font-size:.85rem;color:#c8a05a;letter-spacing:.1em;margin-bottom:10px;margin-top:20px}
+.book-anim{animation:bookIn .24s ease both}
+/* book prose */
+.bprose{color:#8a7860;font-style:italic;line-height:1.8;font-size:.92rem;margin-bottom:10px}
+.bch{font-family:'Cinzel',serif;font-size:.85rem;color:var(--gold);letter-spacing:.1em;margin-bottom:10px;margin-top:20px}
 .bch:first-child{margin-top:0}
-.bgt{font-family:'Cinzel',serif;font-size:.78rem;color:#c8a05a;font-weight:600;margin-bottom:3px}
-.bgd{color:#8a7860;font-size:.86rem;line-height:1.6;margin-bottom:14px;padding-left:10px;border-left:2px solid rgba(200,160,90,.2)}
-.bvc{background:rgba(255,255,255,.03);border:1px solid rgba(200,160,90,.12);border-radius:12px;padding:16px 18px;margin-bottom:12px}
+.bgt{font-family:'Cinzel',serif;font-size:.78rem;color:var(--gold);font-weight:600;margin-bottom:3px}
+.bgd{color:#8a7860;font-size:.87rem;line-height:1.6;margin-bottom:14px;padding-left:10px;border-left:2px solid rgba(201,162,39,.2)}
+.bvc{background:rgba(255,255,255,.03);border:1px solid rgba(201,162,39,.1);border-radius:12px;padding:16px 18px;margin-bottom:12px}
 .bvn{font-family:'Cinzel',serif;font-size:.95rem;font-weight:600;margin-bottom:4px}
 .bvf{display:flex;flex-wrap:wrap;gap:5px;margin:10px 0 4px}
-.bvft{font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;padding:3px 8px;border-radius:4px;background:rgba(200,160,90,.1);border:1px solid rgba(200,160,90,.25);color:#c8a05a}
-.bec{background:rgba(255,255,255,.03);border:1px solid rgba(200,160,90,.12);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;gap:14px;align-items:flex-start}
+.bvft{font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;padding:3px 8px;border-radius:4px;background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.22);color:var(--gold)}
+.bec{background:rgba(255,255,255,.03);border:1px solid rgba(201,162,39,.1);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;gap:14px;align-items:flex-start}
 .bei{font-size:1.8rem;flex-shrink:0;margin-top:2px}
 .ben{font-family:'Cinzel',serif;font-size:.85rem;font-weight:600;margin-bottom:3px}
 .bew{font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;margin-bottom:5px}
-.bed{color:#8a7860;font-size:.84rem;line-height:1.6;font-style:italic}
-.btc{background:rgba(255,255,255,.02);border-left:3px solid rgba(200,160,90,.3);padding:12px 14px;margin-bottom:12px;border-radius:0 8px 8px 0}
-.btt{font-family:'Cinzel',serif;font-size:.78rem;color:#c8a05a;letter-spacing:.08em;margin-bottom:5px}
-.btx{color:#8a7860;font-size:.85rem;line-height:1.65;font-style:italic}
-/* ── DICE ──────────────────────────────────────────────── */
-.dice-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.dbtn{font-family:'Cinzel',serif;font-size:.63rem;letter-spacing:.12em;text-transform:uppercase;background:rgba(155,89,182,.1);border:1px solid rgba(155,89,182,.3);color:#b090e0;border-radius:20px;padding:5px 12px;cursor:pointer;transition:all .15s;-webkit-tap-highlight-color:transparent}
-.dbtn:hover{background:rgba(155,89,182,.22)}
-.dev-bg{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:400;display:flex;align-items:center;justify-content:center;padding:20px}
-.dev-box{background:#111018;border:1px solid rgba(155,89,182,.4);border-radius:16px;padding:28px 22px;max-width:340px;width:100%;position:relative;text-align:center}
-.dev-close{position:absolute;top:12px;right:14px;background:none;border:none;color:#6a5a40;font-size:1.3rem;cursor:pointer;line-height:1}
+.bed{color:#8a7860;font-size:.85rem;line-height:1.6;font-style:italic}
+.btc{background:rgba(255,255,255,.02);border-left:3px solid rgba(201,162,39,.28);padding:12px 14px;margin-bottom:12px;border-radius:0 8px 8px 0}
+.btt{font-family:'Cinzel',serif;font-size:.78rem;color:var(--gold);letter-spacing:.08em;margin-bottom:5px}
+.btx{color:#8a7860;font-size:.86rem;line-height:1.65;font-style:italic}
+/* ── COIN FLIP ── */
+@keyframes coinFlip{0%{transform:rotateY(0) scale(1)}40%{transform:rotateY(720deg) scale(1.25)}100%{transform:rotateY(1440deg) scale(1)}}
+.coin-anim{animation:coinFlip .75s ease-out}
+/* ── DICE ── */
+.dice-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.dbtn{font-family:'Cinzel',serif;font-size:.63rem;letter-spacing:.12em;text-transform:uppercase;background:rgba(125,60,152,.1);border:1px solid rgba(125,60,152,.26);color:#c0a0e8;border-radius:20px;padding:6px 14px;cursor:pointer;transition:all .15s;-webkit-tap-highlight-color:transparent}
+.dbtn:hover{background:rgba(125,60,152,.2)}
+.dev-bg{position:fixed;inset:0;background:rgba(0,0,0,.84);z-index:400;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(5px)}
+.dev-box{background:#0c101a;border:1px solid rgba(125,60,152,.36);border-radius:18px;padding:28px 22px;max-width:340px;width:100%;position:relative;text-align:center}
+.dev-close{position:absolute;top:14px;right:16px;background:none;border:none;color:#5a4830;font-size:1.3rem;cursor:pointer;line-height:1}
 .dev-icon{font-size:3rem;display:block;margin-bottom:10px}
-.dev-name{font-family:'Cinzel Decorative',serif;font-size:1rem;color:#b090e0;margin-bottom:5px}
+.dev-name{font-family:'Cinzel Decorative',serif;font-size:1rem;color:#c0a0e8;margin-bottom:5px}
 .dev-when{font-family:'Cinzel',serif;font-size:.63rem;letter-spacing:.15em;text-transform:uppercase;margin-bottom:10px}
-.dev-desc{color:#9a80b0;font-style:italic;line-height:1.7;font-size:.9rem;margin-bottom:16px}
-/* ── ORDINE & SINDACO ── */
-.ordine-pill{font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;padding:3px 9px;border-radius:12px;background:rgba(26,188,156,.12);border:1px solid rgba(26,188,156,.3);color:#1abc9c}
+.dev-desc{color:#9a80b0;font-style:italic;line-height:1.7;font-size:.92rem;margin-bottom:16px}
+/* ── ORDINE / SINDACO ── */
+.ordine-pill{font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;padding:3px 9px;border-radius:12px;background:rgba(26,188,156,.1);border:1px solid rgba(26,188,156,.26);color:#1abc9c}
 .sindaco-badge{display:inline-block;font-size:.75rem;margin-left:5px;vertical-align:middle}
 /* ── SCOREBOARD ── */
-.sb-row{display:flex;align-items:center;padding:11px 14px;border-bottom:1px solid rgba(255,255,255,.05)}
+.sb-row{display:flex;align-items:center;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.05)}
 .sb-row:last-child{border-bottom:none}
-.sb-row.sb-me{background:rgba(200,160,90,.06)}
-.sb-rank{font-family:'Cinzel',serif;font-size:.7rem;color:#6a5a40;width:22px;flex-shrink:0}
-.sb-name{flex:1;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sb-pts{font-family:'Cinzel Decorative',serif;font-size:.95rem;color:#f1c40f;width:44px;text-align:right;flex-shrink:0}
-.sb-meta{font-size:.73rem;color:#5a4a30;width:72px;text-align:right;flex-shrink:0;font-style:italic}
-.pts-earned{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-radius:8px;margin-bottom:6px;font-size:.88rem;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06)}
-.pts-earned.winner{background:rgba(241,196,15,.07);border-color:rgba(241,196,15,.25)}
+.sb-rank{font-family:'Cinzel',serif;font-size:.7rem;color:#5a4830;width:24px;flex-shrink:0}
+.sb-name{flex:1;font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-pts{font-family:'Cinzel Decorative',serif;font-size:.95rem;color:#f1c40f;width:46px;text-align:right;flex-shrink:0}
+.sb-meta{font-size:.72rem;color:#5a4830;width:74px;text-align:right;flex-shrink:0;font-style:italic}
+.pts-earned{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-radius:8px;margin-bottom:6px;font-size:.9rem;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06)}
+.pts-earned.winner{background:rgba(241,196,15,.07);border-color:rgba(241,196,15,.22)}
+/* ── ROLE PICK CATEGORY ── */
+.cat-hdr{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;background:rgba(255,255,255,.04);border:1px solid rgba(201,162,39,.12);border-radius:10px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s}
+.cat-hdr.open{background:rgba(201,162,39,.07);border-color:rgba(201,162,39,.26);border-radius:10px 10px 0 0}
+.cat-body{background:rgba(255,255,255,.02);border:1px solid rgba(201,162,39,.1);border-top:none;border-radius:0 0 10px 10px;overflow:hidden;margin-bottom:10px}
+.role-row{display:flex;align-items:center;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.04)}
+.role-row:last-child{border-bottom:none}
+.rr-cnt-btn{width:32px;height:32px;border-radius:8px;border:1px solid rgba(201,162,39,.28);background:rgba(255,255,255,.04);color:var(--gold);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s;-webkit-tap-highlight-color:transparent}
+.rr-cnt-btn:active{background:rgba(201,162,39,.15)}
+.rr-cnt-val{width:34px;text-align:center;font-family:'Cinzel',serif;font-size:.95rem;border:1px solid rgba(201,162,39,.18);border-left:none;border-right:none;padding:5px 0;background:rgba(255,255,255,.02)}
 </style>
 </head>
 <body>
@@ -1101,7 +1192,8 @@ function App(){
 
   // ── NightWrap component ────────────────────────────────────────────────────
   const NW=({color,emoji,title,children})=>(
-    <div className="app" style={{background:'#04040c'}}><MuteBtn/><div className="moon"/>
+    <div className="app night" style={{'--ni-col':color}}><MuteBtn/><div className="astro moon"/>
+    <div style={{position:'fixed',inset:0,background:`radial-gradient(ellipse 60% 45% at 50% 20%,${color}18 0%,transparent 65%)`,pointerEvents:'none',zIndex:0}}/>
     {diceEv&&(
       <div className="dev-bg" onClick={()=>setDiceEv(null)}>
         <div className="dev-box" onClick={e=>e.stopPropagation()}>
@@ -1123,7 +1215,7 @@ function App(){
           <button className="dbtn" onClick={()=>setDiceEv(RANDOM_EVENTS[Math.floor(Math.random()*RANDOM_EVENTS.length)])}>🎲 Dado</button>
         </div>
       </div>
-      <div className="ph"><span className="pi">{emoji}</span><div className="pt" style={{color}}>{title}</div></div>
+      <div className="night-hdr"><span className="ni-em">{emoji}</span><div className="ni-title">{title}</div></div>
       {children}
       <div className="div"/>
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
@@ -1132,19 +1224,20 @@ function App(){
           {showRoles?'👁 Nascondi':'👁 Ruoli'}
         </button>
       </div>
-      {players.map(p=>{
-        const isTransforming=p.role==='lupoAlpha'&&alphaTransf&&p.alive;
-        return(
-        <div key={p.id} className={`prow${!p.alive?' dead':''}`} style={isTransforming?{borderColor:'rgba(142,68,173,.5)',background:'rgba(142,68,173,.08)'}:{}}>
-          <div className="pl"><span className={`dot ${p.alive?'da':'dd'}`}/>{p.name}</div>
-          <div style={{display:'flex',alignItems:'center',gap:6}}>
-            {isTransforming&&<span style={{fontSize:'.72rem',fontFamily:'Cinzel,serif',color:'#8e44ad'}}>🐾→🐺 In trasformazione</span>}
-            {!isTransforming&&showRoles&&<span style={{fontSize:'.75rem',fontFamily:'Cinzel,serif',color:ROLES[p.role].color}}>{ROLES[p.role].emoji} {ROLES[p.role].name}</span>}
-            {!isTransforming&&!p.alive&&!showRoles&&<span style={{fontSize:'.75rem',color:'#5a4a30',fontFamily:'Cinzel,serif'}}>{ROLES[p.role].emoji} {ROLES[p.role].name}</span>}
-          </div>
-        </div>
-        );
-      })}
+      <div className="player-grid">
+        {players.map(p=>{
+          const r=ROLES[p.role];
+          return(
+            <div key={p.id} className={`p-tok ${p.alive?'alive':'dead'}`}>
+              {sindacoIdx>=0&&players[sindacoIdx]?.id===p.id&&p.alive&&<span className="pt-sindaco">🏛️</span>}
+              {!p.alive&&<span className="pt-dead-x">✕</span>}
+              <span className="pt-em">{showRoles||!p.alive?r.emoji:'👤'}</span>
+              <span className="pt-name">{p.name}</span>
+              {(showRoles||!p.alive)&&<span className="pt-role" style={{color:r.color}}>{r.name}</span>}
+            </div>
+          );
+        })}
+      </div>
       <div className="div"/>
       {!menuConfirm?(
         <button className="btn btn-outline" style={{color:'#6a5a40',borderColor:'rgba(100,80,50,.3)',fontSize:'.68rem'}} onClick={()=>setMenuConfirm(true)}>↩ Menu Principale</button>
@@ -1211,7 +1304,7 @@ function App(){
   if(sc==='setup'){
     const saved=loadGame();
     return(
-      <div className="app"><MuteBtn/><div className="moon"/>
+      <div className="app night"><MuteBtn/><div className="astro moon"/>
       {infoModal&&<RoleModal roleKey={infoModal} onClose={()=>setInfoModal(null)}/>}
       {libro&&<LibroMagico onClose={()=>{setLibro(false);setLibroTab('tutti');}} initialCat={libroTab}/>}
       {showScores&&<ScoreboardModal/>}
@@ -1299,7 +1392,7 @@ function App(){
       });
     };
     return(
-      <div className="app"><MuteBtn/><div className="moon"/>
+      <div className="app night"><MuteBtn/><div className="astro moon"/>
       {infoModal&&<RoleModal roleKey={infoModal} onClose={()=>setInfoModal(null)}/>}
       <div className="screen fade">
         <h1 className="title">Configura Ruoli</h1>
@@ -1311,7 +1404,7 @@ function App(){
           return(
             <div key={cat.id} style={{marginBottom:10}}>
               {/* Header */}
-              <div onClick={()=>toggleCat(cat.id)} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 16px',background:isOpen?'rgba(200,160,90,.08)':'rgba(255,255,255,.04)',border:`1px solid ${isOpen?'rgba(200,160,90,.3)':'rgba(200,160,90,.1)'}`,borderRadius:isOpen?'10px 10px 0 0':'10px',cursor:'pointer',WebkitTapHighlightColor:'transparent'}}>
+              <div onClick={()=>toggleCat(cat.id)} className={`cat-hdr${isOpen?' open':''}`}>
                 <div style={{display:'flex',alignItems:'center',gap:10}}>
                   <span style={{fontFamily:'Cinzel,serif',fontSize:'.82rem',color:'#c8a05a',letterSpacing:'.08em'}}>{cat.label}</span>
                   {catTotal>0&&<span style={{fontFamily:'Cinzel,serif',fontSize:'.65rem',padding:'2px 8px',borderRadius:10,background:'rgba(200,160,90,.15)',color:'#c8a05a',border:'1px solid rgba(200,160,90,.25)'}}>{catTotal} attivi</span>}
@@ -1320,12 +1413,12 @@ function App(){
               </div>
               {/* Body */}
               {isOpen&&(
-                <div style={{background:'rgba(255,255,255,.02)',border:'1px solid rgba(200,160,90,.1)',borderTop:'none',borderRadius:'0 0 10px 10px',overflow:'hidden'}}>
+                <div className="cat-body">
                   {cat.roles.map(key=>{
                     const r=ROLES[key];
                     const cnt=dist[key]||0;
                     return(
-                      <div key={key} style={{display:'flex',alignItems:'center',padding:'10px 14px',borderBottom:'1px solid rgba(255,255,255,.04)'}}>
+                      <div key={key} className="role-row">
                         <span style={{fontSize:'1.2rem',marginRight:8}}>{r.emoji}</span>
                         <span style={{flex:1,fontSize:'.88rem'}}>{r.name}</span>
                         <button className="ibtn" onClick={e=>{e.stopPropagation();setInfoModal(key);}} style={{marginRight:10}}>i</button>
@@ -1333,9 +1426,9 @@ function App(){
                           <span style={{fontFamily:'Cinzel,serif',fontSize:'.78rem',minWidth:80,textAlign:'center',color:'#e91e63',fontStyle:'italic'}}>= Romeo ({cnt})</span>
                         ):(
                           <div style={{display:'flex',alignItems:'center'}}>
-                            <button onClick={e=>{e.stopPropagation();change(key,-1);}} style={{width:32,height:32,borderRadius:'8px 0 0 8px',border:'1px solid rgba(200,160,90,.3)',background:'rgba(255,255,255,.04)',color:'#c8a05a',fontSize:'1.1rem',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>−</button>
-                            <span style={{width:34,textAlign:'center',fontFamily:'Cinzel,serif',fontSize:'.95rem',color:cnt>0?r.color:'#4a3a20',border:'1px solid rgba(200,160,90,.2)',borderLeft:'none',borderRight:'none',padding:'5px 0',background:'rgba(255,255,255,.03)'}}>{cnt}</span>
-                            <button onClick={e=>{e.stopPropagation();change(key,+1);}} style={{width:32,height:32,borderRadius:'0 8px 8px 0',border:'1px solid rgba(200,160,90,.3)',background:'rgba(255,255,255,.04)',color:'#c8a05a',fontSize:'1.1rem',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>+</button>
+                            <button onClick={e=>{e.stopPropagation();change(key,-1);}} className="rr-cnt-btn" style={{borderRadius:'8px 0 0 8px'}}>−</button>
+                            <span className="rr-cnt-val" style={{color:cnt>0?r.color:'var(--text-muted)'}}>{cnt}</span>
+                            <button onClick={e=>{e.stopPropagation();change(key,+1);}} className="rr-cnt-btn" style={{borderRadius:'0 8px 8px 0'}}>+</button>
                           </div>
                         )}
                       </div>
@@ -1389,28 +1482,27 @@ function App(){
     const tl=r.soloTeam?'⚖️ Fazione Solitaria':r.wolfTeam?'🐺 Squadra Lupi':r.winsWithWolves?'😒 Vinci coi Lupi':isOrdineRole?'🔮 Ordine':'🏘️ Squadra Villaggio';
     const tc=r.soloTeam?'#f39c12':r.wolfTeam||r.winsWithWolves?'#e74c3c':isOrdineRole?'#1abc9c':'#2ecc71';
     return(
-      <div className="app"><MuteBtn/><div className="moon"/>
+      <div className="app night"><MuteBtn/><div className="astro moon"/>
       <div className="screen fade">
-        <h1 className="title">Assegnazione Ruoli</h1>
-        <p className="subtitle">{vName} — ogni giocatore legge il proprio ruolo in privato</p>
-        <div className="pill-center"><span className="pill">{ri+1} / {players.length}</span></div>
-        <div className="card mb16">
-          <p className="mb16" style={{textAlign:'center',fontSize:'1.05rem'}}>È il turno di <strong style={{color:'#c8a05a'}}>{p.name}</strong></p>
-          {!rv?(
-            <div className="reveal-tap" onClick={()=>setRv(true)}>
-              <span style={{fontSize:'2.5rem'}}>🃏</span>
-              <span className="reveal-hint">Tocca per scoprire il tuo ruolo</span>
-              <span style={{fontSize:'.78rem',color:'#3a3020',fontStyle:'italic'}}>Assicurati di essere solo tu a guardare</span>
-            </div>
-          ):(
-            <div className="role-disp fade">
-              <span className="re">{r.emoji}</span>
-              <div className="rn" style={{color:r.color}}>{r.name}</div>
-              <p className="rd">{r.desc}</p>
-              <div className="rt" style={{color:tc}}>{tl}</div>
-            </div>
-          )}
+        <h1 className="title" style={{fontSize:'1.3rem',marginBottom:4}}>Assegnazione Ruoli</h1>
+        <p className="subtitle" style={{marginBottom:16}}>{vName}</p>
+        <div className="pill-center" style={{marginBottom:20}}>
+          <span className="pill">{ri+1} / {players.length} — {p.name}</span>
         </div>
+        {!rv?(
+          <div className="reveal-back" onClick={()=>setRv(true)}>
+            <span style={{fontSize:'3.5rem',filter:'blur(2px)',opacity:.5}}>🃏</span>
+            <span className="reveal-hint">Tocca per scoprire il tuo ruolo</span>
+            <span style={{fontSize:'.8rem',color:'#3a2c14',fontStyle:'italic'}}>Assicurati di essere solo tu a guardare</span>
+          </div>
+        ):(
+          <div className="reveal-front" style={{'--role-glow':r.color+'44'}}>
+            <span className="re">{r.emoji}</span>
+            <div className="rn" style={{color:r.color}}>{r.name}</div>
+            <p className="rd">{r.desc}</p>
+            <div className="rt" style={{color:tc,borderColor:tc+'44'}}>{tl}</div>
+          </div>
+        )}
         <button className="btn btn-gold" onClick={nextReveal} disabled={!rv}>
           {ri+1===players.length?'🌙 Inizia la Notte':`Passa a ${players[ri+1].name} →`}
         </button>
@@ -1502,24 +1594,13 @@ function App(){
       const lupoOk=players.some(p=>p.role==='lupo'&&p.alive);
       const cucHere=!lupoOk&&players.some(p=>p.role==='cucciolo'&&p.alive);
       const cucBlock=cucHere&&cFirst;
+      // Arciere logic: alpha blocked = no attack; cucciolo-solo blocked = no attack; normal wolf blocked = others still attack
       const alphaIdx=players.findIndex(p=>p.role==='lupoAlpha'&&p.alive);
       const arcBlockedAlpha=ac!==null&&ac===alphaIdx&&alphaIdx!==-1;
       const arcBlockedCucSolo=cucHere&&ac!==null&&players[ac]?.role==='cucciolo';
       const wolvesBlocked=arcBlockedAlpha||arcBlockedCucSolo;
-      // lupoAlpha in trasformazione: è ora con i lupi, non può essere vittima
-      const alphaTransfName=alphaTransf&&alphaIdx!==-1?players[alphaIdx].name:null;
       return(
         <NW color="#e74c3c" emoji="🐺" title={cucHere?'Il Lupo Cucciolo si sveglia':'I Lupi si svegliano'}>
-          {/* Alert narratore: lupoAlpha si trasforma questa notte */}
-          {alphaTransf&&alphaTransfName&&(
-            <div style={{background:'rgba(142,68,173,.15)',border:'1px solid rgba(142,68,173,.5)',borderRadius:10,padding:'13px 15px',marginBottom:14}}>
-              <div style={{fontFamily:'Cinzel,serif',fontSize:'.72rem',letterSpacing:'.15em',textTransform:'uppercase',color:'#8e44ad',marginBottom:6}}>⚠️ Solo per il Narratore</div>
-              <p style={{fontSize:'.9rem',color:'#b080d0',lineHeight:1.6}}>
-                <strong>{alphaTransfName}</strong> (Lupo Alpha) si è trasformato stanotte.<br/>
-                <span style={{fontStyle:'italic',color:'#8a60a0'}}>Annuncia al villaggio che si sveglia insieme ai lupi. Da questo momento è un Lupo Mannaro a tutti gli effetti.</span>
-              </p>
-            </div>
-          )}
           {wolvesBlocked?(
             <><div className="instr" style={{borderColor:'rgba(39,174,96,.3)',color:'#70a080'}}>🏹 L'Arciere ha bloccato {arcBlockedAlpha?'il Lupo Alpha':'il Cucciolo'}. Nessun attacco questa notte.</div>
             <button className="btn btn-gold" onClick={()=>confWolves(true)}>Conferma — nessuna vittima →</button></>
@@ -1527,9 +1608,9 @@ function App(){
             <><div className="instr">🐶 Il Cucciolo ha perso il suo branco. Questa notte non riesce ad agire — dalla prossima potrà uccidere.</div>
             <button className="btn btn-gold" onClick={()=>confWolves(true)}>Notte senza vittima →</button></>
           ):(
-            <><div className="instr">{cucHere?'Il Cucciolo si è trasformato. Indica la vittima.':alphaTransf?'Il Lupo Alpha si è unito al branco. I lupi scelgono la vittima.':'I Lupi si riconoscono e scelgono la vittima in silenzio.'}</div>
+            <><div className="instr">{cucHere?'Il Cucciolo si è trasformato. Indica la vittima.':'I Lupi si riconoscono e scelgono la vittima in silenzio.'}</div>
             <div className="nlbl">Chi attaccano i Lupi?</div>
-            <PList players={alive.filter(p=>!ROLES[p.role].wolfTeam&&p.role!=='cucciolo'&&!(p.role==='lupoAlpha'&&alphaTransf))} sel={wc} onSel={setWc}/>
+            <PList players={alive.filter(p=>!ROLES[p.role].wolfTeam&&p.role!=='cucciolo')} sel={wc} onSel={setWc}/>
             <button className="btn btn-gold mb8" onClick={()=>confWolves(false)} disabled={wc===null}>Conferma Vittima</button>
             <button className="btn btn-outline" onClick={()=>confWolves(true)}>Nessuna vittima</button></>
           )}
@@ -1780,7 +1861,7 @@ function App(){
     const silName=silenced!==null&&players[silenced]?players[silenced].name:null;
     const rollDice=()=>setDiceEv(RANDOM_EVENTS[Math.floor(Math.random()*RANDOM_EVENTS.length)]);
     return(
-      <div className="app"><MuteBtn/><div className="moon"/>
+      <div className="app day"><MuteBtn/><div className="astro sun"/>
       {diceEv&&(
         <div className="dev-bg" onClick={()=>setDiceEv(null)}>
           <div className="dev-box" onClick={e=>e.stopPropagation()}>
@@ -1796,10 +1877,13 @@ function App(){
       )}
       <div className="screen fade">
         <div className="dice-row">
-          <span className="pill">☀️ Giorno {round}</span>
-          <button className="dbtn" onClick={rollDice}>🎲 Dado degli eventi</button>
+          <span className="pill" style={{background:'rgba(200,120,20,.12)',borderColor:'rgba(200,120,20,.28)',color:'#d4821a'}}>☀️ Giorno {round}</span>
+          <button className="dbtn" onClick={rollDice}>🎲 Dado</button>
         </div>
-        <div className="ph"><span className="pi">☀️</span><div className="pt" style={{color:'#e67e22'}}>{vName} si sveglia</div></div>
+        <div style={{textAlign:'center',marginBottom:20}}>
+          <span style={{fontSize:'2.8rem',display:'block',marginBottom:6,filter:'drop-shadow(0 0 20px rgba(210,120,10,.35))'}}>☀️</span>
+          <div style={{fontFamily:'Cinzel,serif',fontSize:'1rem',color:'#d4821a',letterSpacing:'.06em'}}>{vName} si sveglia</div>
+        </div>
         <div className="lbl mb8">Cosa è successo stanotte</div>
         {de.map((e,i)=><div key={i} className={`ev ev-${e.t}`}>{e.tx}</div>)}
         {silName&&<div className="ev ev-info">🤫 <strong>{silName}</strong> è silenziato — non può parlare né votare oggi.</div>}
@@ -1865,25 +1949,21 @@ function App(){
             {showRoles?'👁 Nascondi Ruoli':'👁 Mostra Ruoli'}
           </button>
         </div>
-        {players.map(p=>{
-          const isTransforming=p.role==='lupoAlpha'&&alphaTransf&&p.alive;
-          const displayRole=isTransforming?'🐾→🐺 In trasformazione':null;
-          return(
-          <div key={p.id} className={`prow${!p.alive?' dead':''}`} style={isTransforming?{borderColor:'rgba(142,68,173,.5)',background:'rgba(142,68,173,.08)'}:{}}>
-            <div className="pl">
-              <span className={`dot ${p.alive?'da':'dd'}`}/>
-              {p.name}
-              {sindacoIdx>=0&&players[sindacoIdx]?.id===p.id&&p.alive&&<span className="sindaco-badge" title="Sindaco">🏛️</span>}
-              {ordineMode&&ROLES[p.role]?.isOrdine&&p.alive&&<span className="ordine-pill" style={{marginLeft:6}}>Ordine</span>}
-            </div>
-            <div style={{display:'flex',alignItems:'center',gap:6}}>
-              {isTransforming&&<span style={{fontSize:'.72rem',fontFamily:'Cinzel,serif',color:'#8e44ad'}}>{displayRole}</span>}
-              {!isTransforming&&showRoles&&<span style={{fontSize:'.75rem',fontFamily:'Cinzel,serif',color:ROLES[p.role].color}}>{ROLES[p.role].emoji} {ROLES[p.role].name}</span>}
-              {!isTransforming&&!p.alive&&!showRoles&&<span style={{fontSize:'.75rem',color:'#5a4a30',fontFamily:'Cinzel,serif'}}>{ROLES[p.role].emoji} {ROLES[p.role].name}</span>}
-            </div>
-          </div>
-          );
-        })}
+        <div className="player-grid">
+          {players.map(p=>{
+            const r=ROLES[p.role];
+            return(
+              <div key={p.id} className={`p-tok ${p.alive?'alive':'dead'}`}>
+                {sindacoIdx>=0&&players[sindacoIdx]?.id===p.id&&p.alive&&<span className="pt-sindaco">🏛️</span>}
+                {!p.alive&&<span className="pt-dead-x">✕</span>}
+                <span className="pt-em">{showRoles||!p.alive?r.emoji:'👤'}</span>
+                <span className="pt-name">{p.name}</span>
+                {(showRoles||!p.alive)&&<span className="pt-role" style={{color:r.color}}>{r.name}</span>}
+                {ordineMode&&r.isOrdine&&p.alive&&<span style={{fontSize:'.55rem',fontFamily:'Cinzel,serif',color:'#1abc9c',display:'block',marginTop:2}}>Ordine</span>}
+              </div>
+            );
+          })}
+        </div>
         <div className="div"/>
         {!menuConfirm?(
           <button className="btn btn-outline" style={{color:'#6a5a40',borderColor:'rgba(100,80,50,.3)',fontSize:'.68rem'}} onClick={()=>setMenuConfirm(true)}>↩ Menu Principale</button>
@@ -1959,16 +2039,12 @@ function App(){
 
         <div className="div"/>
         <div className="lbl mb8">Ruoli Rivelati</div>
-        {players.map(p=>{const n=winNote(p);
-          // if lupoAlpha transformed, show as wolf in game over
-          const wasAlpha=p.role==='lupo'&&p.id===players.find(x=>x.role==='lupo'&&x.id===p.id)?.id;
-          const displayRole=ROLES[p.role];
-          return(
+        {players.map(p=>{const n=winNote(p);return(
           <div key={p.id} className={`fr${!p.alive?' fdead':''}`}>
-            <span>{displayRole.emoji}</span>
+            <span>{ROLES[p.role].emoji}</span>
             <span className="fn" style={{textDecoration:!p.alive?'line-through':'none'}}>{p.name}{sindacoIdx>=0&&players[sindacoIdx]?.id===p.id?'  🏛️':''}</span>
             {n&&<span style={{fontSize:'.7rem',color:'#f1c40f',marginRight:4}}>{n}</span>}
-            <span className="frn" style={{color:isO&&displayRole.isOrdine?'#1abc9c':displayRole.color}}>{displayRole.name}{isO&&displayRole.isOrdine?' (Ordine)':''}</span>
+            <span className="frn" style={{color:isO&&ROLES[p.role].isOrdine?'#1abc9c':ROLES[p.role].color}}>{ROLES[p.role].name}{isO&&ROLES[p.role].isOrdine?' (Ordine)':''}</span>
           </div>
         );})}
         <div style={{marginTop:24,display:'flex',gap:8}}>
