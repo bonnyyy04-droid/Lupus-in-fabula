@@ -774,6 +774,7 @@ function App(){
   const [vr,setVr]=useState(null);
   const [mc,setMc]=useState(null);
   const [ac,setAc]=useState(null);
+  const [arcWolvesBlocked,setArcWolvesBlocked]=useState(false); // true quando arciere ha bloccato i lupi
   const [cusC,setCusC]=useState(null);
   const [negC,setNegC]=useState(null);
   const [negR,setNegR]=useState(null);
@@ -906,7 +907,7 @@ function App(){
     setCorvoVotes(s.corvoVotes||{});setOrfanoEff(s.orfanoEff||false);
     setSilenced(s.silenced??null);setAvvRm(s.avvRm??null);
     setDe(s.de||[]);setVi(s.vi??null);setWin(s.win??null);
-    setOrdineMode(s.ordineMode||false);setSindacoIdx(s.sindacoIdx??null);setShowRoles(s.showRoles||false);
+    setOrdineMode(s.ordineMode||false);setSindacoIdx(s.sindacoIdx??null);setShowRoles(s.showRoles||false);setArcWolvesBlocked(s.arcWolvesBlocked||false);
     setFunamboloCoin(s.funamboloCoin??null);setVampPrede(s.vampPrede||[]);
   },[]);
 
@@ -916,7 +917,7 @@ function App(){
     saveGame({sc,names,vName,players,ri,round,ns,dist,gc,wc,vc,vr,mc,ac,cusC,negC,negR,pirC,accC,accR,
       alchAct,alchT,alchTs,mutC,conC,corC,seerKill,cAlone,cFirst,pirUsed,alchUsed,araldoUsed,accLast,
       gesuDeath,cappKilled,alphaTransf,mutRole,conRole,corvoVotes,orfanoEff,silenced,avvRm,de,vi,win,
-      ordineMode,sindacoIdx,showRoles,funamboloCoin,vampPrede});
+      ordineMode,sindacoIdx,showRoles,funamboloCoin,vampPrede,arcWolvesBlocked});
   },[sc,players,ri,round,ns,gc,wc,vc,vr,mc,ac,cusC,negC,negR,pirC,accC,accR,
     alchAct,alchT,alchTs,mutC,conC,corC,seerKill,cAlone,cFirst,pirUsed,alchUsed,
     araldoUsed,accLast,gesuDeath,cappKilled,alphaTransf,mutRole,conRole,corvoVotes,
@@ -946,7 +947,7 @@ function App(){
 
   const nextReveal=()=>{if(ri+1<players.length){setRi(r=>r+1);setRv(false);}else startNight(players,false,false);};
 
-  const resetNight=()=>{setGc(null);setWc(null);setVc(null);setVr(null);setMc(null);setAc(null);setCusC(null);setNegC(null);setNegR(null);setPirC(null);setAccC(null);setAccR(null);setAlchAct(null);setAlchT(null);setAlchTs([]);setMutC(null);setConC(null);setCorC(null);setSeerKill(null);setFunamboloCoin(null);setVampC(null);};
+  const resetNight=()=>{setGc(null);setWc(null);setVc(null);setVr(null);setMc(null);setAc(null);setArcWolvesBlocked(false);setCusC(null);setNegC(null);setNegR(null);setPirC(null);setAccC(null);setAccR(null);setAlchAct(null);setAlchT(null);setAlchTs([]);setMutC(null);setConC(null);setCorC(null);setSeerKill(null);setFunamboloCoin(null);setVampC(null);};
 
   const startNight=(ps,ca,cf)=>{
     const fr=ps.map(p=>({...p,protected:false}));
@@ -963,7 +964,16 @@ function App(){
 
   // ── NIGHT CONFIRMS ──
   const confGuard=()=>{if(gc===null)return;const u=players.map((p,i)=>({...p,protected:i===gc}));setPlayers(u);advance('guardia',u);};
-  const confArc=()=>{advance('arciere',players,{arcT:ac});};
+  const confArc=()=>{
+    if(ac===null)return;
+    // Controlla se l'arciere ha bloccato lupo alpha o cucciolo-solo → lupi non possono attaccare
+    const lupoOkNow=players.some(p=>p.role==='lupo'&&p.alive);
+    const cucSoloNow=!lupoOkNow&&players.some(p=>p.role==='cucciolo'&&p.alive);
+    const targetRole=players[ac]?.role;
+    const blocksWolves=(targetRole==='lupoAlpha')||(cucSoloNow&&targetRole==='cucciolo');
+    setArcWolvesBlocked(blocksWolves);
+    advance('arciere',players,{arcT:ac});
+  };
   const skipArc=()=>{setAc(null);advance('arciere',players,{arcT:null});};
   const confCus=()=>{if(cusC===null)return;setSilenced(cusC);advance('custode',players);};
   const skipCus=()=>{advance('custode',players);};
@@ -1026,15 +1036,7 @@ function App(){
     const merIdx=np.findIndex(p=>p.role==='meretrice'&&p.alive);
     const cricIdx=np.findIndex(p=>p.role==='criceto'&&p.alive);
 
-    // wolf attack
-    // Se l'arciere ha bloccato il lupoAlpha o il cucciolo-solo, i lupi non possono attaccare
-    const alphaIdxR=np.findIndex(p=>p.role==='lupoAlpha'&&p.alive);
-    const lupoOkR=np.some(p=>p.role==='lupo'&&p.alive);
-    const cucSoloR=!lupoOkR&&np.some(p=>p.role==='cucciolo'&&p.alive);
-    const arcBlockedAlphaR=arcT!==null&&arcT!==undefined&&alphaIdxR!==-1&&arcT===alphaIdxR;
-    const arcBlockedCucR=arcT!==null&&arcT!==undefined&&cucSoloR&&np[arcT]?.role==='cucciolo';
-    const wolvesForced=arcBlockedAlphaR||arcBlockedCucR;
-    const effectiveWolfT=wolvesForced?null:wolfT;
+    const effectiveWolfT=arcWolvesBlocked?null:wolfT;
 
     const wolfOnMer=effectiveWolfT===merIdx&&merIdx!==-1;
     let merOnWolf=false,merOnSameAsWolf=false,merOut=false;
@@ -1607,9 +1609,6 @@ function App(){
       const cucHere=!lupoOk&&players.some(p=>p.role==='cucciolo'&&p.alive);
       const cucBlock=cucHere&&cFirst;
       const alphaIdx=players.findIndex(p=>p.role==='lupoAlpha'&&p.alive);
-      const arcBlockedAlpha=ac!==null&&ac===alphaIdx&&alphaIdx!==-1;
-      const arcBlockedCucSolo=cucHere&&ac!==null&&players[ac]?.role==='cucciolo';
-      const wolvesBlocked=arcBlockedAlpha||arcBlockedCucSolo;
       const alphaTransfName=alphaTransf&&alphaIdx!==-1?players[alphaIdx].name:null;
       return(
         <NW color="#e74c3c" emoji="🐺" title={cucHere?'Il Lupo Cucciolo si sveglia':'I Lupi si svegliano'}>
@@ -1622,8 +1621,8 @@ function App(){
               </p>
             </div>
           )}
-          {wolvesBlocked?(
-            <><div className="instr" style={{borderColor:'rgba(39,174,96,.3)',color:'#70a080'}}>🏹 L'Arciere ha bloccato {arcBlockedAlpha?'il Lupo Alpha':'il Cucciolo'}. Nessun attacco questa notte.</div>
+          {arcWolvesBlocked?(
+            <><div className="instr" style={{borderColor:'rgba(39,174,96,.3)',color:'#70a080'}}>🏹 L'Arciere ha bloccato il branco. Nessun attacco questa notte.</div>
             <button className="btn btn-gold" onClick={()=>confWolves(true)}>Conferma — nessuna vittima →</button></>
           ):cucBlock?(
             <><div className="instr">🐶 Il Cucciolo ha perso il suo branco. Questa notte non riesce ad agire — dalla prossima potrà uccidere.</div>
