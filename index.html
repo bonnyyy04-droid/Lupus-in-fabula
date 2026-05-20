@@ -1025,37 +1025,47 @@ function App(){
     // meretrice
     const merIdx=np.findIndex(p=>p.role==='meretrice'&&p.alive);
     const cricIdx=np.findIndex(p=>p.role==='criceto'&&p.alive);
-    const wolfOnMer=wolfT===merIdx&&merIdx!==-1;
+
+    // wolf attack
+    // Se l'arciere ha bloccato il lupoAlpha o il cucciolo-solo, i lupi non possono attaccare
+    const alphaIdxR=np.findIndex(p=>p.role==='lupoAlpha'&&p.alive);
+    const lupoOkR=np.some(p=>p.role==='lupo'&&p.alive);
+    const cucSoloR=!lupoOkR&&np.some(p=>p.role==='cucciolo'&&p.alive);
+    const arcBlockedAlphaR=arcT!==null&&arcT!==undefined&&alphaIdxR!==-1&&arcT===alphaIdxR;
+    const arcBlockedCucR=arcT!==null&&arcT!==undefined&&cucSoloR&&np[arcT]?.role==='cucciolo';
+    const wolvesForced=arcBlockedAlphaR||arcBlockedCucR;
+    const effectiveWolfT=wolvesForced?null:wolfT;
+
+    const wolfOnMer=effectiveWolfT===merIdx&&merIdx!==-1;
     let merOnWolf=false,merOnSameAsWolf=false,merOut=false;
     if(merIdx!==-1&&merT!==null&&merT!==undefined){
       merOnWolf=ROLES[np[merT].role].wolfTeam;
-      merOnSameAsWolf=merT===wolfT;
+      merOnSameAsWolf=merT===effectiveWolfT;
       merOut=true;
     }
 
-    // wolf attack
-    if(wolfT!==null&&wolfT!==undefined){
-      const isCric=wolfT===cricIdx&&cricIdx!==-1;
-      const isAlpha=np[wolfT]&&np[wolfT].role==='lupoAlpha'&&!alphaTransf;
-      const isFun=np[wolfT]&&np[wolfT].role==='funambolo';
+    if(effectiveWolfT!==null&&effectiveWolfT!==undefined){
+      const isCric=effectiveWolfT===cricIdx&&cricIdx!==-1;
+      const isAlpha=np[effectiveWolfT]&&np[effectiveWolfT].role==='lupoAlpha'&&!alphaTransf;
+      const isFun=np[effectiveWolfT]&&np[effectiveWolfT].role==='funambolo';
       const funTesta=isFun&&funamboloCoin==='testa';
       const funCroce=isFun&&funamboloCoin==='croce';
       if(wolfOnMer){/* silent */}
       else if(isCric){/* silent – criceto survives */}
       else if(isAlpha){setAlphaTransf(true);/* silent */}
       else if(funTesta){/* funambolo immune stanotte */}
-      else if(guardT===wolfT&&!funCroce){
+      else if(guardT===effectiveWolfT&&!funCroce){
         evs.push({t:'protected',tx:'🛡️ I morsi della notte non hanno trovato carne — qualcuno era sotto protezione.'});
         if(merOnSameAsWolf&&merIdx!==-1){/* also protected, silent */}
       }else{
-        if(np[wolfT].role==='contaminato'){
-          dying.add(wolfT);
+        if(np[effectiveWolfT].role==='contaminato'){
+          dying.add(effectiveWolfT);
           const laIdx=np.findIndex(p=>p.role==='lupoAlpha'&&p.alive);
           if(laIdx!==-1)dying.add(laIdx);
-        }else{dying.add(wolfT);}
+        }else{dying.add(effectiveWolfT);}
         if(merOnSameAsWolf&&merIdx!==-1)dying.add(merIdx);
-        if(np[wolfT].role==='orfano')setOrfanoEff(true);
-        if(np[wolfT].role==='cappuccetto')setCappKilled(true);
+        if(np[effectiveWolfT].role==='orfano')setOrfanoEff(true);
+        if(np[effectiveWolfT].role==='cappuccetto')setCappKilled(true);
       }
     }
 
