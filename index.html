@@ -185,7 +185,7 @@ input[type=text]::placeholder{color:#2e2214}
 .ibtn:hover{background:rgba(201,162,39,.2)}
 
 /* ── LIBRO MAGICO ── */
-.book-overlay{position:fixed;inset:0;z-index:600;display:flex;align-items:stretch;justify-content:center;background:#040810}
+.book-overlay{position:fixed;inset:0;z-index:300;display:flex;align-items:stretch;justify-content:center;background:#040810}
 .book-bg{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 20%,rgba(130,75,15,.14) 0%,transparent 70%);pointer-events:none}
 .book-wrap{position:relative;z-index:1;width:100%;max-width:480px;display:flex;flex-direction:column;overflow:hidden}
 .book-header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 12px;border-bottom:1px solid rgba(201,162,39,.14);flex-shrink:0}
@@ -1227,13 +1227,15 @@ function App(){
       <div className="player-grid">
         {players.map(p=>{
           const r=ROLES[p.role];
+          const isTransforming=p.role==='lupoAlpha'&&alphaTransf&&p.alive;
           return(
-            <div key={p.id} className={`p-tok ${p.alive?'alive':'dead'}`}>
+            <div key={p.id} className={`p-tok ${p.alive?'alive':'dead'}`} style={isTransforming?{outline:'1px solid rgba(142,68,173,.5)',background:'rgba(142,68,173,.08)',borderRadius:8}:{}}>
               {sindacoIdx>=0&&players[sindacoIdx]?.id===p.id&&p.alive&&<span className="pt-sindaco">🏛️</span>}
               {!p.alive&&<span className="pt-dead-x">✕</span>}
-              <span className="pt-em">{showRoles||!p.alive?r.emoji:'👤'}</span>
+              <span className="pt-em">{isTransforming?'🐾':showRoles||!p.alive?r.emoji:'👤'}</span>
               <span className="pt-name">{p.name}</span>
-              {(showRoles||!p.alive)&&<span className="pt-role" style={{color:r.color}}>{r.name}</span>}
+              {isTransforming&&<span className="pt-role" style={{color:'#8e44ad'}}>→🐺 Trasform.</span>}
+              {!isTransforming&&(showRoles||!p.alive)&&<span className="pt-role" style={{color:r.color}}>{r.name}</span>}
             </div>
           );
         })}
@@ -1594,13 +1596,22 @@ function App(){
       const lupoOk=players.some(p=>p.role==='lupo'&&p.alive);
       const cucHere=!lupoOk&&players.some(p=>p.role==='cucciolo'&&p.alive);
       const cucBlock=cucHere&&cFirst;
-      // Arciere logic: alpha blocked = no attack; cucciolo-solo blocked = no attack; normal wolf blocked = others still attack
       const alphaIdx=players.findIndex(p=>p.role==='lupoAlpha'&&p.alive);
       const arcBlockedAlpha=ac!==null&&ac===alphaIdx&&alphaIdx!==-1;
       const arcBlockedCucSolo=cucHere&&ac!==null&&players[ac]?.role==='cucciolo';
       const wolvesBlocked=arcBlockedAlpha||arcBlockedCucSolo;
+      const alphaTransfName=alphaTransf&&alphaIdx!==-1?players[alphaIdx].name:null;
       return(
         <NW color="#e74c3c" emoji="🐺" title={cucHere?'Il Lupo Cucciolo si sveglia':'I Lupi si svegliano'}>
+          {alphaTransf&&alphaTransfName&&(
+            <div style={{background:'rgba(142,68,173,.15)',border:'1px solid rgba(142,68,173,.5)',borderRadius:10,padding:'13px 15px',marginBottom:14}}>
+              <div style={{fontFamily:'Cinzel,serif',fontSize:'.72rem',letterSpacing:'.15em',textTransform:'uppercase',color:'#8e44ad',marginBottom:6}}>⚠️ Solo per il Narratore</div>
+              <p style={{fontSize:'.9rem',color:'#b080d0',lineHeight:1.6}}>
+                <strong>{alphaTransfName}</strong> (Lupo Alpha) si è trasformato stanotte.<br/>
+                <span style={{fontStyle:'italic',color:'#8a60a0'}}>Annuncia al villaggio che si sveglia insieme ai lupi. Da questo momento è un Lupo Mannaro a tutti gli effetti.</span>
+              </p>
+            </div>
+          )}
           {wolvesBlocked?(
             <><div className="instr" style={{borderColor:'rgba(39,174,96,.3)',color:'#70a080'}}>🏹 L'Arciere ha bloccato {arcBlockedAlpha?'il Lupo Alpha':'il Cucciolo'}. Nessun attacco questa notte.</div>
             <button className="btn btn-gold" onClick={()=>confWolves(true)}>Conferma — nessuna vittima →</button></>
@@ -1608,9 +1619,9 @@ function App(){
             <><div className="instr">🐶 Il Cucciolo ha perso il suo branco. Questa notte non riesce ad agire — dalla prossima potrà uccidere.</div>
             <button className="btn btn-gold" onClick={()=>confWolves(true)}>Notte senza vittima →</button></>
           ):(
-            <><div className="instr">{cucHere?'Il Cucciolo si è trasformato. Indica la vittima.':'I Lupi si riconoscono e scelgono la vittima in silenzio.'}</div>
+            <><div className="instr">{cucHere?'Il Cucciolo si è trasformato. Indica la vittima.':alphaTransf?'Il Lupo Alpha si è unito al branco. I lupi scelgono la vittima.':'I Lupi si riconoscono e scelgono la vittima in silenzio.'}</div>
             <div className="nlbl">Chi attaccano i Lupi?</div>
-            <PList players={alive.filter(p=>!ROLES[p.role].wolfTeam&&p.role!=='cucciolo')} sel={wc} onSel={setWc}/>
+            <PList players={alive.filter(p=>!ROLES[p.role].wolfTeam&&p.role!=='cucciolo'&&!(p.role==='lupoAlpha'&&alphaTransf))} sel={wc} onSel={setWc}/>
             <button className="btn btn-gold mb8" onClick={()=>confWolves(false)} disabled={wc===null}>Conferma Vittima</button>
             <button className="btn btn-outline" onClick={()=>confWolves(true)}>Nessuna vittima</button></>
           )}
@@ -1952,14 +1963,16 @@ function App(){
         <div className="player-grid">
           {players.map(p=>{
             const r=ROLES[p.role];
+            const isTransforming=p.role==='lupoAlpha'&&alphaTransf&&p.alive;
             return(
-              <div key={p.id} className={`p-tok ${p.alive?'alive':'dead'}`}>
+              <div key={p.id} className={`p-tok ${p.alive?'alive':'dead'}`} style={isTransforming?{outline:'1px solid rgba(142,68,173,.5)',background:'rgba(142,68,173,.08)',borderRadius:8}:{}}>
                 {sindacoIdx>=0&&players[sindacoIdx]?.id===p.id&&p.alive&&<span className="pt-sindaco">🏛️</span>}
                 {!p.alive&&<span className="pt-dead-x">✕</span>}
-                <span className="pt-em">{showRoles||!p.alive?r.emoji:'👤'}</span>
+                <span className="pt-em">{isTransforming?'🐾':showRoles||!p.alive?r.emoji:'👤'}</span>
                 <span className="pt-name">{p.name}</span>
-                {(showRoles||!p.alive)&&<span className="pt-role" style={{color:r.color}}>{r.name}</span>}
-                {ordineMode&&r.isOrdine&&p.alive&&<span style={{fontSize:'.55rem',fontFamily:'Cinzel,serif',color:'#1abc9c',display:'block',marginTop:2}}>Ordine</span>}
+                {isTransforming&&<span className="pt-role" style={{color:'#8e44ad'}}>→🐺 In trasformazione</span>}
+                {!isTransforming&&(showRoles||!p.alive)&&<span className="pt-role" style={{color:r.color}}>{r.name}</span>}
+                {!isTransforming&&ordineMode&&r.isOrdine&&p.alive&&<span style={{fontSize:'.55rem',fontFamily:'Cinzel,serif',color:'#1abc9c',display:'block',marginTop:2}}>Ordine</span>}
               </div>
             );
           })}
