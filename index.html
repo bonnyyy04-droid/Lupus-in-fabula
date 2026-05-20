@@ -185,7 +185,7 @@ input[type=text]::placeholder{color:#2e2214}
 .ibtn:hover{background:rgba(201,162,39,.2)}
 
 /* ── LIBRO MAGICO ── */
-.book-overlay{position:fixed;inset:0;z-index:300;display:flex;align-items:stretch;justify-content:center;background:#040810}
+.book-overlay{position:fixed;inset:0;z-index:600;display:flex;align-items:stretch;justify-content:center;background:#040810}
 .book-bg{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 20%,rgba(130,75,15,.14) 0%,transparent 70%);pointer-events:none}
 .book-wrap{position:relative;z-index:1;width:100%;max-width:480px;display:flex;flex-direction:column;overflow:hidden}
 .book-header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 12px;border-bottom:1px solid rgba(201,162,39,.14);flex-shrink:0}
@@ -774,7 +774,6 @@ function App(){
   const [vr,setVr]=useState(null);
   const [mc,setMc]=useState(null);
   const [ac,setAc]=useState(null);
-  const [arcWolvesBlocked,setArcWolvesBlocked]=useState(false); // true quando arciere ha bloccato i lupi
   const [cusC,setCusC]=useState(null);
   const [negC,setNegC]=useState(null);
   const [negR,setNegR]=useState(null);
@@ -907,7 +906,7 @@ function App(){
     setCorvoVotes(s.corvoVotes||{});setOrfanoEff(s.orfanoEff||false);
     setSilenced(s.silenced??null);setAvvRm(s.avvRm??null);
     setDe(s.de||[]);setVi(s.vi??null);setWin(s.win??null);
-    setOrdineMode(s.ordineMode||false);setSindacoIdx(s.sindacoIdx??null);setShowRoles(s.showRoles||false);setArcWolvesBlocked(s.arcWolvesBlocked||false);
+    setOrdineMode(s.ordineMode||false);setSindacoIdx(s.sindacoIdx??null);setShowRoles(s.showRoles||false);
     setFunamboloCoin(s.funamboloCoin??null);setVampPrede(s.vampPrede||[]);
   },[]);
 
@@ -917,7 +916,7 @@ function App(){
     saveGame({sc,names,vName,players,ri,round,ns,dist,gc,wc,vc,vr,mc,ac,cusC,negC,negR,pirC,accC,accR,
       alchAct,alchT,alchTs,mutC,conC,corC,seerKill,cAlone,cFirst,pirUsed,alchUsed,araldoUsed,accLast,
       gesuDeath,cappKilled,alphaTransf,mutRole,conRole,corvoVotes,orfanoEff,silenced,avvRm,de,vi,win,
-      ordineMode,sindacoIdx,showRoles,funamboloCoin,vampPrede,arcWolvesBlocked});
+      ordineMode,sindacoIdx,showRoles,funamboloCoin,vampPrede});
   },[sc,players,ri,round,ns,gc,wc,vc,vr,mc,ac,cusC,negC,negR,pirC,accC,accR,
     alchAct,alchT,alchTs,mutC,conC,corC,seerKill,cAlone,cFirst,pirUsed,alchUsed,
     araldoUsed,accLast,gesuDeath,cappKilled,alphaTransf,mutRole,conRole,corvoVotes,
@@ -947,7 +946,7 @@ function App(){
 
   const nextReveal=()=>{if(ri+1<players.length){setRi(r=>r+1);setRv(false);}else startNight(players,false,false);};
 
-  const resetNight=()=>{setGc(null);setWc(null);setVc(null);setVr(null);setMc(null);setAc(null);setArcWolvesBlocked(false);setCusC(null);setNegC(null);setNegR(null);setPirC(null);setAccC(null);setAccR(null);setAlchAct(null);setAlchT(null);setAlchTs([]);setMutC(null);setConC(null);setCorC(null);setSeerKill(null);setFunamboloCoin(null);setVampC(null);};
+  const resetNight=()=>{setGc(null);setWc(null);setVc(null);setVr(null);setMc(null);setAc(null);setCusC(null);setNegC(null);setNegR(null);setPirC(null);setAccC(null);setAccR(null);setAlchAct(null);setAlchT(null);setAlchTs([]);setMutC(null);setConC(null);setCorC(null);setSeerKill(null);setFunamboloCoin(null);setVampC(null);};
 
   const startNight=(ps,ca,cf)=>{
     const fr=ps.map(p=>({...p,protected:false}));
@@ -964,16 +963,7 @@ function App(){
 
   // ── NIGHT CONFIRMS ──
   const confGuard=()=>{if(gc===null)return;const u=players.map((p,i)=>({...p,protected:i===gc}));setPlayers(u);advance('guardia',u);};
-  const confArc=()=>{
-    if(ac===null)return;
-    // Controlla se l'arciere ha bloccato lupo alpha o cucciolo-solo → lupi non possono attaccare
-    const lupoOkNow=players.some(p=>p.role==='lupo'&&p.alive);
-    const cucSoloNow=!lupoOkNow&&players.some(p=>p.role==='cucciolo'&&p.alive);
-    const targetRole=players[ac]?.role;
-    const blocksWolves=(targetRole==='lupoAlpha')||(cucSoloNow&&targetRole==='cucciolo');
-    setArcWolvesBlocked(blocksWolves);
-    advance('arciere',players,{arcT:ac});
-  };
+  const confArc=()=>{advance('arciere',players,{arcT:ac});};
   const skipArc=()=>{setAc(null);advance('arciere',players,{arcT:null});};
   const confCus=()=>{if(cusC===null)return;setSilenced(cusC);advance('custode',players);};
   const skipCus=()=>{advance('custode',players);};
@@ -1035,39 +1025,37 @@ function App(){
     // meretrice
     const merIdx=np.findIndex(p=>p.role==='meretrice'&&p.alive);
     const cricIdx=np.findIndex(p=>p.role==='criceto'&&p.alive);
-
-    const effectiveWolfT=arcWolvesBlocked?null:wolfT;
-
-    const wolfOnMer=effectiveWolfT===merIdx&&merIdx!==-1;
+    const wolfOnMer=wolfT===merIdx&&merIdx!==-1;
     let merOnWolf=false,merOnSameAsWolf=false,merOut=false;
     if(merIdx!==-1&&merT!==null&&merT!==undefined){
       merOnWolf=ROLES[np[merT].role].wolfTeam;
-      merOnSameAsWolf=merT===effectiveWolfT;
+      merOnSameAsWolf=merT===wolfT;
       merOut=true;
     }
 
-    if(effectiveWolfT!==null&&effectiveWolfT!==undefined){
-      const isCric=effectiveWolfT===cricIdx&&cricIdx!==-1;
-      const isAlpha=np[effectiveWolfT]&&np[effectiveWolfT].role==='lupoAlpha'&&!alphaTransf;
-      const isFun=np[effectiveWolfT]&&np[effectiveWolfT].role==='funambolo';
+    // wolf attack
+    if(wolfT!==null&&wolfT!==undefined){
+      const isCric=wolfT===cricIdx&&cricIdx!==-1;
+      const isAlpha=np[wolfT]&&np[wolfT].role==='lupoAlpha'&&!alphaTransf&&!blocked.has(wolfT);
+      const isFun=np[wolfT]&&np[wolfT].role==='funambolo';
       const funTesta=isFun&&funamboloCoin==='testa';
       const funCroce=isFun&&funamboloCoin==='croce';
       if(wolfOnMer){/* silent */}
       else if(isCric){/* silent – criceto survives */}
       else if(isAlpha){setAlphaTransf(true);/* silent */}
       else if(funTesta){/* funambolo immune stanotte */}
-      else if(guardT===effectiveWolfT&&!funCroce){
+      else if(guardT===wolfT&&!funCroce){
         evs.push({t:'protected',tx:'🛡️ I morsi della notte non hanno trovato carne — qualcuno era sotto protezione.'});
         if(merOnSameAsWolf&&merIdx!==-1){/* also protected, silent */}
       }else{
-        if(np[effectiveWolfT].role==='contaminato'){
-          dying.add(effectiveWolfT);
+        if(np[wolfT].role==='contaminato'){
+          dying.add(wolfT);
           const laIdx=np.findIndex(p=>p.role==='lupoAlpha'&&p.alive);
           if(laIdx!==-1)dying.add(laIdx);
-        }else{dying.add(effectiveWolfT);}
+        }else{dying.add(wolfT);}
         if(merOnSameAsWolf&&merIdx!==-1)dying.add(merIdx);
-        if(np[effectiveWolfT].role==='orfano')setOrfanoEff(true);
-        if(np[effectiveWolfT].role==='cappuccetto')setCappKilled(true);
+        if(np[wolfT].role==='orfano')setOrfanoEff(true);
+        if(np[wolfT].role==='cappuccetto')setCappKilled(true);
       }
     }
 
@@ -1239,15 +1227,13 @@ function App(){
       <div className="player-grid">
         {players.map(p=>{
           const r=ROLES[p.role];
-          const isTransforming=p.role==='lupoAlpha'&&alphaTransf&&p.alive;
           return(
-            <div key={p.id} className={`p-tok ${p.alive?'alive':'dead'}`} style={isTransforming?{outline:'1px solid rgba(142,68,173,.5)',background:'rgba(142,68,173,.08)',borderRadius:8}:{}}>
+            <div key={p.id} className={`p-tok ${p.alive?'alive':'dead'}`}>
               {sindacoIdx>=0&&players[sindacoIdx]?.id===p.id&&p.alive&&<span className="pt-sindaco">🏛️</span>}
               {!p.alive&&<span className="pt-dead-x">✕</span>}
-              <span className="pt-em">{isTransforming?'🐾':showRoles||!p.alive?r.emoji:'👤'}</span>
+              <span className="pt-em">{showRoles||!p.alive?r.emoji:'👤'}</span>
               <span className="pt-name">{p.name}</span>
-              {isTransforming&&<span className="pt-role" style={{color:'#8e44ad'}}>→🐺 Trasform.</span>}
-              {!isTransforming&&(showRoles||!p.alive)&&<span className="pt-role" style={{color:r.color}}>{r.name}</span>}
+              {(showRoles||!p.alive)&&<span className="pt-role" style={{color:r.color}}>{r.name}</span>}
             </div>
           );
         })}
@@ -1608,29 +1594,23 @@ function App(){
       const lupoOk=players.some(p=>p.role==='lupo'&&p.alive);
       const cucHere=!lupoOk&&players.some(p=>p.role==='cucciolo'&&p.alive);
       const cucBlock=cucHere&&cFirst;
+      // Arciere logic: alpha blocked = no attack; cucciolo-solo blocked = no attack; normal wolf blocked = others still attack
       const alphaIdx=players.findIndex(p=>p.role==='lupoAlpha'&&p.alive);
-      const alphaTransfName=alphaTransf&&alphaIdx!==-1?players[alphaIdx].name:null;
+      const arcBlockedAlpha=ac!==null&&ac===alphaIdx&&alphaIdx!==-1;
+      const arcBlockedCucSolo=cucHere&&ac!==null&&players[ac]?.role==='cucciolo';
+      const wolvesBlocked=arcBlockedAlpha||arcBlockedCucSolo;
       return(
         <NW color="#e74c3c" emoji="🐺" title={cucHere?'Il Lupo Cucciolo si sveglia':'I Lupi si svegliano'}>
-          {alphaTransf&&alphaTransfName&&(
-            <div style={{background:'rgba(142,68,173,.15)',border:'1px solid rgba(142,68,173,.5)',borderRadius:10,padding:'13px 15px',marginBottom:14}}>
-              <div style={{fontFamily:'Cinzel,serif',fontSize:'.72rem',letterSpacing:'.15em',textTransform:'uppercase',color:'#8e44ad',marginBottom:6}}>⚠️ Solo per il Narratore</div>
-              <p style={{fontSize:'.9rem',color:'#b080d0',lineHeight:1.6}}>
-                <strong>{alphaTransfName}</strong> (Lupo Alpha) si è trasformato stanotte.<br/>
-                <span style={{fontStyle:'italic',color:'#8a60a0'}}>Annuncia al villaggio che si sveglia insieme ai lupi. Da questo momento è un Lupo Mannaro a tutti gli effetti.</span>
-              </p>
-            </div>
-          )}
-          {arcWolvesBlocked?(
-            <><div className="instr" style={{borderColor:'rgba(39,174,96,.3)',color:'#70a080'}}>🏹 L'Arciere ha bloccato il branco. Nessun attacco questa notte.</div>
+          {wolvesBlocked?(
+            <><div className="instr" style={{borderColor:'rgba(39,174,96,.3)',color:'#70a080'}}>🏹 L'Arciere ha bloccato {arcBlockedAlpha?'il Lupo Alpha':'il Cucciolo'}. Nessun attacco questa notte.</div>
             <button className="btn btn-gold" onClick={()=>confWolves(true)}>Conferma — nessuna vittima →</button></>
           ):cucBlock?(
             <><div className="instr">🐶 Il Cucciolo ha perso il suo branco. Questa notte non riesce ad agire — dalla prossima potrà uccidere.</div>
             <button className="btn btn-gold" onClick={()=>confWolves(true)}>Notte senza vittima →</button></>
           ):(
-            <><div className="instr">{cucHere?'Il Cucciolo si è trasformato. Indica la vittima.':alphaTransf?'Il Lupo Alpha si è unito al branco. I lupi scelgono la vittima.':'I Lupi si riconoscono e scelgono la vittima in silenzio.'}</div>
+            <><div className="instr">{cucHere?'Il Cucciolo si è trasformato. Indica la vittima.':'I Lupi si riconoscono e scelgono la vittima in silenzio.'}</div>
             <div className="nlbl">Chi attaccano i Lupi?</div>
-            <PList players={alive.filter(p=>!ROLES[p.role].wolfTeam&&p.role!=='cucciolo'&&!(p.role==='lupoAlpha'&&alphaTransf))} sel={wc} onSel={setWc}/>
+            <PList players={alive.filter(p=>!ROLES[p.role].wolfTeam&&p.role!=='cucciolo')} sel={wc} onSel={setWc}/>
             <button className="btn btn-gold mb8" onClick={()=>confWolves(false)} disabled={wc===null}>Conferma Vittima</button>
             <button className="btn btn-outline" onClick={()=>confWolves(true)}>Nessuna vittima</button></>
           )}
@@ -1972,16 +1952,14 @@ function App(){
         <div className="player-grid">
           {players.map(p=>{
             const r=ROLES[p.role];
-            const isTransforming=p.role==='lupoAlpha'&&alphaTransf&&p.alive;
             return(
-              <div key={p.id} className={`p-tok ${p.alive?'alive':'dead'}`} style={isTransforming?{outline:'1px solid rgba(142,68,173,.5)',background:'rgba(142,68,173,.08)',borderRadius:8}:{}}>
+              <div key={p.id} className={`p-tok ${p.alive?'alive':'dead'}`}>
                 {sindacoIdx>=0&&players[sindacoIdx]?.id===p.id&&p.alive&&<span className="pt-sindaco">🏛️</span>}
                 {!p.alive&&<span className="pt-dead-x">✕</span>}
-                <span className="pt-em">{isTransforming?'🐾':showRoles||!p.alive?r.emoji:'👤'}</span>
+                <span className="pt-em">{showRoles||!p.alive?r.emoji:'👤'}</span>
                 <span className="pt-name">{p.name}</span>
-                {isTransforming&&<span className="pt-role" style={{color:'#8e44ad'}}>→🐺 In trasformazione</span>}
-                {!isTransforming&&(showRoles||!p.alive)&&<span className="pt-role" style={{color:r.color}}>{r.name}</span>}
-                {!isTransforming&&ordineMode&&r.isOrdine&&p.alive&&<span style={{fontSize:'.55rem',fontFamily:'Cinzel,serif',color:'#1abc9c',display:'block',marginTop:2}}>Ordine</span>}
+                {(showRoles||!p.alive)&&<span className="pt-role" style={{color:r.color}}>{r.name}</span>}
+                {ordineMode&&r.isOrdine&&p.alive&&<span style={{fontSize:'.55rem',fontFamily:'Cinzel,serif',color:'#1abc9c',display:'block',marginTop:2}}>Ordine</span>}
               </div>
             );
           })}
