@@ -5,9 +5,21 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>Lupus in Fabula</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cinzel+Decorative:wght@700&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"
+  crossorigin onerror="window._loadErr=true"></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"
+  crossorigin onerror="window._loadErr=true"></script>
+<script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.24.7/babel.min.js"
+  crossorigin onerror="window._loadErr=true"></script>
+<script>
+// Fallback message if CDN scripts don't load within 9s
+setTimeout(function(){
+  if(typeof React==='undefined'||typeof Babel==='undefined'||window._loadErr){
+    var l=document.getElementById('loading');
+    if(l)l.innerHTML='<div style="max-width:300px;text-align:center;padding:20px"><p style="font-size:2.5rem;margin-bottom:14px">⚠️</p><p style="font-family:serif;color:#a08050;font-size:.95rem;line-height:1.7;margin-bottom:14px">Impossibile caricare le librerie.<br>Verifica la connessione internet<br>e ricarica la pagina.</p><button onclick="location.reload()" style="font-family:serif;padding:10px 22px;background:#c9a227;border:none;border-radius:8px;color:#0a0700;cursor:pointer;font-size:.9rem">↺ Ricarica</button></div>';
+  }
+},9000);
+</script>
 <style>
 /* ── RESET ── */
 *{box-sizing:border-box;margin:0;padding:0}
@@ -750,21 +762,21 @@ function RoleModal({roleKey,onClose}){
 
 // ─── APP ──────────────────────────────────────────────────────────────────────
 const STEP_HINTS={
-  arciere:   {rules:['Sceglie un giocatore che perde i poteri stanotte','Non può bloccare se stesso','Può scegliere di passare']},
-  guardia:   {rules:['Protegge un giocatore dalla morte notturna','Non può proteggere la stessa persona due notti di fila','Non può proteggere se stesso']},
-  custode:   {rules:['Silenzia un giocatore per tutto il giorno seguente','Non agisce la prima notte','Il bersaglio non può parlare né votare']},
-  funambolo: {rules:['Il Narratore lancia la moneta in segreto','Testa = immune a qualsiasi morte stanotte','Croce = muore comunque anche se protetto']},
-  lupi:      {rules:['I Lupi concordano silenziosamente la vittima','Il Lupo Maggiore ha l'ultima parola','Non possono attaccare un altro Lupo']},
-  veggente:  {rules:['Scopre se il giocatore scelto è buono o cattivo','Il Vampiro appare come Lupo','Il Lupo Alpha appare come innocente']},
-  meretrice: {rules:['Visita un giocatore: quella notte è fuori casa','Se visita il Lupo Cucciolo, muore','Se i Lupi attaccano la Meretrice mentre è fuori, non trovano nessuno']},
-  negromante:{rules:['Indica un morto per attivare un'azione speciale la notte successiva','Il giocatore rianimato agisce come zombie','Vince con l'Ordine']},
-  accusatore:{rules:['Aggiunge voti bonus contro un giocatore nella votazione diurna','Non può accusare se stesso','L'effetto si accumula notte dopo notte']},
-  piromane:  {rules:['Segna case (con fiamma silenziosa) o accende tutto ciò che è segnato','Le morti da fuoco sembrano morti normali','Vince solo se è l'unico sopravvissuto']},
-  alchimista:{rules:['Usabile UNA SOLA VOLTA in tutta la partita','Pozione Rossa: sceglie 2 morti, uno resuscita a caso','Pozione Nera: avvelena un vivo (muore la notte dopo, nessuna protezione)']},
-  mutaforma: {rules:['Copia il ruolo di un giocatore morto','Acquisisce poteri e condizioni di vittoria del ruolo copiato','Vince con l'Ordine']},
-  condor:    {rules:['Vede i ruoli di tutti i giocatori morti','Può comunicare informazioni segrete all'Ordine','Vince con l'Ordine']},
-  corvo:     {rules:['Aggiunge voti nascosti contro un giocatore ogni notte','Il Narratore annuncia i voti del Corvo durante il giorno','Vince se sopravvive alla fine della partita']},
-  vampiro:   {rules:['Morde un giocatore: diventa sua Preda (rimane segreto)','Le Prede votano a favore del Vampiro','Vince quando lui + Prede vivi > tutti gli altri vivi']},
+  arciere:   {rules:["Sceglie un giocatore che perde i poteri stanotte","Non pu\u00f2 bloccare se stesso","Pu\u00f2 scegliere di passare"]},
+  guardia:   {rules:["Protegge un giocatore dalla morte notturna","Non pu\u00f2 proteggere la stessa persona due notti di fila","Non pu\u00f2 proteggere se stesso"]},
+  custode:   {rules:["Silenzia un giocatore per tutto il giorno seguente","Non agisce la prima notte","Il bersaglio non pu\u00f2 parlare n\u00e9 votare"]},
+  funambolo: {rules:["Il Narratore lancia la moneta in segreto","Testa = immune a qualsiasi morte stanotte","Croce = muore comunque anche se protetto"]},
+  lupi:      {rules:["I Lupi concordano silenziosamente la vittima","Il Lupo Maggiore ha l\u2019ultima parola","Non possono attaccare un altro Lupo"]},
+  veggente:  {rules:["Scopre se il giocatore scelto \u00e8 buono o cattivo","Il Vampiro appare come Lupo","Il Lupo Alpha appare come innocente"]},
+  meretrice: {rules:["Visita un giocatore: quella notte \u00e8 fuori casa","Se visita il Lupo Cucciolo, muore","Se i Lupi attaccano la Meretrice mentre \u00e8 fuori, non trovano nessuno"]},
+  negromante:{rules:["Indica un morto per attivare un\u2019azione speciale la notte successiva","Il giocatore rianimato agisce come zombie","Vince con l\u2019Ordine"]},
+  accusatore:{rules:["Aggiunge voti bonus contro un giocatore nella votazione diurna","Non pu\u00f2 accusare se stesso","L\u2019effetto si accumula notte dopo notte"]},
+  piromane:  {rules:["Segna case in silenzio o accende tutto ci\u00f2 che \u00e8 segnato","Le morti da fuoco sembrano morti normali","Vince solo se \u00e8 l\u2019unico sopravvissuto"]},
+  alchimista:{rules:["Usabile UNA SOLA VOLTA in tutta la partita","Pozione Rossa: sceglie 2 morti, uno resuscita a caso","Pozione Nera: avvelena un vivo (muore la notte dopo, senza protezione)"]},
+  mutaforma: {rules:["Copia il ruolo di un giocatore morto","Acquisisce poteri e condizioni di vittoria del ruolo copiato","Vince con l\u2019Ordine"]},
+  condor:    {rules:["Vede i ruoli di tutti i giocatori morti","Pu\u00f2 comunicare informazioni segrete all\u2019Ordine","Vince con l\u2019Ordine"]},
+  corvo:     {rules:["Aggiunge voti nascosti contro un giocatore ogni notte","Il Narratore annuncia i voti del Corvo durante il giorno","Vince se sopravvive alla fine della partita"]},
+  vampiro:   {rules:["Morde un giocatore: diventa sua Preda (rimane segreto)","Le Prede votano a favore del Vampiro","Vince quando lui + Prede vivi > tutti gli altri vivi"]},
 };
 
 function App(){
