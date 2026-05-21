@@ -855,6 +855,72 @@ function App(){
   const [vampC,setVampC]=useState(null);
   const toggleCat=id=>setOpenCats(p=>({...p,[id]:!p[id]}));
 
+  // ── FIRST-TIME GUIDE ──────────────────────────────────────────────────────
+  const GUIDE_KEY='lupus_guide_v1';
+  const [showGuide,setShowGuide]=useState(()=>{
+    try{return!localStorage.getItem(GUIDE_KEY);}catch(e){return false;}
+  });
+  const [guideStep,setGuideStep]=useState(0);
+  const closeGuide=()=>{
+    try{localStorage.setItem(GUIDE_KEY,'1');}catch(e){}
+    setShowGuide(false);
+  };
+  const GUIDE_STEPS=[
+    {emoji:'🐺',title:'Benvenuto in Lupus in Fabula',
+     body:'Questa app è il tuo alleato come Narratore.\n\nGuidi la partita passo dopo passo, gestisci le notti in silenzio e riveli i ruoli ai giocatori — senza sbagliare nulla.',
+     note:null},
+    {emoji:'🎭',title:'Il tuo ruolo: il Narratore',
+     body:'Tu non giochi — racconti.\n\nDistribuisci i ruoli, chiami i personaggi di notte e annunci gli eventi di giorno. I giocatori si fidano di te.',
+     note:'Tieni il telefono solo tu durante la notte.'},
+    {emoji:'🌙',title:'Come funziona la notte',
+     body:"Ogni notte l'app ti guida passo dopo passo: prima l'Arciere, poi la Guardia, poi i Lupi, la Veggente e così via.\n\nOgni personaggio apre gli occhi in silenzio, compie la sua azione, poi si riaddormenta.",
+     note:"I giocatori non devono vedere lo schermo durante i turni notturni."},
+    {emoji:'☀️',title:'Come funziona il giorno',
+     body:"All'alba l'app mostra gli eventi della notte. Il villaggio discute, accusa e vota chi eliminare.\n\nTu annunci il risultato, poi si ricomincia con una nuova notte.",
+     note:'Sei pronto. Buona partita!'},
+  ];
+  const GuideModal=()=>{
+    const s=GUIDE_STEPS[guideStep];
+    const isLast=guideStep===GUIDE_STEPS.length-1;
+    return(
+      <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.88)',zIndex:800,display:'flex',alignItems:'center',justifyContent:'center',padding:20,backdropFilter:'blur(6px)'}}
+        onClick={closeGuide}>
+        <div style={{background:'#080e1c',border:'1px solid rgba(201,162,39,.28)',borderRadius:20,padding:'32px 24px 24px',maxWidth:360,width:'100%',position:'relative',animation:'fadeUp .3s ease'}}
+          onClick={e=>e.stopPropagation()}>
+          <button onClick={closeGuide} style={{position:'absolute',top:14,right:16,background:'none',border:'none',color:'#4a3820',fontFamily:'Cinzel,serif',fontSize:'.65rem',letterSpacing:'.12em',textTransform:'uppercase',cursor:'pointer',padding:'4px 8px'}}>
+            Salta ✕
+          </button>
+          <div style={{display:'flex',gap:6,justifyContent:'center',marginBottom:24}}>
+            {GUIDE_STEPS.map((_,i)=>(
+              <div key={i} style={{width:i===guideStep?22:7,height:7,borderRadius:4,background:i===guideStep?'#c9a227':i<guideStep?'rgba(201,162,39,.45)':'rgba(255,255,255,.1)',transition:'all .25s'}}/>
+            ))}
+          </div>
+          <div style={{textAlign:'center',marginBottom:20}}>
+            <span style={{fontSize:'3.6rem',display:'block',marginBottom:14,filter:'drop-shadow(0 0 18px rgba(201,162,39,.3))'}}>{s.emoji}</span>
+            <div style={{fontFamily:'Cinzel,serif',fontSize:'1.05rem',color:'#c9a227',marginBottom:14,lineHeight:1.3,fontWeight:600}}>{s.title}</div>
+            <p style={{color:'#9a8870',lineHeight:1.8,fontSize:'.92rem',whiteSpace:'pre-line',fontStyle:'italic'}}>{s.body}</p>
+          </div>
+          {s.note&&(
+            <div style={{background:'rgba(201,162,39,.07)',border:'1px solid rgba(201,162,39,.18)',borderRadius:10,padding:'10px 14px',marginBottom:16,textAlign:'center'}}>
+              <p style={{fontSize:'.83rem',color:'#c9a227',fontStyle:'italic'}}>💡 {s.note}</p>
+            </div>
+          )}
+          <div style={{display:'flex',gap:8}}>
+            {guideStep>0&&(
+              <button onClick={()=>setGuideStep(s=>s-1)} style={{flex:1,fontFamily:'Cinzel,serif',fontSize:'.7rem',letterSpacing:'.1em',textTransform:'uppercase',background:'transparent',border:'1px solid rgba(201,162,39,.22)',borderRadius:8,padding:'12px',color:'#6a5a40',cursor:'pointer'}}>
+                ← Indietro
+              </button>
+            )}
+            <button onClick={isLast?closeGuide:()=>setGuideStep(s=>s+1)}
+              style={{flex:2,fontFamily:'Cinzel,serif',fontSize:'.72rem',letterSpacing:'.1em',textTransform:'uppercase',background:'linear-gradient(145deg,#c9a227 0%,#7a4e08 100%)',border:'none',borderRadius:8,padding:'13px',color:'#0a0700',fontWeight:700,cursor:'pointer',boxShadow:'0 2px 14px rgba(201,162,39,.22)'}}>
+              {isLast?'Inizia! →':'Avanti →'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // ── AUDIO ──────────────────────────────────────────────────────────────────
   const [muted,setMuted]=useState(false);
   const mutedRef=useRef(false);
@@ -1375,13 +1441,18 @@ function App(){
     const saved=loadGame();
     return(
       <div className="app night"><MuteBtn/><div className="astro moon"/>
+      {showGuide&&<GuideModal/>}
       {infoModal&&<RoleModal roleKey={infoModal} onClose={()=>setInfoModal(null)}/>}
       {libro&&<LibroMagico onClose={()=>{setLibro(false);setLibroTab('tutti');}} initialCat={libroTab}/>}
       {showScores&&<ScoreboardModal/>}
       <div className="screen fade">
         <h1 className="title glow">Lupus in Fabula</h1>
         <p className="subtitle">Narratore — Gestione Partita</p>
-        <div style={{position:"absolute",top:14,left:14,fontFamily:"Cinzel,serif",fontSize:".55rem",letterSpacing:".12em",color:"#2e2414",textTransform:"uppercase"}}>v2.1</div>
+        <div style={{position:"absolute",top:14,left:14,display:'flex',alignItems:'center',gap:8}}>
+          <span style={{fontFamily:"Cinzel,serif",fontSize:".55rem",letterSpacing:".12em",color:"#2e2414",textTransform:"uppercase"}}>v2.1</span>
+          <button onClick={()=>{setGuideStep(0);setShowGuide(true);}} title="Guida introduttiva"
+            style={{background:'rgba(201,162,39,.08)',border:'1px solid rgba(201,162,39,.22)',borderRadius:'50%',width:22,height:22,color:'#6a5030',fontFamily:'Cinzel,serif',fontWeight:700,fontSize:'.72rem',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',lineHeight:1}}>?</button>
+        </div>
         {/* ── TOP BAR: quick access ── */}
         <div style={{display:'flex',gap:6,marginBottom:18,justifyContent:'center'}}>
           <button className="btn btn-outline" style={{flex:1,padding:'9px 8px',fontSize:'.68rem',letterSpacing:'.1em'}} onClick={()=>{setLibroTab('regole');setLibro(true);}}>📋 Regole</button>
@@ -1688,15 +1759,16 @@ function App(){
       const lupoOk=players.some(p=>p.role==='lupo'&&p.alive);
       const cucHere=!lupoOk&&players.some(p=>p.role==='cucciolo'&&p.alive);
       const cucBlock=cucHere&&cFirst;
-      // Arciere logic: alpha blocked = no attack; cucciolo-solo blocked = no attack; normal wolf blocked = others still attack
+      // Arciere logic: lupoAlpha blocked = no attack; lupo (Lupo Alpha) blocked = no attack; cucciolo-solo blocked = no attack
       const alphaIdx=players.findIndex(p=>p.role==='lupoAlpha'&&p.alive);
       const arcBlockedAlpha=ac!==null&&ac===alphaIdx&&alphaIdx!==-1;
+      const arcBlockedLupo=ac!==null&&players[ac]?.role==='lupo';
       const arcBlockedCucSolo=cucHere&&ac!==null&&players[ac]?.role==='cucciolo';
-      const wolvesBlocked=arcBlockedAlpha||arcBlockedCucSolo;
+      const wolvesBlocked=arcBlockedAlpha||arcBlockedLupo||arcBlockedCucSolo;
       return(
         <NW color="#e74c3c" emoji="🐺" title={cucHere?'Il Lupo Cucciolo si sveglia':'I Lupi si svegliano'}>
           {wolvesBlocked?(
-            <><div className="instr" style={{borderColor:'rgba(39,174,96,.3)',color:'#70a080'}}>🏹 L'Arciere ha bloccato {arcBlockedAlpha?'il Lupo Alpha':'il Cucciolo'}. Nessun attacco questa notte.</div>
+            <><div className="instr" style={{borderColor:'rgba(39,174,96,.3)',color:'#70a080'}}>🏹 L'Arciere ha bloccato {arcBlockedAlpha?'il Lupo Mannaro':arcBlockedLupo?'il Lupo Alpha':'il Cucciolo'}. Nessun attacco questa notte.</div>
             <button className="btn btn-gold" onClick={()=>confWolves(true)}>Conferma — nessuna vittima →</button></>
           ):cucBlock?(
             <><div className="instr">🐶 Il Cucciolo ha perso il suo branco. Questa notte non riesce ad agire — dalla prossima potrà uccidere.</div>
