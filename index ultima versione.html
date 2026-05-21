@@ -1,0 +1,2298 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Lupus in Fabula</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cinzel+Decorative:wght@700&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"
+  crossorigin onerror="window._loadErr=true"></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"
+  crossorigin onerror="window._loadErr=true"></script>
+<script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.24.7/babel.min.js"
+  crossorigin onerror="window._loadErr=true"></script>
+<script>
+// Fallback message if CDN scripts don't load within 9s
+setTimeout(function(){
+  if(typeof React==='undefined'||typeof Babel==='undefined'||window._loadErr){
+    var l=document.getElementById('loading');
+    if(l)l.innerHTML='<div style="max-width:300px;text-align:center;padding:20px"><p style="font-size:2.5rem;margin-bottom:14px">⚠️</p><p style="font-family:serif;color:#a08050;font-size:.95rem;line-height:1.7;margin-bottom:14px">Impossibile caricare le librerie.<br>Verifica la connessione internet<br>e ricarica la pagina.</p><button onclick="location.reload()" style="font-family:serif;padding:10px 22px;background:#c9a227;border:none;border-radius:8px;color:#0a0700;cursor:pointer;font-size:.9rem">↺ Ricarica</button></div>';
+  }
+},9000);
+</script>
+<style>
+/* ── RESET ── */
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gold:#c9a227;--gold-dim:#6a4e12;--gold-glow:rgba(201,162,39,.22);
+  --red:#c0392b;--green:#1a7a45;--blue:#2475b0;--purple:#7d3c98;
+  --text:#ddd0b8;--text-dim:#6b5a3e;--text-muted:#48392a;
+  --n-bg:#04080f;--n-s1:#08101e;--n-s2:#0d1628;
+  --d-bg:#100a04;--d-s1:#1c1106;--d-s2:#261808;
+  --r:12px;--r-sm:8px;--r-lg:18px;
+}
+body{background:var(--n-bg);color:var(--text);font-family:'EB Garamond',serif;font-size:16px;min-height:100vh;-webkit-text-size-adjust:100%}
+#root{min-height:100vh}
+
+/* ── LOADING ── */
+#loading{position:fixed;inset:0;background:#04080f;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;z-index:100}
+#loading span{font-size:3.5rem;animation:pulse 2s ease infinite}
+#loading p{font-family:'Cinzel',serif;color:#2e240f;font-size:.68rem;letter-spacing:.32em;text-transform:uppercase}
+@keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
+
+/* ── APP WRAPPERS ── */
+.app{position:relative;min-height:100vh}
+.app.night{background:var(--n-bg)}
+.app.day{background:var(--d-bg)}
+.app.night::before{content:'';position:fixed;inset:0;background:
+  radial-gradient(ellipse 65% 30% at 80% 0%,rgba(30,70,160,.14) 0%,transparent 60%),
+  radial-gradient(ellipse 30% 40% at 10% 100%,rgba(50,15,110,.1) 0%,transparent 55%);
+  pointer-events:none;z-index:0}
+.app.day::before{content:'';position:fixed;inset:0;background:
+  radial-gradient(ellipse 70% 35% at 50% 0%,rgba(180,90,15,.2) 0%,transparent 55%),
+  radial-gradient(ellipse 35% 25% at 95% 85%,rgba(100,35,5,.1) 0%,transparent 50%);
+  pointer-events:none;z-index:0}
+
+/* ── CELESTIAL BODY ── */
+.astro{position:fixed;top:-75px;right:-55px;width:260px;height:260px;border-radius:50%;pointer-events:none;z-index:0}
+.astro.moon{background:radial-gradient(circle at 36% 36%,#e8e0d0,#b0883a 42%,#3a1e06 72%,#08040e);opacity:.08;filter:blur(2px)}
+.astro.sun{background:radial-gradient(circle at 50% 50%,#fff5d0,#d47a08 48%,#6a2000);opacity:.09;width:320px;height:320px;top:-100px;right:-80px;filter:blur(4px)}
+
+/* ── SCREEN ── */
+.screen{position:relative;z-index:1;max-width:460px;margin:0 auto;padding:30px 18px 80px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.fade{animation:fadeUp .32s ease both}
+
+/* ── TYPOGRAPHY ── */
+.title{font-family:'Cinzel Decorative',serif;font-size:clamp(1.5rem,7.5vw,2.2rem);color:var(--gold);text-align:center;letter-spacing:.03em;line-height:1.2}
+.subtitle{font-family:'Cinzel',serif;font-size:.64rem;color:#3a2c14;text-align:center;letter-spacing:.28em;text-transform:uppercase;margin-top:8px;margin-bottom:28px}
+.lbl{font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold-dim);margin-bottom:9px}
+.nlbl{font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:8px}
+.muted{color:var(--text-dim);font-size:.9rem;font-style:italic}
+.warn{color:#7a5428;font-size:.83rem;font-style:italic;margin-bottom:10px}
+
+@keyframes titleGlow{0%,100%{text-shadow:0 0 25px rgba(201,162,39,.2)}50%{text-shadow:0 0 55px rgba(201,162,39,.5),0 0 110px rgba(201,162,39,.12)}}
+.glow{animation:titleGlow 4s ease-in-out infinite}
+
+/* ── PILL / BADGE ── */
+.pill{display:inline-block;font-family:'Cinzel',serif;font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;padding:4px 14px;border-radius:20px;background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.2);color:var(--gold)}
+.pill-center{text-align:center;margin-bottom:18px}
+
+/* ── CARD ── */
+.card{background:rgba(255,255,255,.04);border:1px solid rgba(201,162,39,.12);border-radius:var(--r);padding:18px 20px;margin-bottom:14px}
+.card-warm{background:rgba(255,200,80,.03);border:1px solid rgba(180,100,15,.15);border-radius:var(--r);padding:18px 20px;margin-bottom:14px}
+
+/* ── INPUTS ── */
+.input-row{display:flex;gap:8px;margin-bottom:12px}
+input[type=text]{flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(201,162,39,.2);border-radius:var(--r-sm);padding:12px 16px;color:var(--text);font-family:'EB Garamond',serif;font-size:.98rem;outline:none;transition:border-color .2s,background .2s;-webkit-appearance:none}
+input[type=text]:focus{border-color:rgba(201,162,39,.48);background:rgba(255,255,255,.06)}
+input[type=text]::placeholder{color:#2e2214}
+
+/* ── CHIPS ── */
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.chip{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:5px 12px;font-size:.9rem;color:var(--text)}
+.chip button{background:none;border:none;color:#4a3820;cursor:pointer;font-size:.8rem;padding:0;line-height:1;transition:color .15s}
+.chip button:hover{color:var(--red)}
+
+/* ── BUTTONS ── */
+.btn{font-family:'Cinzel',serif;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;border:none;border-radius:var(--r-sm);padding:13px 20px;cursor:pointer;transition:transform .12s,box-shadow .15s,opacity .15s;-webkit-tap-highlight-color:transparent;display:block;width:100%;text-align:center}
+.btn:disabled{opacity:.26;cursor:not-allowed}
+.btn:active:not(:disabled){transform:scale(.97)}
+.btn-gold{background:linear-gradient(145deg,#c9a227 0%,#7a4e08 100%);color:#0a0700;font-weight:700;box-shadow:0 2px 14px rgba(201,162,39,.22)}
+.btn-gold:hover:not(:disabled){box-shadow:0 4px 26px rgba(201,162,39,.42)}
+.btn-outline{background:transparent;color:var(--gold);border:1px solid rgba(201,162,39,.3)}
+.btn-outline:hover:not(:disabled){background:rgba(201,162,39,.07)}
+.btn-red{background:linear-gradient(145deg,#c0392b,#7b1e15);color:#fff;font-weight:700;box-shadow:0 2px 10px rgba(192,57,43,.22)}
+.btn-red:hover:not(:disabled){box-shadow:0 4px 24px rgba(192,57,43,.42)}
+.btn-magic{background:linear-gradient(145deg,#2e1060,#12082e);color:#c0a0f0;border:1px solid rgba(160,100,240,.32);font-weight:600}
+.btn-magic:hover:not(:disabled){box-shadow:0 4px 24px rgba(120,60,200,.35)}
+.btn-sm{width:auto;padding:12px 18px}
+.mt8{margin-top:8px}.mb8{margin-bottom:8px}.mb16{margin-bottom:16px}
+
+/* ── MUTE BTN ── */
+.mute-btn{position:fixed;top:14px;right:14px;z-index:500;width:38px;height:38px;border-radius:50%;background:rgba(4,8,15,.88);border:1px solid rgba(201,162,39,.18);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.92rem;backdrop-filter:blur(8px);-webkit-tap-highlight-color:transparent;transition:border-color .2s}
+.mute-btn:hover{border-color:rgba(201,162,39,.44)}
+
+/* ── DIVIDER ── */
+.div{height:1px;background:linear-gradient(to right,transparent,rgba(201,162,39,.16),transparent);margin:22px 0}
+
+/* ────────────────────────────────────────────────────────────
+   PLAYER GRID — the big new thing for day + night status
+   ──────────────────────────────────────────────────────── */
+.player-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.p-tok{position:relative;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:10px 6px 8px;text-align:center;transition:opacity .4s,border-color .3s,filter .4s;cursor:default}
+.p-tok.alive{border-color:rgba(201,162,39,.18)}
+.p-tok.dead{opacity:.32;filter:grayscale(.8);border-color:rgba(255,255,255,.04);background:rgba(0,0,0,.12)}
+.p-tok .pt-em{font-size:1.45rem;line-height:1;display:block;margin-bottom:4px}
+.p-tok .pt-name{font-size:.78rem;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);font-family:'Cinzel',serif;font-weight:600;letter-spacing:.03em}
+.p-tok .pt-role{font-size:.65rem;font-family:'Cinzel',serif;display:block;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-dim)}
+.p-tok .pt-sindaco{position:absolute;top:4px;left:6px;font-size:.75rem;line-height:1}
+.p-tok .pt-dead-x{position:absolute;top:4px;right:6px;font-size:.7rem;color:#6b2020;font-family:'Cinzel',serif;font-weight:700}
+.p-tok.alive:hover{border-color:rgba(201,162,39,.35);background:rgba(255,255,255,.06)}
+
+/* ── SELECTION LIST ── */
+.slist{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.sbtn{display:flex;align-items:center;gap:10px;padding:12px 14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:var(--r-sm);color:var(--text);font-family:'EB Garamond',serif;font-size:.93rem;cursor:pointer;transition:all .12s;text-align:left;-webkit-tap-highlight-color:transparent;width:100%}
+.sbtn:hover{background:rgba(255,255,255,.07);border-color:rgba(201,162,39,.28)}
+.sbtn.sel{background:rgba(201,162,39,.1);border-color:rgba(201,162,39,.44)}
+.sbtn:disabled{opacity:.3;cursor:not-allowed}
+.ck{margin-left:auto;color:var(--gold);font-size:.9rem}
+
+/* ── NIGHT STEP WRAPPER ── */
+.night-hdr{text-align:center;padding:32px 16px 16px}
+.night-hdr .ni-em{font-size:3.8rem;display:block;margin-bottom:10px;filter:drop-shadow(0 0 16px var(--ni-col,#fff4))}
+.night-hdr .ni-title{font-family:'Cinzel',serif;font-size:1.12rem;letter-spacing:.06em;color:var(--ni-col,var(--gold))}
+.night-pill-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+
+/* ── INSTRUCTION BOX ── */
+.instr{background:rgba(201,162,39,.05);border:1px solid rgba(201,162,39,.14);border-radius:10px;padding:13px 16px;margin-bottom:14px;font-size:.9rem;line-height:1.7;font-style:italic;color:#a08850}
+
+/* ── VISION BOX ── */
+.vbox{background:rgba(125,60,152,.1);border:1px solid rgba(125,60,152,.24);border-radius:12px;padding:16px;text-align:center;margin-bottom:14px}
+.vlbl{font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.2em;text-transform:uppercase;color:#9b59b6;margin-bottom:8px}
+
+/* ── ROLE REVEAL ── */
+@keyframes cardIn{from{opacity:0;transform:rotateY(-22deg) scale(.94)}to{opacity:1;transform:rotateY(0) scale(1)}}
+.reveal-back{background:var(--n-s1);border:2px dashed rgba(201,162,39,.18);border-radius:18px;padding:54px 24px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:14px;transition:all .2s;-webkit-tap-highlight-color:transparent;user-select:none}
+.reveal-back:active{background:rgba(201,162,39,.06);border-color:rgba(201,162,39,.38);transform:scale(.98)}
+.reveal-hint{font-family:'Cinzel',serif;font-size:.73rem;letter-spacing:.16em;color:#4a3820;text-transform:uppercase}
+.reveal-front{background:var(--n-s1);border:1px solid rgba(201,162,39,.2);border-radius:18px;padding:30px 24px 26px;text-align:center;animation:cardIn .35s ease both}
+.re{font-size:4.5rem;display:block;margin-bottom:16px;filter:drop-shadow(0 4px 18px var(--role-glow,rgba(255,255,255,.1)))}
+.rn{font-family:'Cinzel',serif;font-size:1.45rem;font-weight:700;margin-bottom:12px}
+.rd{color:#8a7860;font-style:italic;line-height:1.7;font-size:.92rem;max-width:290px;margin:0 auto}
+.rt{font-family:'Cinzel',serif;font-size:.63rem;letter-spacing:.18em;text-transform:uppercase;margin-top:12px;padding:5px 14px;border-radius:20px;display:inline-block;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04)}
+
+/* ── EVENTS ── */
+.ev{padding:11px 14px;border-radius:9px;margin-bottom:8px;font-size:.9rem;line-height:1.6}
+.ev-death{background:rgba(176,32,32,.12);border:1px solid rgba(176,32,32,.25)}
+.ev-protected{background:rgba(36,117,176,.1);border:1px solid rgba(36,117,176,.22)}
+.ev-peaceful{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07)}
+.ev-info{background:rgba(201,162,39,.06);border:1px solid rgba(201,162,39,.17)}
+.ev-revive{background:rgba(26,122,69,.1);border:1px solid rgba(26,122,69,.22)}
+
+/* ── COMPACT PLAYER ROWS (status panel) ── */
+.prow{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:8px;margin-bottom:4px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);font-size:.87rem}
+.prow.dead{opacity:.3}
+.pl{display:flex;align-items:center;gap:9px}
+.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.da{background:#1a7a45;box-shadow:0 0 5px rgba(26,122,69,.5)}
+.dd{background:#6b2020}
+
+/* ── WIN SCREEN ── */
+.wh{text-align:center;padding:18px 0 30px}
+.we{font-size:5rem;display:block;margin-bottom:16px}
+.wt{font-family:'Cinzel Decorative',serif;font-size:clamp(1.2rem,5.5vw,1.8rem);margin-bottom:10px;line-height:1.25}
+.ws{color:#5a4830;font-style:italic;font-size:.92rem}
+.fr{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;margin-bottom:4px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);font-size:.87rem}
+.fr.fdead{opacity:.38}
+.fn{flex:1}
+.frn{font-family:'Cinzel',serif;font-size:.72rem}
+
+/* ── MODAL ── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)}
+.modal{background:#0c101a;border:1px solid rgba(201,162,39,.26);border-radius:18px;padding:28px 22px;max-width:360px;width:100%;position:relative;max-height:82vh;overflow-y:auto}
+.modal-close{position:absolute;top:14px;right:16px;background:none;border:none;color:#5a4830;font-size:1.3rem;cursor:pointer;line-height:1;transition:color .15s}
+.modal-close:hover{color:var(--gold)}
+.ibtn{width:26px;height:26px;border-radius:50%;border:1px solid rgba(201,162,39,.28);background:rgba(201,162,39,.07);color:var(--gold);font-size:.7rem;font-family:'Cinzel',serif;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s;-webkit-tap-highlight-color:transparent}
+.ibtn:hover{background:rgba(201,162,39,.2)}
+
+/* ── LIBRO MAGICO ── */
+.book-overlay{position:fixed;inset:0;z-index:600;display:flex;align-items:stretch;justify-content:center;background:#040810}
+.book-bg{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 20%,rgba(130,75,15,.14) 0%,transparent 70%);pointer-events:none}
+.book-wrap{position:relative;z-index:1;width:100%;max-width:480px;display:flex;flex-direction:column;overflow:hidden}
+.book-header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 12px;border-bottom:1px solid rgba(201,162,39,.14);flex-shrink:0}
+.book-title{font-family:'Cinzel Decorative',serif;font-size:1.1rem;color:var(--gold);letter-spacing:.04em}
+.book-close{background:none;border:1px solid rgba(201,162,39,.26);border-radius:50%;width:34px;height:34px;color:var(--gold);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;flex-shrink:0}
+.book-close:hover{background:rgba(201,162,39,.1)}
+.book-nav{display:flex;padding:10px 20px;border-bottom:1px solid rgba(201,162,39,.1);flex-shrink:0;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:4px}
+.book-nav::-webkit-scrollbar{display:none}
+.book-tab{font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;padding:6px 12px;border-radius:20px;border:1px solid transparent;cursor:pointer;white-space:nowrap;transition:all .15s;background:transparent;color:#3a2c14;-webkit-tap-highlight-color:transparent}
+.book-tab.active{background:rgba(201,162,39,.14);color:var(--gold);border-color:rgba(201,162,39,.28)}
+.book-content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:24px 20px 40px}
+.book-role-card{background:rgba(255,255,255,.03);border:1px solid rgba(201,162,39,.1);border-radius:14px;padding:20px 18px;margin-bottom:14px}
+.book-role-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.book-role-emoji{font-size:2.2rem;flex-shrink:0}
+.book-role-name{font-family:'Cinzel',serif;font-size:1rem;font-weight:600;margin-bottom:3px}
+.book-role-faction{font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.18em;text-transform:uppercase}
+.book-divider{height:1px;background:linear-gradient(to right,rgba(201,162,39,.18),transparent);margin:12px 0}
+.book-section{font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:#5a4830;margin-bottom:6px}
+.book-desc{color:#8a7860;font-style:italic;line-height:1.7;font-size:.9rem}
+.book-ability{color:#b09878;line-height:1.7;font-size:.9rem}
+.book-win{display:inline-block;font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;padding:3px 10px;border-radius:12px;margin-top:8px}
+.book-intro{text-align:center;padding:32px 16px 24px}
+.book-intro-icon{font-size:4rem;display:block;margin-bottom:16px}
+.book-intro-text{color:#7a6848;font-style:italic;line-height:1.8;font-size:.92rem}
+@keyframes bookIn{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:scale(1)}}
+.book-anim{animation:bookIn .24s ease both}
+/* book prose */
+.bprose{color:#8a7860;font-style:italic;line-height:1.8;font-size:.92rem;margin-bottom:10px}
+.bch{font-family:'Cinzel',serif;font-size:.85rem;color:var(--gold);letter-spacing:.1em;margin-bottom:10px;margin-top:20px}
+.bch:first-child{margin-top:0}
+.bgt{font-family:'Cinzel',serif;font-size:.78rem;color:var(--gold);font-weight:600;margin-bottom:3px}
+.bgd{color:#8a7860;font-size:.87rem;line-height:1.6;margin-bottom:14px;padding-left:10px;border-left:2px solid rgba(201,162,39,.2)}
+.bvc{background:rgba(255,255,255,.03);border:1px solid rgba(201,162,39,.1);border-radius:12px;padding:16px 18px;margin-bottom:12px}
+.bvn{font-family:'Cinzel',serif;font-size:.95rem;font-weight:600;margin-bottom:4px}
+.bvf{display:flex;flex-wrap:wrap;gap:5px;margin:10px 0 4px}
+.bvft{font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;padding:3px 8px;border-radius:4px;background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.22);color:var(--gold)}
+.bec{background:rgba(255,255,255,.03);border:1px solid rgba(201,162,39,.1);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;gap:14px;align-items:flex-start}
+.bei{font-size:1.8rem;flex-shrink:0;margin-top:2px}
+.ben{font-family:'Cinzel',serif;font-size:.85rem;font-weight:600;margin-bottom:3px}
+.bew{font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;margin-bottom:5px}
+.bed{color:#8a7860;font-size:.85rem;line-height:1.6;font-style:italic}
+.btc{background:rgba(255,255,255,.02);border-left:3px solid rgba(201,162,39,.28);padding:12px 14px;margin-bottom:12px;border-radius:0 8px 8px 0}
+.btt{font-family:'Cinzel',serif;font-size:.78rem;color:var(--gold);letter-spacing:.08em;margin-bottom:5px}
+.btx{color:#8a7860;font-size:.86rem;line-height:1.65;font-style:italic}
+/* ── COIN FLIP ── */
+@keyframes coinFlip{0%{transform:rotateY(0) scale(1)}40%{transform:rotateY(720deg) scale(1.25)}100%{transform:rotateY(1440deg) scale(1)}}
+.coin-anim{animation:coinFlip .75s ease-out}
+/* ── DICE ── */
+.dice-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.dbtn{font-family:'Cinzel',serif;font-size:.63rem;letter-spacing:.12em;text-transform:uppercase;background:rgba(125,60,152,.1);border:1px solid rgba(125,60,152,.26);color:#c0a0e8;border-radius:20px;padding:6px 14px;cursor:pointer;transition:all .15s;-webkit-tap-highlight-color:transparent}
+.dbtn:hover{background:rgba(125,60,152,.2)}
+.dev-bg{position:fixed;inset:0;background:rgba(0,0,0,.84);z-index:400;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(5px)}
+.dev-box{background:#0c101a;border:1px solid rgba(125,60,152,.36);border-radius:18px;padding:28px 22px;max-width:340px;width:100%;position:relative;text-align:center}
+.dev-close{position:absolute;top:14px;right:16px;background:none;border:none;color:#5a4830;font-size:1.3rem;cursor:pointer;line-height:1}
+.dev-icon{font-size:3rem;display:block;margin-bottom:10px}
+.dev-name{font-family:'Cinzel Decorative',serif;font-size:1rem;color:#c0a0e8;margin-bottom:5px}
+.dev-when{font-family:'Cinzel',serif;font-size:.63rem;letter-spacing:.15em;text-transform:uppercase;margin-bottom:10px}
+.dev-desc{color:#9a80b0;font-style:italic;line-height:1.7;font-size:.92rem;margin-bottom:16px}
+/* ── ORDINE / SINDACO ── */
+.ordine-pill{font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;padding:3px 9px;border-radius:12px;background:rgba(26,188,156,.1);border:1px solid rgba(26,188,156,.26);color:#1abc9c}
+.sindaco-badge{display:inline-block;font-size:.75rem;margin-left:5px;vertical-align:middle}
+/* ── SCOREBOARD ── */
+.sb-row{display:flex;align-items:center;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.05)}
+.sb-row:last-child{border-bottom:none}
+.sb-rank{font-family:'Cinzel',serif;font-size:.7rem;color:#5a4830;width:24px;flex-shrink:0}
+.sb-name{flex:1;font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-pts{font-family:'Cinzel Decorative',serif;font-size:.95rem;color:#f1c40f;width:46px;text-align:right;flex-shrink:0}
+.sb-meta{font-size:.72rem;color:#5a4830;width:74px;text-align:right;flex-shrink:0;font-style:italic}
+.pts-earned{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-radius:8px;margin-bottom:6px;font-size:.9rem;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06)}
+.pts-earned.winner{background:rgba(241,196,15,.07);border-color:rgba(241,196,15,.22)}
+/* ── ROLE PICK CATEGORY ── */
+.cat-hdr{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;background:rgba(255,255,255,.04);border:1px solid rgba(201,162,39,.12);border-radius:10px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s}
+.cat-hdr.open{background:rgba(201,162,39,.07);border-color:rgba(201,162,39,.26);border-radius:10px 10px 0 0}
+.cat-body{background:rgba(255,255,255,.02);border:1px solid rgba(201,162,39,.1);border-top:none;border-radius:0 0 10px 10px;overflow:hidden;margin-bottom:10px}
+.role-row{display:flex;align-items:center;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.04)}
+.role-row:last-child{border-bottom:none}
+.rr-cnt-btn{width:32px;height:32px;border-radius:8px;border:1px solid rgba(201,162,39,.28);background:rgba(255,255,255,.04);color:var(--gold);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s;-webkit-tap-highlight-color:transparent}
+.rr-cnt-btn:active{background:rgba(201,162,39,.15)}
+.rr-cnt-val{width:34px;text-align:center;font-family:'Cinzel',serif;font-size:.95rem;border:1px solid rgba(201,162,39,.18);border-left:none;border-right:none;padding:5px 0;background:rgba(255,255,255,.02)}
+</style>
+</head>
+<body>
+<div id="loading"><span>🐺</span><p>Caricamento...</p></div>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useRef} = React;
+
+// ─── ROLES ────────────────────────────────────────────────────────────────────
+const ROLES = {
+  lupo:        {name:'Lupo Alpha',          emoji:'🐺',wolfTeam:true, winsWithWolves:false,soloTeam:false,seerSees:'lupo',   survivesWolf:false,color:'#e74c3c',bg:'rgba(231,76,60,.13)',   desc:'Di notte si sveglia con il branco per scegliere una vittima da eliminare.'},
+  cucciolo:    {name:'Lupo Cucciolo',       emoji:'🐶',wolfTeam:true, winsWithWolves:false,soloTeam:false,seerSees:'villico',survivesWolf:false,color:'#e67e22',bg:'rgba(230,126,34,.13)',  desc:'Fai parte dei lupi ma il Veggente ti vede come innocente. Se sei l\'unico lupo, la prima notte non puoi uccidere.'},
+  villico:     {name:'Villico',              emoji:'🧑‍🌾',wolfTeam:false,winsWithWolves:false,soloTeam:false,seerSees:'villico',survivesWolf:false,color:'#e67e22',bg:'rgba(230,126,34,.10)', desc:'Nessun potere speciale. Il tuo voto è fondamentale per smascherare i lupi!'},
+  veggente:    {name:'Veggente',             emoji:'🔮',wolfTeam:false,winsWithWolves:false,soloTeam:false,isOrdine:true, seerSees:'villico',survivesWolf:false,color:'#9b59b6',bg:'rgba(155,89,182,.13)',  desc:'Di notte puoi scoprire il ruolo segreto di un altro giocatore.'},
+  guardia:     {name:'Guardia del Corpo',    emoji:'🛡️',wolfTeam:false,winsWithWolves:false,soloTeam:false,isOrdine:false,seerSees:'villico',survivesWolf:false,color:'#2980b9',bg:'rgba(41,128,185,.13)',  desc:'Di notte scegli chi proteggere. I lupi non potranno eliminarlo stanotte.'},
+  meretrice:   {name:'Meretrice',            emoji:'💋',wolfTeam:false,winsWithWolves:false,soloTeam:false,isOrdine:false,seerSees:'villico',survivesWolf:false,color:'#c0392b',bg:'rgba(192,57,43,.13)',   desc:'Ogni notte scegli qualcuno con cui passare la notte. Muori se visiti un lupo. Muori se vai dalla vittima dei lupi (a meno che non fosse protetta). Sei salva se i lupi scelgono te.'},
+  arciere:     {name:'Arciere',              emoji:'🏹',wolfTeam:false,winsWithWolves:false,soloTeam:false,isOrdine:false,seerSees:'villico',survivesWolf:false,color:'#27ae60',bg:'rgba(39,174,96,.13)',   desc:'Ogni notte scegli un giocatore: quella persona perde i suoi poteri per l\'intera notte.'},
+  avvocato:    {name:'Avvocato',             emoji:'⚖️',wolfTeam:false,winsWithWolves:false,soloTeam:false,isOrdine:false,seerSees:'villico',survivesWolf:false,color:'#f39c12',bg:'rgba(243,156,18,.13)',  desc:'Durante ogni votazione puoi indicare al Narratore un giocatore a cui togliere un voto (anche te stesso).'},
+  negromante:  {name:'Negromante',           emoji:'💀',wolfTeam:false,winsWithWolves:false,soloTeam:false,isOrdine:true, seerSees:'villico',survivesWolf:false,color:'#7f8c8d',bg:'rgba(127,140,141,.13)', desc:'Ogni notte puoi chiedere al Narratore il ruolo di un giocatore morto.'},
+  gesu:        {name:'Gesù',                 emoji:'✝️',wolfTeam:false,winsWithWolves:false,soloTeam:false,isOrdine:false,seerSees:'villico',survivesWolf:false,color:'#f1c40f',bg:'rgba(241,196,15,.13)',  desc:'Resusciti automaticamente il terzo giorno dopo la tua morte.'},
+  cappuccetto: {name:'Cappuccetto Rosso',    emoji:'🧺',wolfTeam:false,winsWithWolves:false,soloTeam:false,isOrdine:false,seerSees:'villico',survivesWolf:false,color:'#e74c3c',bg:'rgba(231,76,60,.10)',   desc:'Se vieni uccisa dai lupi e il giorno successivo un lupo viene votato, ritorni in vita.'},
+  romeo:       {name:'Romeo',                emoji:'🌹',wolfTeam:false,winsWithWolves:false,soloTeam:false,isOrdine:false,seerSees:'villico',survivesWolf:false,color:'#e91e63',bg:'rgba(233,30,99,.13)',   desc:'Sei legato a Giulietta. Se lei muore, muori anche tu. Se lei è protetta, sei protetto anche tu.'},
+  giulietta:   {name:'Giulietta',            emoji:'💐',wolfTeam:false,winsWithWolves:false,soloTeam:false,isOrdine:false,seerSees:'villico',survivesWolf:false,color:'#e91e63',bg:'rgba(233,30,99,.13)',   desc:'Sei legata a Romeo. Se lui muore, muori anche tu. Se lui è protetto, sei protetta anche tu.'},
+  orfano:      {name:'Orfano',               emoji:'🍵',wolfTeam:false,winsWithWolves:false,soloTeam:false,isOrdine:false,seerSees:'villico',survivesWolf:false,color:'#bdc3c7',bg:'rgba(189,195,199,.10)', desc:'Se vieni ucciso dai lupi, il giorno successivo i voti contro lupi e misantropo valgono doppio.'},
+  contaminato: {name:'Contadino Avvelenato', emoji:'🤒',wolfTeam:false,winsWithWolves:false,soloTeam:false,isOrdine:false,seerSees:'villico',survivesWolf:false,color:'#2ecc71',bg:'rgba(46,204,113,.10)',  desc:'Se vieni ucciso dai lupi di notte, il Lupo Alpha muore immediatamente insieme a te.'},
+  piromane:    {name:'Piromane',             emoji:'🔥',wolfTeam:false,winsWithWolves:false,soloTeam:false,isOrdine:false,seerSees:'villico',survivesWolf:false,color:'#e67e22',bg:'rgba(230,126,34,.13)',  desc:'Una sola volta per partita puoi incendiare la casa di un giocatore. Se è un lupo muore lui; se è innocente o neutrale muori tu.'},
+  accusatore:  {name:'Accusatore',           emoji:'👉',wolfTeam:false,winsWithWolves:false,soloTeam:false,isOrdine:false,seerSees:'villico',survivesWolf:false,color:'#c0392b',bg:'rgba(192,57,43,.10)',   desc:'Ogni due notti puoi accusare un giocatore: se è un lupo viene rivelato pubblicamente. Se è innocente, muori tu.'},
+  funambolo:   {name:'Funambolo',            emoji:'🎪',wolfTeam:false,winsWithWolves:false,soloTeam:false,isOrdine:false,seerSees:'villico',survivesWolf:false,color:'#16a085',bg:'rgba(22,160,133,.13)',  desc:'Ogni notte il Narratore lancia in segreto una moneta. Testa: sei immune a qualsiasi morte. Croce: muori comunque anche se protetto.'},
+  custode:     {name:'Custode del Silenzio', emoji:'🤫',wolfTeam:false,winsWithWolves:false,soloTeam:false,isOrdine:true, seerSees:'villico',survivesWolf:false,color:'#95a5a6',bg:'rgba(149,165,166,.10)', desc:'Dalla seconda notte puoi silenziare un giocatore: non potrà parlare né votare il giorno successivo.'},
+  araldo:      {name:'Araldo del Crepuscolo',emoji:'📯',wolfTeam:false,winsWithWolves:false,soloTeam:false,isOrdine:true, seerSees:'villico',survivesWolf:false,color:'#d4ac0d',bg:'rgba(212,172,13,.10)',  desc:'Una sola volta puoi forzare il villaggio a scegliere tra due candidati. Dopo muori. Scade alla terza notte.'},
+  alchimista:  {name:'Alchimista',           emoji:'⚗️',wolfTeam:false,winsWithWolves:false,soloTeam:false,isOrdine:true, seerSees:'villico',survivesWolf:false,color:'#1abc9c',bg:'rgba(26,188,156,.10)',  desc:'Una sola volta: Pozione Rossa (resuscita 1 di 2 morti a caso) o Pozione Nera (avvelena un vivo che muore la notte dopo).'},
+  criceto:     {name:'Criceto Mannaro',      emoji:'🐹',wolfTeam:false,winsWithWolves:false,soloTeam:true, seerSees:'criceto',survivesWolf:true, color:'#f39c12',bg:'rgba(243,156,18,.13)',  desc:'Fazione solitaria. Sopravvivi agli attacchi dei lupi. Muori se il Veggente ti scruta o se vieni votato. Vinci da solo se sopravvivi con una sola fazione rimasta.'},
+  misantropo:  {name:'Misantropo',           emoji:'😒',wolfTeam:false,winsWithWolves:true, soloTeam:false,seerSees:'villico',survivesWolf:false,color:'#7f8c8d',bg:'rgba(127,140,141,.13)', desc:'Sembri un normale cittadino senza poteri. Vinci solo se vincono i lupi.'},
+  incompreso:  {name:'Incompreso',           emoji:'🥀',wolfTeam:false,winsWithWolves:false,soloTeam:false,seerSees:'lupo',   survivesWolf:false,color:'#8e44ad',bg:'rgba(142,68,173,.13)',  desc:'Sei innocente e vinci col villaggio. Ma il Veggente ti vede come un lupo.'},
+  lupoAlpha:   {name:'Lupo Mannaro',        emoji:'🐾',wolfTeam:false,winsWithWolves:false,soloTeam:false,seerSees:'villico',survivesWolf:true, color:'#8e44ad',bg:'rgba(142,68,173,.13)',  desc:'Appari come contadino. Se i lupi ti attaccano non muori: la notte successiva diventi un Lupo Alpha.'},
+  suicida:     {name:'Suicida',              emoji:'🪦',wolfTeam:false,winsWithWolves:false,soloTeam:true, seerSees:'villico',survivesWolf:false,color:'#636e72',bg:'rgba(99,110,114,.10)',  desc:'Nessun potere. Vinci solo se vieni eliminato tramite votazione di giorno.'},
+  mutaforma:   {name:'Mutaforma',            emoji:'👤',wolfTeam:false,winsWithWolves:false,soloTeam:true, seerSees:'villico',survivesWolf:false,color:'#bdc3c7',bg:'rgba(189,195,199,.10)', desc:'Dalla seconda notte copi i poteri di un giocatore vivo. Vinci con la fazione del ruolo copiato.'},
+  condor:      {name:'Condor',               emoji:'🦅',wolfTeam:false,winsWithWolves:false,soloTeam:true, seerSees:'villico',survivesWolf:false,color:'#d35400',bg:'rgba(211,84,0,.13)',    desc:'Dalla seconda notte copi i poteri di un giocatore morto. Vinci con la fazione del ruolo copiato.'},
+  corvo:       {name:'Corvo',                emoji:'🪶',wolfTeam:false,winsWithWolves:false,soloTeam:true, seerSees:'villico',survivesWolf:false,color:'#2c3e50',bg:'rgba(44,62,80,.13)',    desc:'Ogni notte aggiungi un voto nascosto contro un giocatore. Vinci se sei vivo alla fine della partita.'},
+  vampiro:     {name:'Vampiro',              emoji:'🧛',wolfTeam:false,winsWithWolves:false,soloTeam:true, seerSees:'lupo',   survivesWolf:false,color:'#6c3483',bg:'rgba(108,52,131,.13)',   desc:'Ogni notte morde un giocatore vivo che diventa sua Preda (fedele in segreto). Vince quando lui + le Prede in vita superano gli altri. Il Veggente lo vede come Lupo.'},
+};
+
+// ─── LIBRO DATA ───────────────────────────────────────────────────────────────
+const BOOK = [
+  {key:'narratore',cat:'speciale',emoji:'📜',name:'Il Narratore',color:'#c8a05a',faction:'Nessuna (non gioca)',fc:'#6a5a40',
+   desc:'Un cantastorie al margine del villaggio. Non giudica, non agisce: racconta ciò che accade.',
+   ability:'Gestisce la partita. Riceve tutte le informazioni private.',win:'Nessuno (non gioca)'},
+  {key:'villico',cat:'villaggio',emoji:'🧑‍🌾',name:'Il Contadino',color:'#e67e22',faction:'Villaggio',fc:'#2ecc71',
+   desc:'Nessuna magia, nessun potere. Solo mani callose e la fede che il bene possa ancora vincere.',
+   ability:'Nessuna abilità speciale.',win:'I contadini'},
+  {key:'veggente',cat:'villaggio',emoji:'🔮',name:'Il Veggente',color:'#9b59b6',faction:'Villaggio',fc:'#2ecc71',
+   desc:'Non dorme come gli altri, parla con le ombre. I suoi occhi non vedono volti, ma verità.',
+   ability:'Ogni notte può chiedere al Narratore se un giocatore è Lupo o Contadino.',win:'I contadini'},
+  {key:'guardia',cat:'villaggio',emoji:'🛡️',name:'Il Bodyguard',color:'#2980b9',faction:'Villaggio',fc:'#2ecc71',
+   desc:'Un gigante silenzioso con la corazza ammaccata. Vive per proteggere.',
+   ability:'Ogni notte sceglie un giocatore da proteggere dall\'attacco dei lupi.',win:'I contadini'},
+  {key:'meretrice',cat:'villaggio',emoji:'💋',name:'La Meretrice',color:'#c0392b',faction:'Villaggio',fc:'#2ecc71',
+   desc:'Bellissima, pericolosa, inafferrabile. Scivola tra le case con il passo felpato di un sogno.',
+   ability:'Ogni notte visita qualcuno. Muore se visita un lupo o la vittima dei lupi. Sopravvive se i lupi scelgono lei.',win:'I contadini'},
+  {key:'arciere',cat:'villaggio',emoji:'🏹',name:'L\'Arciere',color:'#27ae60',faction:'Villaggio',fc:'#2ecc71',
+   desc:'Occhi freddi, mano ferma. Non colpisce per uccidere, ma per bloccare.',
+   ability:'Ogni notte sceglie un giocatore che perde i suoi poteri per quella notte.',win:'I contadini'},
+  {key:'avvocato',cat:'villaggio',emoji:'⚖️',name:'L\'Avvocato',color:'#f39c12',faction:'Villaggio',fc:'#2ecc71',
+   desc:'Le sue armi sono parole e cavilli.',
+   ability:'Durante ogni votazione toglie un voto a un giocatore scelto (anche sé stesso).',win:'I contadini'},
+  {key:'incompreso',cat:'villaggio',emoji:'🥀',name:'L\'Incompreso',color:'#8e44ad',faction:'Villaggio',fc:'#2ecc71',
+   desc:'Non ha colpe, ma nessuno gli crede.',
+   ability:'Appare come Lupo se visionato dalla Veggente, ma è innocente.',win:'I contadini'},
+  {key:'negromante',cat:'villaggio',emoji:'💀',name:'Il Negromante',color:'#7f8c8d',faction:'Villaggio',fc:'#2ecc71',
+   desc:'Parla con i morti. Ogni cadavere è una fonte di sapere.',
+   ability:'Ogni notte può chiedere al Narratore il ruolo di un giocatore morto.',win:'I contadini'},
+  {key:'gesu',cat:'villaggio',emoji:'✝️',name:'Gesù',color:'#f1c40f',faction:'Villaggio',fc:'#2ecc71',
+   desc:'La sua morte non è la fine. Tornerà, sempre.',
+   ability:'Resuscita automaticamente il terzo giorno dopo la sua morte.',win:'I contadini'},
+  {key:'cappuccetto',cat:'villaggio',emoji:'🧺',name:'Cappuccetto Rosso',color:'#e74c3c',faction:'Villaggio',fc:'#2ecc71',
+   desc:'Le ombre che ha attraversato le hanno tolto ogni innocenza.',
+   ability:'Se viene uccisa dai lupi e il giorno successivo un lupo viene votato, ritorna in vita.',win:'I contadini'},
+  {key:'romeo',cat:'villaggio',emoji:'🌹',name:'Romeo',color:'#e91e63',faction:'Villaggio',fc:'#2ecc71',
+   desc:'Vive in funzione di un legame.',
+   ability:'Se Giulietta muore, muore anche lui. Se lei è protetta, lo è anche lui.',win:'I contadini'},
+  {key:'giulietta',cat:'villaggio',emoji:'💐',name:'Giulietta',color:'#e91e63',faction:'Villaggio',fc:'#2ecc71',
+   desc:'Vive in funzione di un legame.',
+   ability:'Se Romeo muore, muore anche lei. Se lui è protetto, lo è anche lei.',win:'I contadini'},
+  {key:'orfano',cat:'villaggio',emoji:'🍵',name:'L\'Orfano',color:'#bdc3c7',faction:'Villaggio',fc:'#2ecc71',
+   desc:'Solo, nel freddo della stalla, sognava ancora la voce della madre.',
+   ability:'Se viene ucciso dai Lupi, il giorno dopo i voti contro Lupi e Misantropo valgono doppio.',win:'I contadini'},
+  {key:'contaminato',cat:'villaggio',emoji:'🤒',name:'Il Contadino Avvelenato',color:'#2ecc71',faction:'Villaggio',fc:'#2ecc71',
+   desc:'Sembrava innocuo. Ma dentro di lui qualcosa marciva.',
+   ability:'Se viene ucciso dai lupi, il Lupo Alpha muore immediatamente.',win:'I contadini'},
+  {key:'piromane',cat:'villaggio',emoji:'🔥',name:'Il Piromane',color:'#e67e22',faction:'Villaggio',fc:'#2ecc71',
+   desc:'Ride davanti alle fiamme.',
+   ability:'Una sola volta: incendia una casa. Se è un lupo muore lui; se è innocente muore il Piromane.',win:'I contadini'},
+  {key:'accusatore',cat:'villaggio',emoji:'👉',name:'L\'Accusatore',color:'#c0392b',faction:'Villaggio',fc:'#2ecc71',
+   desc:'Lo sguardo che brucia. La parola che pesa.',
+   ability:'Ogni due notti accusa un giocatore: se è Lupo viene rivelato; se è innocente muore l\'Accusatore.',win:'I contadini'},
+  {key:'funambolo',cat:'villaggio',emoji:'🎪',name:'Il Funambolo',color:'#16a085',faction:'Villaggio',fc:'#2ecc71',
+   desc:'Ogni notte cammina sul filo tra la vita e la morte.',
+   ability:'Il Narratore lancia in segreto una moneta: Testa=immune, Croce=muore comunque anche se protetto.',win:'I contadini'},
+  {key:'custode',cat:'villaggio',emoji:'🤫',name:'Il Custode del Silenzio',color:'#95a5a6',faction:'Villaggio',fc:'#2ecc71',
+   desc:'Cammina scalzo tra le case, incappucciato e muto.',
+   ability:'Dalla seconda notte silenzia un giocatore: non potrà parlare né votare il giorno dopo.',win:'I contadini'},
+  {key:'araldo',cat:'villaggio',emoji:'📯',name:'L\'Araldo del Crepuscolo',color:'#d4ac0d',faction:'Villaggio',fc:'#2ecc71',
+   desc:'Si annuncia solo al tramonto, porta con sé una scelta impossibile.',
+   ability:'Una sola volta forza il villaggio a scegliere tra due candidati. Poi muore. Scade alla terza notte.',win:'I contadini'},
+  {key:'alchimista',cat:'villaggio',emoji:'⚗️',name:'L\'Alchimista',color:'#1abc9c',faction:'Villaggio',fc:'#2ecc71',
+   desc:'Nel cuore della notte, le sue ampolle ribollono.',
+   ability:'Una sola volta: Pozione Rossa (resuscita 1 di 2 morti a caso) o Pozione Nera (avvelena un vivo).',win:'I contadini'},
+  {key:'lupo',cat:'lupi',emoji:'🐺',name:'Il Lupo Mannaro',color:'#e74c3c',faction:'Lupi',fc:'#e74c3c',
+   desc:'Di giorno cammina tra gli uomini. Di notte corre, morde, uccide.',
+   ability:'Ogni notte insieme agli altri lupi sceglie un abitante da uccidere.',win:'I lupi'},
+  {key:'cucciolo',cat:'lupi',emoji:'🐶',name:'Il Lupo Cucciolo',color:'#e67e22',faction:'Lupi',fc:'#e74c3c',
+   desc:'Ha ancora i denti da latte ma sotto la pelliccia si nasconde un predatore.',
+   ability:'Visto come contadino dalla Veggente. Se è l\'unico lupo, la prima notte da solo non può uccidere.',win:'I lupi'},
+  {key:'lupoAlpha',cat:'lupi',emoji:'🐾',name:'Il Lupo Alpha',color:'#8e44ad',faction:'Villaggio → Lupi',fc:'#e74c3c',
+   desc:'Vive da uomo, ma porta dentro un veleno dormiente.',
+   ability:'Se attaccato dai lupi non muore e si trasforma in Lupo nella notte successiva.',win:'I contadini (prima) / I lupi (dopo)'},
+  {key:'criceto',cat:'neutri',emoji:'🐹',name:'Il Criceto Mannaro',color:'#f39c12',faction:'Solitario',fc:'#f39c12',
+   desc:'È piccolo. Mentre gli altri si sbranano, lui rosicchia nell\'ombra.',
+   ability:'Sopravvive agli attacchi dei lupi. Muore se scrutato dalla Veggente. Vince se sopravvive con una sola fazione.',win:'Solo'},
+  {key:'misantropo',cat:'neutri',emoji:'😒',name:'Il Misantropo',color:'#7f8c8d',faction:'Solitario (vince coi Lupi)',fc:'#e74c3c',
+   desc:'Non vuole salvare nessuno. Se il villaggio brucia, per lui è un giorno buono.',
+   ability:'È un contadino normale, ma vince solo se vincono i lupi.',win:'I lupi'},
+  {key:'suicida',cat:'neutri',emoji:'🪦',name:'Il Suicida',color:'#636e72',faction:'Solitario',fc:'#636e72',
+   desc:'Ride da solo. Vuole solo che qualcuno dica "colpevole".',
+   ability:'Nessun potere attivo. Vince solo se viene linciato di giorno tramite votazione.',win:'Solo (se linciato)'},
+  {key:'mutaforma',cat:'neutri',emoji:'👤',name:'Il Mutaforma',color:'#bdc3c7',faction:'Variabile',fc:'#bdc3c7',
+   desc:'Non ha volto, non ha identità. Prende in prestito le vite degli altri.',
+   ability:'Dalla seconda notte copia i poteri di un giocatore vivo.',win:'Vince con la fazione del ruolo copiato'},
+  {key:'condor',cat:'neutri',emoji:'🦅',name:'Il Condor',color:'#d35400',faction:'Variabile',fc:'#d35400',
+   desc:'Arriva sempre dopo il silenzio, quando i corpi sono freddi.',
+   ability:'Dalla seconda notte copia i poteri di un giocatore morto.',win:'Vince con la fazione del ruolo preso'},
+  {key:'corvo',cat:'neutri',emoji:'🪶',name:'Il Corvo',color:'#2c3e50',faction:'Solitario',fc:'#2c3e50',
+   desc:'Lo si sente gracchiare sui tetti la notte prima che scorra il sangue.',
+   ability:'Ogni notte aggiunge un voto nascosto contro un giocatore.',win:'Sopravvivere fino alla fine'},
+  {key:'vampiro',cat:'neutri',emoji:'🧛',name:'Il Vampiro',color:'#6c3483',faction:'Solitario',fc:'#6c3483',
+   desc:'Non cerca il sangue — cerca il controllo. Ogni notte sceglie una vittima e la piega alla sua volontà.',
+   ability:'Morde un giocatore vivo ogni notte: diventa sua Preda segreta. Vince quando lui + le Prede in vita > tutti gli altri. Il Veggente lo vede come Lupo.',win:'Solo (maggioranza con le Prede)'},
+];
+const BOOK_CATS=[{k:'tutti',l:'Tutti'},{k:'speciale',l:'📜 Narratore'},{k:'villaggio',l:'🏘️ Villaggio'},{k:'lupi',l:'🐺 Lupi'},{k:'neutri',l:'⚖️ Neutri'},{k:'storia',l:'📜 Storia'},{k:'regole',l:'📋 Regole'},{k:'varianti',l:'🎭 Varianti'},{k:'consigli',l:'💡 Consigli'},{k:'dadi',l:'🎲 Dadi'}];
+
+// ─── CONTENUTO PDF ────────────────────────────────────────────────────────────
+const LORE=[
+  {title:'Il Villaggio',text:["C'è un villaggio, nascosto tra boschi antichi e colline che nessuna mappa osa più disegnare.","Un luogo dimenticato dal tempo, dove la nebbia non si alza mai del tutto e le notti sono più lunghe dei giorni. Qui ogni porta si chiude presto e ogni lanterna trema come se sapesse.","Perché nel villaggio si annida qualcosa, qualcosa che una volta era umano… o che finge ancora di esserlo."]},
+  {title:'La Caccia',text:["Ogni notte, quando il silenzio cala come una coltre, i Lupi escono a caccia, nascosti sotto sembianze familiari. Gli abitanti si scrutano, si accusano, si difendono: nessuno sa più chi fidarsi, e a ogni alba resta solo il dubbio… o un cadavere.","Ma il villaggio non è solo paura. Ci sono occhi che vedono nell'ombra, mani pronte a proteggere, voci che mentono e altre che guidano. Alcuni combattono per la verità, altri per sopravvivere… e c'è chi ha un solo scopo: distruggere tutto."]},
+  {title:'Il Cantastorie',text:["E poi c'è il Cantastorie. Colui che non prende parte, ma tutto osserva. Colui che racconta ciò che accade… e ciò che deve ancora accadere.","Inizia così il gioco. Un gioco di maschere, sospetti, alleanze e inganni. Dove ogni personaggio ha un segreto da portare nella notte.","Benvenuto a Tabula. Qui la morte parla piano. Ma arriva sempre."]},
+];
+const GLOSSARIO=[
+  {t:'Narratore',d:"Guida il gioco, assegna i ruoli, scandisce la notte e il giorno, comunica gli eventi senza rivelare troppo."},
+  {t:'Ruolo Segreto',d:"La carta o identità nascosta che ogni giocatore riceve all'inizio (es. Lupo, Contadino, Veggente…)."},
+  {t:'Fazione',d:"Gruppo a cui appartiene un personaggio (es. Contadini, Lupi, Ordine, Solisti)."},
+  {t:'Fase Notturna',d:"Il momento in cui i ruoli attivi agiscono, con gli occhi chiusi per chi non deve vedere."},
+  {t:'Fase Diurna',d:"Momento in cui il villaggio si confronta per decidere chi eliminare."},
+  {t:'Votazione',d:"Parte conclusiva del giorno. Ogni giocatore indica chi vuole eliminare."},
+  {t:'Protezione',d:"Effetto che impedisce la morte notturna di un personaggio."},
+  {t:'Visione',d:"Il potere del Veggente o simili di scoprire l'identità o la fazione di un altro."},
+  {t:'Silenziare',d:"Effetto che impedisce a un giocatore di parlare o votare."},
+  {t:'Contadini',d:"Fazione \"buona\", spesso ignara, che deve sopravvivere e scoprire i Lupi."},
+  {t:'Lupi',d:"Fazione \"malvagia\", che ogni notte tenta di eliminare i Contadini."},
+  {t:'Solista',d:"Personaggio indipendente con condizioni di vittoria proprie (es. Criceto Mannaro, Suicida, Vampiro…)."},
+  {t:'Ordine',d:"Fazione parallela ai Contadini con figure mistiche e poteri attivi. Vincono se tutti i lupi sono morti e sono in maggioranza rispetto ai contadini."},
+];
+const VARIANTI=[
+  {name:'Classica',icon:'⚔️',color:'#e67e22',desc:'La più semplice. Due sole fazioni: i Lupi e i Contadini. Ideale per partite veloci o con nuovi giocatori.',factions:['Contadini','Lupi'],note:'Nessun solista'},
+  {name:'Con il Solista',icon:'👤',color:'#9b59b6',desc:'Un personaggio solitario con condizioni di vittoria tutte sue stravolge il gioco. Consigliato un solo solista per partita.',factions:['Contadini','Lupi','1 Solista'],note:"Nessun ruolo dell'Ordine"},
+  {name:"Con l'Ordine",icon:'🔮',color:'#1abc9c',desc:"Nasce l'Ordine: non fedele ai Contadini ma nemico dei Lupi. Regole di vittoria autonome. Minimo 3 membri dell'Ordine.",factions:["Contadini","Lupi","Ordine"],note:'Nessun solista'},
+  {name:'Lupi vs Ordine',icon:'🌙',color:'#e74c3c',desc:"I Contadini non sono più protagonisti. La sfida è tra Lupi e l'Ordine. Adatta a pochi giocatori esperti.",factions:['Lupi','Ordine'],note:'Nessun Contadino, nessun solista'},
+  {name:'Completa',icon:'👑',color:'#f39c12',desc:"La modalità definitiva: ogni fazione presente. Regna il caos. Almeno 3 membri dell'Ordine. Consigliata con molti giocatori.",factions:['Contadini','Lupi','Ordine','1 Solista'],note:'Partite lunghe e complesse'},
+];
+const SPEC_VAR=[
+  {name:'Tutti contro il Vampiro',icon:'🧛',color:'#6c3483',desc:'Un antico male si è risvegliato. Nessun branco, nessun solista... solo lui. Il villaggio deve collaborare per eliminarlo.',win:'Il Vampiro controlla la maggioranza di voti con le sue Prede',note:'Consigliato 8+ giocatori'},
+  {name:"L'Orfano Vendicatore",icon:'🍵',color:'#bdc3c7',desc:"Uno dei contadini giura vendetta. Se sopravvive e fa giustiziare tutti i Lupi, vince da solo — non con i Contadini.",win:'Sopravvive e tutti i Lupi vengono giustiziati',note:'Sfida personale'},
+  {name:'La Notte del Fuoco',icon:'🔥',color:'#e67e22',desc:'Un pazzo incendiario si aggira per il villaggio. Ogni notte appicca fuoco a una casa. Il caos dilaga.',win:"Il Piromane resta l'unico in vita",note:'Consigliato 10+ giocatori'},
+  {name:'Il Processo Silenzioso',icon:'🤫',color:'#95a5a6',desc:'Nessuno può parlare di giorno: solo gesti, sospiri e sguardi. Il Custode del Silenzio può zittire un giocatore.',win:null,note:'Si applica a qualsiasi configurazione'},
+];
+const RANDOM_EVENTS=[
+  {id:1,icon:'🌑',name:'Eclissi Notturna',when:'Notte',color:'#2c3e50',desc:'Nessun lupo può uccidere stanotte.'},
+  {id:2,icon:'📢',name:'Accusa Pubblica',when:'Giorno',color:'#e67e22',desc:'Prima del voto, un giocatore scelto a caso va ai voti e al ballottaggio con il più votato.'},
+  {id:3,icon:'🪶',name:'Maledizione del Corvo',when:'Giorno',color:'#7f8c8d',desc:'Un giocatore a caso non potrà parlare né votare oggi.'},
+  {id:4,icon:'🐺',name:'Furia del Branco',when:'Notte',color:'#c0392b',desc:'I Lupi possono uccidere due persone stanotte.'},
+  {id:5,icon:'✨',name:"Dono dell'Ordine",when:'Notte',color:'#9b59b6',desc:"Una figura dell'Ordine a caso riceve una visione gratuita. Se è il Veggente, non ha effetto."},
+  {id:6,icon:'💬',name:'Cadavere Parla',when:'Giorno',color:'#27ae60',desc:'Un morto può lasciare un messaggio di massimo 3 parole (non nomi) letto dal Cantastorie all\'alba.'},
+];
+const TIPS=[
+  {title:'Crea atmosfera 🌙',text:'Usa un tono grave durante la notte. Sussurra: "È notte nel villaggio. Tutti chiudano gli occhi…". Il silenzio è il tuo alleato.'},
+  {title:'Non farti scoprire 🎭',text:'Quando chiami un ruolo, muoviti con gesti leggeri. Se i Lupi sentono che chiami una sola persona, capiscono troppo.'},
+  {title:'Sii imparziale ⚖️',text:'Non suggerire, non ridere, non fare commenti ambigui. Tu sei solo la voce degli eventi.'},
+  {title:'Racconta la morte con stile 💀',text:'Non dire solo "È morto X". Racconta: "All\'alba, qualcuno nota una finestra aperta… e nella piazza c\'è un corpo."'},
+  {title:'Bilanciamento Lupi 🐺',text:'6-8 giocatori: 1 Lupo. 9-11 giocatori: 2 Lupi. 12-15 giocatori: 3 Lupi. Aggiungi Cuccioli per varietà.'},
+  {title:'Quando inserire un Solista 👤',text:'Di solita 1 solo per partita. Attenzione: Criceto e Vampiro insieme sono difficili da gestire.'},
+  {title:"Inserire l'Ordine 🔮",text:"Il Veggente è sempre utile. Un buon Ordine ha 3-4 membri su 10-12 giocatori. Condor e Alchimista aggiungono varietà."},
+  {title:'Ruoli Funzionali 🎖️',text:'Il Sindaco ha voto doppio — eletto il primo giorno. Il Lupo Alpha decide la vittima finale e non può essere un Cucciolo.'},
+];
+
+function LibroMagico({onClose,initialCat='tutti'}){
+  const [cat,setCat]=useState(initialCat);
+  const isRole=['tutti','speciale','villaggio','lupi','neutri'].includes(cat);
+  const list=isRole?(cat==='tutti'?BOOK:BOOK.filter(r=>r.cat===cat)):[];
+  const D=({h})=><div style={{height:1,background:'linear-gradient(to right,transparent,rgba(200,160,90,.25),transparent)',margin:'20px 0'}}/>;
+  return(
+    <div className="book-overlay book-anim">
+      <div className="book-bg"/>
+      <div className="book-wrap">
+        <div className="book-header">
+          <div style={{display:'flex',alignItems:'center',gap:10}}><span style={{fontSize:'1.5rem'}}>📖</span><div className="book-title">Libro Magico</div></div>
+          <button className="book-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="book-nav">
+          {BOOK_CATS.map(c=><button key={c.k} className={`book-tab${cat===c.k?' active':''}`} onClick={()=>setCat(c.k)}>{c.l}</button>)}
+        </div>
+        <div className="book-content">
+
+          {/* ── RUOLI ── */}
+          {isRole&&<>
+            {cat==='tutti'&&(
+              <div className="book-intro">
+                <span className="book-intro-icon">🌙</span>
+                <p className="book-intro-text">In questo grimorio sono custodite le anime di ogni personaggio.<br/><br/>Ogni ruolo ha la sua storia, il suo potere, il suo destino.<br/><br/>Scorri le pagine e impara a conoscere le forze che si contendono la notte.</p>
+                <D/>
+              </div>
+            )}
+            {list.map(r=>{
+              const wb=r.cat==='lupi'?'rgba(231,76,60,.15)':r.cat==='neutri'?'rgba(243,156,18,.12)':'rgba(46,204,113,.1)';
+              const wbr=r.cat==='lupi'?'rgba(231,76,60,.3)':r.cat==='neutri'?'rgba(243,156,18,.25)':'rgba(46,204,113,.25)';
+              return(
+                <div key={r.key} className="book-role-card">
+                  <div className="book-role-header">
+                    <span className="book-role-emoji">{r.emoji}</span>
+                    <div><div className="book-role-name" style={{color:r.color}}>{r.name}</div><div className="book-role-faction" style={{color:r.fc}}>{r.faction}</div></div>
+                  </div>
+                  <div className="book-divider"/>
+                  <div className="book-section">Descrizione</div><p className="book-desc">{r.desc}</p>
+                  <div className="book-divider"/>
+                  <div className="book-section">Abilità</div><p className="book-ability">{r.ability}</p>
+                  <div style={{marginTop:12}}><span className="book-win" style={{background:wb,border:`1px solid ${wbr}`,color:r.fc}}>🏆 Vince con: {r.win}</span></div>
+                </div>
+              );
+            })}
+          </>}
+
+          {/* ── STORIA & GLOSSARIO ── */}
+          {cat==='storia'&&<>
+            <div className="book-intro"><span className="book-intro-icon">📜</span>
+              <p className="book-intro-text">Le origini del villaggio, la leggenda e le parole che ogni abitante deve conoscere prima di chiudere gli occhi.</p>
+            </div>
+            {LORE.map((ch,i)=>(
+              <div key={i} style={{marginBottom:22}}>
+                <div className="bch">{ch.title}</div>
+                {ch.text.map((p,j)=><p key={j} className="bprose">{p}</p>)}
+              </div>
+            ))}
+            <D/>
+            <div className="bch" style={{marginTop:0,marginBottom:14}}>📚 Glossario</div>
+            {GLOSSARIO.map((g,i)=>(
+              <div key={i} style={{marginBottom:12}}>
+                <div className="bgt">• {g.t}</div>
+                <div className="bgd">{g.d}</div>
+              </div>
+            ))}
+          </>}
+
+          {/* ── REGOLE ── */}
+          {cat==='regole'&&<>
+            <div className="book-intro"><span className="book-intro-icon">📋</span>
+              <p className="book-intro-text">Le leggi del villaggio. Seguite alla lettera, sono la struttura che sostiene ogni partita.</p>
+            </div>
+            {[
+              {title:'❶ Preparazione',items:["Il Narratore distribuisce segretamente una carta personaggio a ciascun giocatore.","Ogni carta rappresenta un ruolo unico con abilità speciali e obiettivo di vittoria.","Nessuno rivela il proprio ruolo. La menzogna è parte del villaggio."]},
+              {title:'❷ La Notte',items:["Tutti i giocatori chiudono gli occhi.","Il Narratore chiama i personaggi notturni, uno alla volta, a compiere le loro azioni in silenzio.","Una volta che ogni creatura ha agito, il villaggio si risveglia… e scopre chi non ha visto l'alba."]},
+              {title:'❸ Il Giorno',items:["I vivi discutono tra loro, accusano, mentono, si difendono.","Al termine della discussione, si vota pubblicamente per giustiziare un sospetto.","Il condannato muore. Il gioco torna alla notte."]},
+              {title:'❹ Condizioni di Vittoria',items:["Contadini: scoprono e giustiziamo tutti i Lupi.","Lupi: eliminano i Contadini finché non restano più minacce (≥ agli altri).","Ordine: tutti i Lupi morti e in maggioranza rispetto ai Contadini.","Solisti: raggiungono le proprie condizioni personali."]},
+              {title:'✦ Regole Speciali',items:["I morti non parlano: chi muore non può influenzare la partita.","Nessuno può mostrare la propria carta (salvo indicazioni di gioco).","Il Narratore ha l'ultima parola su ogni disputa.","Il Bodyguard «protegge la casa». La Meretrice muore anche se visita il Lupo Cucciolo.","Non si possono fare gesti la notte."]},
+            ].map((sec,si)=>(
+              <div key={si} className="bvc" style={{marginBottom:10}}>
+                <div className="bvn" style={{color:'#c8a05a'}}>{sec.title}</div>
+                <ul style={{paddingLeft:16,marginTop:6}}>
+                  {sec.items.map((it,ii)=><li key={ii} className="bprose" style={{marginBottom:5}}>{it}</li>)}
+                </ul>
+              </div>
+            ))}
+            <D/>
+            <div className="bch" style={{marginTop:0,marginBottom:12}}>🎖️ Ruoli Funzionali</div>
+            <p className="bprose" style={{marginBottom:14}}>Non fanno parte della carta segreta ma influenzano fortemente la partita.</p>
+            {[
+              {emoji:'🏛️',name:'Il Sindaco',color:'#f39c12',desc:'Eletto dal villaggio al primo giorno. Ha voto doppio durante ogni votazione. Vince con la propria fazione.'},
+              {emoji:'🐺',name:'Il Lupo Alpha (ruolo funzionale)',color:'#e74c3c',desc:"Capobranco silenzioso. Ogni notte decide la vittima finale tra le proposte. Se muore viene eletto un nuovo Alpha tra i restanti (non Cuccioli). Non può essere un Lupo Cucciolo."},
+            ].map((r,i)=>(
+              <div key={i} className="bvc" style={{marginBottom:10}}>
+                <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:8}}>
+                  <span style={{fontSize:'1.6rem'}}>{r.emoji}</span>
+                  <div className="bvn" style={{color:r.color}}>{r.name}</div>
+                </div>
+                <p className="bprose">{r.desc}</p>
+              </div>
+            ))}
+          </>}
+
+          {/* ── VARIANTI ── */}
+          {cat==='varianti'&&<>
+            <div className="book-intro"><span className="book-intro-icon">🎭</span>
+              <p className="book-intro-text">A seconda del numero di giocatori e del tono della partita, il Cantastorie può scegliere tra diverse configurazioni.</p>
+            </div>
+            <div className="bch" style={{marginTop:0}}>Varianti Standard</div>
+            {VARIANTI.map((v,i)=>(
+              <div key={i} className="bvc">
+                <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:8}}><span style={{fontSize:'1.4rem'}}>{v.icon}</span><div className="bvn" style={{color:v.color}}>{v.name}</div></div>
+                <p className="bprose">{v.desc}</p>
+                <div className="bvf">{v.factions.map((f,fi)=><span key={fi} className="bvft">{f}</span>)}</div>
+                <p style={{fontSize:'.78rem',color:'#6a5a40',fontStyle:'italic',marginTop:4}}>✦ {v.note}</p>
+              </div>
+            ))}
+            <D/>
+            <div className="bch" style={{marginTop:0}}>Varianti Speciali</div>
+            {SPEC_VAR.map((v,i)=>(
+              <div key={i} className="bvc">
+                <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:8}}><span style={{fontSize:'1.4rem'}}>{v.icon}</span><div className="bvn" style={{color:v.color}}>{v.name}</div></div>
+                <p className="bprose">{v.desc}</p>
+                {v.win&&<div style={{marginTop:8,padding:'8px 12px',background:'rgba(155,89,182,.08)',borderRadius:8,border:'1px solid rgba(155,89,182,.2)'}}><span style={{fontSize:'.7rem',fontFamily:'Cinzel,serif',color:'#9b59b6',letterSpacing:'.1em',textTransform:'uppercase'}}>Vittoria speciale: </span><span style={{fontSize:'.82rem',color:'#8a7860',fontStyle:'italic'}}>{v.win}</span></div>}
+                <p style={{fontSize:'.78rem',color:'#6a5a40',fontStyle:'italic',marginTop:8}}>✦ {v.note}</p>
+              </div>
+            ))}
+          </>}
+
+          {/* ── CONSIGLI ── */}
+          {cat==='consigli'&&<>
+            <div className="book-intro"><span className="book-intro-icon">💡</span>
+              <p className="book-intro-text">Il gioco vive attraverso la tua voce. Qui trovi i segreti di un Cantastorie che sa come far tremare le lanterne.</p>
+            </div>
+            {TIPS.map((t,i)=>(
+              <div key={i} className="btc">
+                <div className="btt">{t.title}</div>
+                <p className="btx">{t.text}</p>
+              </div>
+            ))}
+          </>}
+
+          {/* ── DADI ── */}
+          {cat==='dadi'&&<>
+            <div className="book-intro"><span className="book-intro-icon">🎲</span>
+              <p className="book-intro-text">Questi eventi possono essere estratti casualmente a inizio notte o giorno, lanciando un dado o pescando un biglietto. Usali per aggiungere imprevedibilità.</p>
+            </div>
+            {RANDOM_EVENTS.map((e,i)=>(
+              <div key={i} className="bec">
+                <div className="bei">{e.icon}</div>
+                <div style={{flex:1}}>
+                  <div className="ben" style={{color:e.color}}>{e.id}. {e.name}</div>
+                  <div className="bew" style={{color:e.color}}>⏱ {e.when}</div>
+                  <p className="bed">{e.desc}</p>
+                </div>
+              </div>
+            ))}
+            <div style={{marginTop:16,padding:'14px 16px',background:'rgba(155,89,182,.08)',borderRadius:10,border:'1px solid rgba(155,89,182,.2)'}}>
+              <p style={{fontFamily:'Cinzel,serif',fontSize:'.7rem',letterSpacing:'.12em',textTransform:'uppercase',color:'#9b59b6',marginBottom:8}}>💡 Come usarli</p>
+              <p className="btx">Puoi usare il bottone 🎲 che appare durante la partita (fase giorno/notte) per estrarre un evento casuale e mostrarlo al Narratore.</p>
+            </div>
+          </>}
+
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]}return b}
+
+function buildRolesFromDist(dist){
+  const a=[];
+  Object.entries(dist).forEach(([k,c])=>{for(let i=0;i<c;i++)a.push(k);});
+  const hasR=a.includes('romeo'),hasG=a.includes('giulietta');
+  if(hasR&&!hasG){const vi=a.lastIndexOf('villico');if(vi!==-1)a.splice(vi,1,'giulietta');}
+  if(hasG&&!hasR){const vi=a.lastIndexOf('villico');if(vi!==-1)a.splice(vi,1,'romeo');}
+  return shuffle(a);
+}
+
+function getSuggestedDist(n){
+  const base={lupo:0,cucciolo:0,veggente:0,guardia:0,meretrice:0,arciere:0,avvocato:0,negromante:0,gesu:0,cappuccetto:0,romeo:0,giulietta:0,orfano:0,contaminato:0,piromane:0,accusatore:0,funambolo:0,custode:0,araldo:0,alchimista:0,criceto:0,misantropo:0,incompreso:0,lupoAlpha:0,suicida:0,mutaforma:0,condor:0,corvo:0,vampiro:0,villico:0};
+  if(n<=7)  return {...base,lupo:1,veggente:1,villico:n-2};
+  if(n<=11) return {...base,lupo:1,cucciolo:1,veggente:1,guardia:1,meretrice:1,villico:n-5};
+  return         {...base,lupo:2,cucciolo:1,veggente:1,guardia:1,meretrice:1,criceto:1,misantropo:1,incompreso:1,villico:n-9};
+}
+
+const ROLE_MAX={lupo:5,cucciolo:2,veggente:1,guardia:1,meretrice:1,arciere:1,avvocato:1,negromante:1,gesu:1,cappuccetto:1,romeo:1,giulietta:1,orfano:1,contaminato:1,piromane:1,accusatore:1,funambolo:1,custode:1,araldo:1,alchimista:1,criceto:1,misantropo:2,incompreso:2,lupoAlpha:1,suicida:1,mutaforma:1,condor:1,corvo:1,vampiro:1,villico:99};
+const ROLE_ORDER=['lupo','cucciolo','lupoAlpha','veggente','guardia','meretrice','arciere','avvocato','negromante','gesu','cappuccetto','romeo','giulietta','orfano','contaminato','piromane','accusatore','funambolo','custode','araldo','alchimista','criceto','misantropo','incompreso','suicida','mutaforma','condor','corvo','vampiro','villico'];
+const ROLE_CATS_CONFIG=[
+  {id:'classici', label:'⚔️ Classici',      roles:['lupo','cucciolo','veggente','guardia','meretrice']},
+  {id:'lupi',     label:'🐺 Fazione Lupi',  roles:['lupoAlpha','incompreso','misantropo']},
+  {id:'villaggio',label:'🏘️ Fazione Villaggio', roles:['arciere','avvocato','negromante','gesu','cappuccetto','romeo','giulietta','orfano','contaminato','piromane','accusatore','funambolo','custode','araldo','alchimista']},
+  {id:'neutri',   label:'⚖️ Fazione Neutri', roles:['criceto','suicida','mutaforma','condor','corvo','vampiro']},
+];
+const NIGHT_STEPS=['arciere','guardia','custode','funambolo','lupi','veggente','meretrice','negromante','accusatore','piromane','alchimista','araldo','mutaforma','condor','corvo','vampiro'];
+// helper: check if a night step has an active player
+function stepHasPlayer(step,ps){
+  if(step==='lupi')return ps.some(p=>(p.role==='lupo'||p.role==='cucciolo')&&p.alive);
+  return ps.some(p=>p.role===step&&p.alive);
+}
+
+// ─── WIN CHECK ────────────────────────────────────────────────────────────────
+function checkWin(ps, ordineMode, vampPrede=[]){
+  // vampiro win: vamp + prede > others alive
+  const vampAlive=ps.find(p=>p.alive&&p.role==='vampiro');
+  if(vampAlive){
+    const prAlive=vampPrede.filter(i=>ps[i]&&ps[i].alive).length;
+    const aliveAll=ps.filter(p=>p.alive).length;
+    const aliveNonVamp=aliveAll-1;
+    if(prAlive>0&&1+prAlive>aliveNonVamp-prAlive)return'vampiro';
+  }
+  // wolves include misantropo (winsWithWolves) — contano come minaccia per il villaggio
+  const wolves =ps.filter(p=>p.alive&&p.role!=='criceto'&&p.role!=='suicida'&&(ROLES[p.role].wolfTeam||ROLES[p.role].winsWithWolves)).length;
+  const criceto=ps.find(p=>p.alive&&p.role==='criceto');
+  if(ordineMode){
+    const ordine  =ps.filter(p=>p.alive&&p.role!=='criceto'&&p.role!=='suicida'&&!ROLES[p.role].wolfTeam&&!ROLES[p.role].winsWithWolves&&ROLES[p.role].isOrdine).length;
+    const regular =ps.filter(p=>p.alive&&p.role!=='criceto'&&p.role!=='suicida'&&!ROLES[p.role].wolfTeam&&!ROLES[p.role].winsWithWolves&&!ROLES[p.role].isOrdine).length;
+    const others  =ordine+regular;
+    if(criceto&&((wolves===0)!==(others===0)))return'criceto';
+    if(wolves===0){if(ordine>0&&ordine>regular)return'ordine';return'villici';}
+    if(wolves>=others)return'lupi';
+  }else{
+    const others=ps.filter(p=>p.alive&&p.role!=='criceto'&&p.role!=='suicida'&&!ROLES[p.role].wolfTeam&&!ROLES[p.role].winsWithWolves).length;
+    if(criceto&&((wolves===0)!==(others===0)))return'criceto';
+    if(wolves===0)return'villici';
+    if(wolves>=others)return'lupi';
+  }
+  return null;
+}
+
+// ─── PERSISTENCE ──────────────────────────────────────────────────────────────
+const SK='lupus_v3';
+const saveGame=s=>{try{localStorage.setItem(SK,JSON.stringify(s));}catch(e){}};
+const loadGame=()=>{try{const s=localStorage.getItem(SK);return s?JSON.parse(s):null;}catch(e){return null;}};
+const clearGame=()=>{try{localStorage.removeItem(SK);}catch(e){}};
+
+// ── SCOREBOARD ─────────────────────────────────────────────────────────────
+const SSK='lupus_scores_v1';
+const saveScores=s=>{try{localStorage.setItem(SSK,JSON.stringify(s));}catch(e){}};
+const loadScores=()=>{try{const s=localStorage.getItem(SSK);return s?JSON.parse(s):{};}catch(e){return{};}};
+
+function getPoints(player,win){
+  const r=ROLES[player.role];const alive=player.alive;
+  if(win==='criceto'&&player.role==='criceto')return 3.5;
+  if(win==='suicida'&&player.role==='suicida'&&!alive)return 2.5;
+  if(win==='lupi'&&(r.wolfTeam||r.winsWithWolves))return alive?2.5:2.0;
+  if((win==='villici'||win==='ordine')&&!r.wolfTeam&&!r.soloTeam&&!r.winsWithWolves)return alive?1.5:1.0;
+  return 0;
+}
+
+// ─── COMPONENTS ───────────────────────────────────────────────────────────────
+function PList({players,sel,onSel,multi=false}){
+  return(
+    <div className="slist">
+      {players.map(p=>{
+        const isSel=multi?(sel||[]).includes(p._i):sel===p._i;
+        return(
+          <button key={p.id??p._i} className={`sbtn${isSel?' sel':''}`} onClick={()=>{
+            if(multi){const c=sel||[];onSel(isSel?c.filter(x=>x!==p._i):[...c,p._i]);}
+            else onSel(isSel?null:p._i);
+          }}>
+            <span style={{opacity:.4,fontSize:'.8rem'}}>👤</span>{p.name}
+            {isSel&&<span className="ck">✓</span>}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function RoleModal({roleKey,onClose}){
+  if(!roleKey||!ROLES[roleKey])return null;
+  const r=ROLES[roleKey];
+  const tl=r.soloTeam?'⚖️ Fazione Solitaria':r.wolfTeam?'🐺 Squadra Lupi':r.winsWithWolves?'😒 Vince coi Lupi':'🏘️ Squadra Villaggio';
+  const tc=r.soloTeam?'#f39c12':r.wolfTeam||r.winsWithWolves?'#e74c3c':'#2ecc71';
+  return(
+    <div className="modal-bg" onClick={onClose}>
+      <div className="modal fade" onClick={e=>e.stopPropagation()}>
+        <button className="modal-close" onClick={onClose}>✕</button>
+        <div style={{textAlign:'center',marginBottom:16}}>
+          <span style={{fontSize:'3rem'}}>{r.emoji}</span>
+          <div style={{fontFamily:'Cinzel,serif',fontSize:'1.1rem',color:r.color,marginTop:8,fontWeight:600}}>{r.name}</div>
+          <div style={{fontFamily:'Cinzel,serif',fontSize:'.65rem',letterSpacing:'.15em',color:tc,marginTop:4,textTransform:'uppercase'}}>{tl}</div>
+        </div>
+        <p style={{color:'#a09070',fontStyle:'italic',lineHeight:1.7,fontSize:'.9rem',textAlign:'center'}}>{r.desc}</p>
+      </div>
+    </div>
+  );
+}
+
+// ─── APP ──────────────────────────────────────────────────────────────────────
+const STEP_HINTS={
+  arciere:   {rules:["Sceglie un giocatore che perde i poteri stanotte","Non pu\u00f2 bloccare se stesso","Pu\u00f2 scegliere di passare"]},
+  guardia:   {rules:["Protegge un giocatore dalla morte notturna","Non pu\u00f2 proteggere la stessa persona due notti di fila","Non pu\u00f2 proteggere se stesso"]},
+  custode:   {rules:["Silenzia un giocatore per tutto il giorno seguente","Non agisce la prima notte","Il bersaglio non pu\u00f2 parlare n\u00e9 votare"]},
+  funambolo: {rules:["Il Narratore lancia la moneta in segreto","Testa = immune a qualsiasi morte stanotte","Croce = muore comunque anche se protetto"]},
+  lupi:      {rules:["I Lupi concordano silenziosamente la vittima","Il Lupo Maggiore ha l\u2019ultima parola","Non possono attaccare un altro Lupo"]},
+  veggente:  {rules:["Scopre se il giocatore scelto \u00e8 buono o cattivo","Il Vampiro appare come Lupo","Il Lupo Alpha appare come innocente"]},
+  meretrice: {rules:["Visita un giocatore: quella notte \u00e8 fuori casa","Se visita il Lupo Cucciolo, muore","Se i Lupi attaccano la Meretrice mentre \u00e8 fuori, non trovano nessuno"]},
+  negromante:{rules:["Indica un morto per attivare un\u2019azione speciale la notte successiva","Il giocatore rianimato agisce come zombie","Vince con l\u2019Ordine"]},
+  accusatore:{rules:["Aggiunge voti bonus contro un giocatore nella votazione diurna","Non pu\u00f2 accusare se stesso","L\u2019effetto si accumula notte dopo notte"]},
+  piromane:  {rules:["Segna case in silenzio o accende tutto ci\u00f2 che \u00e8 segnato","Le morti da fuoco sembrano morti normali","Vince solo se \u00e8 l\u2019unico sopravvissuto"]},
+  alchimista:{rules:["Usabile UNA SOLA VOLTA in tutta la partita","Pozione Rossa: sceglie 2 morti, uno resuscita a caso","Pozione Nera: avvelena un vivo (muore la notte dopo, senza protezione)"]},
+  mutaforma: {rules:["Copia il ruolo di un giocatore morto","Acquisisce poteri e condizioni di vittoria del ruolo copiato","Vince con l\u2019Ordine"]},
+  condor:    {rules:["Vede i ruoli di tutti i giocatori morti","Pu\u00f2 comunicare informazioni segrete all\u2019Ordine","Vince con l\u2019Ordine"]},
+  corvo:     {rules:["Aggiunge voti nascosti contro un giocatore ogni notte","Il Narratore annuncia i voti del Corvo durante il giorno","Vince se sopravvive alla fine della partita"]},
+  vampiro:   {rules:["Morde un giocatore: diventa sua Preda (rimane segreto)","Le Prede votano a favore del Vampiro","Vince quando lui + Prede vivi > tutti gli altri vivi"]},
+  araldo:    {rules:["Può agire solo entro la terza notte (poi scade)","Usabile una sola volta: sceglie 2 candidati obbligatori","Dopo aver usato il potere, muore"]},
+};
+
+function App(){
+  useEffect(()=>{const l=document.getElementById('loading');if(l)l.style.display='none';},[]);
+
+  const [sc,setSc]=useState('setup');
+  const [inp,setInp]=useState('');
+  const [vInp,setVInp]=useState('');
+  const [vName,setVName]=useState('');
+  const [names,setNames]=useState([]);
+  const [players,setPlayers]=useState([]);
+  const [ri,setRi]=useState(0);
+  const [rv,setRv]=useState(false);
+  const [round,setRound]=useState(1);
+  const [dist,setDist]=useState(null);
+  const [infoModal,setInfoModal]=useState(null);
+  const [libro,setLibro]=useState(false);
+  const [libroTab,setLibroTab]=useState('tutti');
+
+  // night
+  const [ns,setNs]=useState('lupi');
+  const [gc,setGc]=useState(null);
+  const [wc,setWc]=useState(null);
+  const [vc,setVc]=useState(null);
+  const [vr,setVr]=useState(null);
+  const [mc,setMc]=useState(null);
+  const [ac,setAc]=useState(null);
+  const [cusC,setCusC]=useState(null);
+  const [negC,setNegC]=useState(null);
+  const [negR,setNegR]=useState(null);
+  const [pirC,setPirC]=useState(null);
+  const [accC,setAccC]=useState(null);
+  const [accR,setAccR]=useState(null);
+  const [alchAct,setAlchAct]=useState(null);
+  const [alchT,setAlchT]=useState(null);
+  const [alchTs,setAlchTs]=useState([]);
+  const [mutC,setMutC]=useState(null);
+  const [conC,setConC]=useState(null);
+  const [corC,setCorC]=useState(null);
+  const [seerKill,setSeerKill]=useState(null);
+
+  // flags
+  const [cAlone,setCAlone]=useState(false);
+  const [cFirst,setCFirst]=useState(false);
+  const [pirUsed,setPirUsed]=useState(false);
+  const [alchUsed,setAlchUsed]=useState(false);
+  const [araldoUsed,setAraldoUsed]=useState(false);
+  const [araldoCands,setAraldoCands]=useState([]);  // [idx1, idx2] candidati forzati
+  const [accLast,setAccLast]=useState(-1);
+  const [gesuDeath,setGesuDeath]=useState(null);
+  const [cappKilled,setCappKilled]=useState(false);
+  const [alphaTransf,setAlphaTransf]=useState(false);
+  const [mutRole,setMutRole]=useState(null);
+  const [conRole,setConRole]=useState(null);
+  const [corvoVotes,setCorvoVotes]=useState({});
+  const [orfanoEff,setOrfanoEff]=useState(false);
+  const [silenced,setSilenced]=useState(null);
+  const [avvRm,setAvvRm]=useState(null);
+
+  const [de,setDe]=useState([]);
+  const [vi,setVi]=useState(null);
+  const [win,setWin]=useState(null);
+  const [diceEv,setDiceEv]=useState(null);
+  const [ordineMode,setOrdineMode]=useState(false);
+  const [sindacoIdx,setSindacoIdx]=useState(null);
+  const [sindacoTmp,setSindacoTmp]=useState(null);
+  const [openCats,setOpenCats]=useState({classici:true,extra:false,arcani:false});
+  const [elimConfirm,setElimConfirm]=useState(false);
+  const [showRoles,setShowRoles]=useState(false);
+  const [menuConfirm,setMenuConfirm]=useState(false);
+  // funambolo coin
+  const [funamboloCoin,setFunamboloCoin]=useState(null);
+  const [showStepHint,setShowStepHint]=useState(false);
+  const [dayGuideOpen,setDayGuideOpen]=useState(true); // null | 'testa' | 'croce'
+  // vampiro
+  const [vampPrede,setVampPrede]=useState([]); // array of player indices
+  const [vampC,setVampC]=useState(null);
+  const toggleCat=id=>setOpenCats(p=>({...p,[id]:!p[id]}));
+
+  // ── FIRST-TIME GUIDE ──────────────────────────────────────────────────────
+  const GUIDE_KEY='lupus_guide_v1';
+  const [showGuide,setShowGuide]=useState(()=>{
+    try{return!localStorage.getItem(GUIDE_KEY);}catch(e){return false;}
+  });
+  const [guideStep,setGuideStep]=useState(0);
+  const closeGuide=()=>{
+    try{localStorage.setItem(GUIDE_KEY,'1');}catch(e){}
+    setShowGuide(false);
+  };
+  const GUIDE_STEPS=[
+    {emoji:'🐺',title:'Benvenuto in Lupus in Fabula',
+     body:'Questa app è il tuo alleato come Narratore.\n\nGuidi la partita passo dopo passo, gestisci le notti in silenzio e riveli i ruoli ai giocatori — senza sbagliare nulla.',
+     note:null},
+    {emoji:'🎭',title:'Il tuo ruolo: il Narratore',
+     body:'Tu non giochi — racconti.\n\nDistribuisci i ruoli, chiami i personaggi di notte e annunci gli eventi di giorno. I giocatori si fidano di te.',
+     note:'Tieni il telefono solo tu durante la notte.'},
+    {emoji:'🌙',title:'Come funziona la notte',
+     body:"Ogni notte l'app ti guida passo dopo passo: prima l'Arciere, poi la Guardia, poi i Lupi, la Veggente e così via.\n\nOgni personaggio apre gli occhi in silenzio, compie la sua azione, poi si riaddormenta.",
+     note:"I giocatori non devono vedere lo schermo durante i turni notturni."},
+    {emoji:'☀️',title:'Come funziona il giorno',
+     body:"All'alba l'app mostra gli eventi della notte. Il villaggio discute, accusa e vota chi eliminare.\n\nTu annunci il risultato, poi si ricomincia con una nuova notte.",
+     note:'Sei pronto. Buona partita!'},
+  ];
+  const GuideModal=()=>{
+    const s=GUIDE_STEPS[guideStep];
+    const isLast=guideStep===GUIDE_STEPS.length-1;
+    return(
+      <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.88)',zIndex:800,display:'flex',alignItems:'center',justifyContent:'center',padding:20,backdropFilter:'blur(6px)'}}
+        onClick={closeGuide}>
+        <div style={{background:'#080e1c',border:'1px solid rgba(201,162,39,.28)',borderRadius:20,padding:'32px 24px 24px',maxWidth:360,width:'100%',position:'relative',animation:'fadeUp .3s ease'}}
+          onClick={e=>e.stopPropagation()}>
+          <button onClick={closeGuide} style={{position:'absolute',top:14,right:16,background:'none',border:'none',color:'#4a3820',fontFamily:'Cinzel,serif',fontSize:'.65rem',letterSpacing:'.12em',textTransform:'uppercase',cursor:'pointer',padding:'4px 8px'}}>
+            Salta ✕
+          </button>
+          <div style={{display:'flex',gap:6,justifyContent:'center',marginBottom:24}}>
+            {GUIDE_STEPS.map((_,i)=>(
+              <div key={i} style={{width:i===guideStep?22:7,height:7,borderRadius:4,background:i===guideStep?'#c9a227':i<guideStep?'rgba(201,162,39,.45)':'rgba(255,255,255,.1)',transition:'all .25s'}}/>
+            ))}
+          </div>
+          <div style={{textAlign:'center',marginBottom:20}}>
+            <span style={{fontSize:'3.6rem',display:'block',marginBottom:14,filter:'drop-shadow(0 0 18px rgba(201,162,39,.3))'}}>{s.emoji}</span>
+            <div style={{fontFamily:'Cinzel,serif',fontSize:'1.05rem',color:'#c9a227',marginBottom:14,lineHeight:1.3,fontWeight:600}}>{s.title}</div>
+            <p style={{color:'#9a8870',lineHeight:1.8,fontSize:'.92rem',whiteSpace:'pre-line',fontStyle:'italic'}}>{s.body}</p>
+          </div>
+          {s.note&&(
+            <div style={{background:'rgba(201,162,39,.07)',border:'1px solid rgba(201,162,39,.18)',borderRadius:10,padding:'10px 14px',marginBottom:16,textAlign:'center'}}>
+              <p style={{fontSize:'.83rem',color:'#c9a227',fontStyle:'italic'}}>💡 {s.note}</p>
+            </div>
+          )}
+          <div style={{display:'flex',gap:8}}>
+            {guideStep>0&&(
+              <button onClick={()=>setGuideStep(s=>s-1)} style={{flex:1,fontFamily:'Cinzel,serif',fontSize:'.7rem',letterSpacing:'.1em',textTransform:'uppercase',background:'transparent',border:'1px solid rgba(201,162,39,.22)',borderRadius:8,padding:'12px',color:'#6a5a40',cursor:'pointer'}}>
+                ← Indietro
+              </button>
+            )}
+            <button onClick={isLast?closeGuide:()=>setGuideStep(s=>s+1)}
+              style={{flex:2,fontFamily:'Cinzel,serif',fontSize:'.72rem',letterSpacing:'.1em',textTransform:'uppercase',background:'linear-gradient(145deg,#c9a227 0%,#7a4e08 100%)',border:'none',borderRadius:8,padding:'13px',color:'#0a0700',fontWeight:700,cursor:'pointer',boxShadow:'0 2px 14px rgba(201,162,39,.22)'}}>
+              {isLast?'Inizia! →':'Avanti →'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ── AUDIO ──────────────────────────────────────────────────────────────────
+  const [muted,setMuted]=useState(false);
+  const mutedRef=useRef(false);
+  const bgRef=useRef(null);
+  const sfxTRef=useRef(null);
+  const [scores,setScores]=useState(()=>loadScores());
+  const [showScores,setShowScores]=useState(false);
+  const scoresSavedRef=useRef(false);
+
+  const stopBg=()=>{
+    if(sfxTRef.current){clearTimeout(sfxTRef.current);sfxTRef.current=null;}
+    if(bgRef.current){bgRef.current.pause();bgRef.current=null;}
+  };
+  const playBg=(file,vol=0.35)=>{
+    stopBg();
+    const a=new Audio(file);
+    a.loop=true;a.volume=mutedRef.current?0:vol;
+    a.play().catch(()=>{});
+    bgRef.current=a;
+  };
+  const playSfx=(file,vol=0.75)=>{
+    if(mutedRef.current)return;
+    const a=new Audio(file);a.volume=vol;
+    a.play().catch(()=>{});
+  };
+  useEffect(()=>{
+    mutedRef.current=muted;
+    if(bgRef.current)bgRef.current.volume=muted?0:0.35;
+  },[muted]);
+  useEffect(()=>{
+    if(sc==='night'){
+      playSfx('transition_night.mp3');
+      sfxTRef.current=setTimeout(()=>playBg('night.mp3',0.35),2200);
+    }else if(sc==='day'){
+      playSfx('transition_day.mp3');
+      sfxTRef.current=setTimeout(()=>playBg('day.mp3',0.35),2200);
+    }else if(sc==='roleReveal'){
+      playBg('night.mp3',0.2);
+    }else if(sc==='setup'||sc==='gameOver'||sc==='rolePick'){
+      stopBg();
+    }
+    return()=>{if(sfxTRef.current){clearTimeout(sfxTRef.current);sfxTRef.current=null;}};
+  },[sc]);
+
+  // ── SAVE SCORES on game over ───────────────────────────────────────────────
+  useEffect(()=>{
+    if(sc==='gameOver'&&win&&players.length>0&&!scoresSavedRef.current){
+      scoresSavedRef.current=true;
+      const ns={...scores};
+      players.forEach(p=>{
+        const pts=getPoints(p,win);
+        if(!ns[p.name])ns[p.name]={pts:0,games:0,wins:0};
+        ns[p.name].pts=Math.round((ns[p.name].pts+pts)*10)/10;
+        ns[p.name].games+=1;
+        if(pts>0)ns[p.name].wins+=1;
+      });
+      setScores(ns);
+      saveScores(ns);
+    }
+  },[sc,win]);
+
+  // ── LOAD ──
+  useEffect(()=>{
+    const s=loadGame();if(!s)return;
+    setSc(s.sc||'setup');setNames(s.names||[]);setVName(s.vName||'');
+    setPlayers(s.players||[]);setRi(s.ri||0);setRound(s.round||1);
+    setNs(s.ns||'lupi');setDist(s.dist??null);
+    setGc(s.gc??null);setWc(s.wc??null);setVc(s.vc??null);setVr(s.vr??null);
+    setMc(s.mc??null);setAc(s.ac??null);setCusC(s.cusC??null);
+    setNegC(s.negC??null);setNegR(s.negR??null);
+    setPirC(s.pirC??null);setAccC(s.accC??null);setAccR(s.accR??null);
+    setAlchAct(s.alchAct??null);setAlchT(s.alchT??null);setAlchTs(s.alchTs||[]);
+    setMutC(s.mutC??null);setConC(s.conC??null);setCorC(s.corC??null);
+    setSeerKill(s.seerKill??null);
+    setCAlone(s.cAlone||false);setCFirst(s.cFirst||false);
+    setPirUsed(s.pirUsed||false);setAlchUsed(s.alchUsed||false);
+    setAraldoUsed(s.araldoUsed||false);setAccLast(s.accLast??-1);
+    setGesuDeath(s.gesuDeath??null);setCappKilled(s.cappKilled||false);
+    setAlphaTransf(s.alphaTransf||false);
+    setMutRole(s.mutRole??null);setConRole(s.conRole??null);
+    setCorvoVotes(s.corvoVotes||{});setOrfanoEff(s.orfanoEff||false);
+    setSilenced(s.silenced??null);setAvvRm(s.avvRm??null);
+    setDe(s.de||[]);setVi(s.vi??null);setWin(s.win??null);
+    setOrdineMode(s.ordineMode||false);setSindacoIdx(s.sindacoIdx??null);setShowRoles(s.showRoles||false);
+    setFunamboloCoin(s.funamboloCoin??null);setVampPrede(s.vampPrede||[]);
+    setAraldoCands(s.araldoCands||[]);
+  },[]);
+
+  // ── SAVE ──
+  useEffect(()=>{
+    if(sc==='setup')return;
+    saveGame({sc,names,vName,players,ri,round,ns,dist,gc,wc,vc,vr,mc,ac,cusC,negC,negR,pirC,accC,accR,
+      alchAct,alchT,alchTs,mutC,conC,corC,seerKill,cAlone,cFirst,pirUsed,alchUsed,araldoUsed,accLast,
+      gesuDeath,cappKilled,alphaTransf,mutRole,conRole,corvoVotes,orfanoEff,silenced,avvRm,de,vi,win,
+      ordineMode,sindacoIdx,showRoles,funamboloCoin,vampPrede,araldoCands});
+  },[sc,players,ri,round,ns,gc,wc,vc,vr,mc,ac,cusC,negC,negR,pirC,accC,accR,
+    alchAct,alchT,alchTs,mutC,conC,corC,seerKill,cAlone,cFirst,pirUsed,alchUsed,
+    araldoUsed,accLast,gesuDeath,cappKilled,alphaTransf,mutRole,conRole,corvoVotes,
+    orfanoEff,silenced,de,vi,win,funamboloCoin,vampPrede,araldoCands]);
+
+  const addP=()=>{const n=inp.trim();if(!n||names.length>=20||names.includes(n))return;setNames(p=>[...p,n]);setInp('');};
+
+  const goRolePick=()=>{setVName(vInp.trim()||'il Villaggio');setDist(getSuggestedDist(names.length));setSc('rolePick');};
+
+  const confirmRoles=()=>{
+    const _n=names.length;
+    const _nonV=ROLE_ORDER.filter(k=>k!=='villico').reduce((s,k)=>s+(dist[k]||0),0);
+    const fixedDist={...dist,villico:Math.max(0,_n-_nonV)};
+    const roles=buildRolesFromDist(fixedDist);
+    const ps=names.map((name,i)=>({id:i,name,role:roles[i],alive:true,protected:false}));
+    setPlayers(ps);setRi(0);setRv(false);setRound(1);
+    setCAlone(false);setCFirst(false);setPirUsed(false);setAlchUsed(false);
+    setAraldoUsed(false);setAccLast(-1);setGesuDeath(null);setCappKilled(false);
+    setAlphaTransf(false);setMutRole(null);setConRole(null);
+    setCorvoVotes({});setOrfanoEff(false);setSilenced(null);setAvvRm(null);
+    setSindacoIdx(null);setSindacoTmp(null);setVampPrede([]);setAraldoCands([]);
+    setSc('roleReveal');
+  };
+
+  const newGame=()=>{clearGame();setNames([]);setPlayers([]);setWin(null);setVName('');setVInp('');setOrdineMode(false);setSindacoIdx(null);setSindacoTmp(null);setVampPrede([]);setAraldoCands([]);scoresSavedRef.current=false;setSc('setup');};
+  const replayGame=()=>{clearGame();setPlayers([]);setWin(null);setSindacoIdx(null);setSindacoTmp(null);setOrdineMode(false);scoresSavedRef.current=false;setDist(getSuggestedDist(names.length));setSc('rolePick');};
+
+  const nextReveal=()=>{if(ri+1<players.length){setRi(r=>r+1);setRv(false);}else startNight(players,false,false);};
+
+  const resetNight=()=>{setGc(null);setWc(null);setVc(null);setVr(null);setMc(null);setAc(null);setCusC(null);setNegC(null);setNegR(null);setPirC(null);setAccC(null);setAccR(null);setAlchAct(null);setAlchT(null);setAlchTs([]);setMutC(null);setConC(null);setCorC(null);setSeerKill(null);setFunamboloCoin(null);setVampC(null);setAraldoCands([]);};
+
+  const startNight=(ps,ca,cf)=>{
+    const fr=ps.map(p=>({...p,protected:false}));
+    setPlayers(fr);resetNight();setCAlone(ca);setCFirst(cf);
+    const first=NIGHT_STEPS.find(s=>stepHasPlayer(s,fr))||'lupi';
+    setNs(first);setSc('night');
+  };
+
+  const advance=(doneStep,ps,ov={})=>{
+    const rem=NIGHT_STEPS.slice(NIGHT_STEPS.indexOf(doneStep)+1);
+    const nxt=rem.find(s=>stepHasPlayer(s,ps));
+    if(nxt){setNs(nxt);}else{resolve(ps,ov);}
+  };
+
+  // ── NIGHT CONFIRMS ──
+  const confGuard=()=>{if(gc===null)return;const u=players.map((p,i)=>({...p,protected:i===gc}));setPlayers(u);advance('guardia',u);};
+  const confArc=()=>{advance('arciere',players,{arcT:ac});};
+  const skipArc=()=>{setAc(null);advance('arciere',players,{arcT:null});};
+  const confCus=()=>{if(cusC===null)return;setSilenced(cusC);advance('custode',players);};
+  const skipCus=()=>{advance('custode',players);};
+  const confWolves=(none=false)=>{const t=none?null:wc;advance('lupi',players,{wt:t});};
+  const confSeer=()=>{
+    if(vc===null)return;
+    const role=players[vc].role;const seen=ROLES[role].seerSees;
+    if(role==='criceto')setSeerKill(vc);
+    setVr({idx:vc,role,seen});
+  };
+  const endSeer=()=>{advance('veggente',players);};
+  const confMer=()=>{if(mc===null)return;advance('meretrice',players,{mt:mc});};
+  const skipMer=()=>{setMc(null);advance('meretrice',players,{mt:null});};
+  const confNeg=()=>{if(negC===null)return;setNegR({idx:negC,role:players[negC].role});};
+  const endNeg=()=>{advance('negromante',players);};
+  const confAcc=()=>{
+    if(accC===null)return;
+    const isWolf=ROLES[players[accC].role].wolfTeam;
+    setAccR({idx:accC,isWolf});
+  };
+  const endAcc=()=>{setAccLast(round);advance('accusatore',players,{accRes:accR});};
+  const skipAcc=()=>{advance('accusatore',players);};
+  const confPir=()=>{if(pirC===null)return;setPirUsed(true);advance('piromane',players,{pt:pirC});};
+  const skipPir=()=>{advance('piromane',players);};
+  const confAlchAct=(act)=>{setAlchAct(act);setAlchUsed(true);};
+  const confAlchTarget=()=>{advance('alchimista',players,{aAct:alchAct,aT:alchT,aTs:alchTs});};
+  const skipAlch=()=>{advance('alchimista',players);};
+  const confMut=()=>{if(mutC===null)return;setMutRole(players[mutC].role);advance('mutaforma',players);};
+  const skipMut=()=>{advance('mutaforma',players);};
+  const confCon=()=>{if(conC===null)return;setConRole(players[conC].role);advance('condor',players);};
+  const skipCon=()=>{advance('condor',players);};
+  const confCor=()=>{if(corC===null)return;setCorvoVotes(p=>{const n={...p};n[corC]=(n[corC]||0)+1;return n;});advance('corvo',players);};
+  const skipCor=()=>{advance('corvo',players);};
+  const confVamp=()=>{
+    if(vampC===null)return;
+    setVampPrede(p=>{if(p.includes(vampC))return p;return[...p,vampC];});
+    advance('vampiro',players);
+  };
+  const skipVamp=()=>{advance('vampiro',players);};
+
+  // ── RESOLVE ────────────────────────────────────────────────────────────────
+  const PEACEFUL=['🌙 L\'alba sorge silenziosa. Il villaggio si desta indisturbato.','🌑 La notte scivola via come un segreto non detto.','🍂 Qualcosa si è mosso nel buio... ma all\'alba non manca nessuno.','🌫️ Una notte densa di sussurri, ma nessuna perdita da piangere.','🕯️ Le candele si sono spente una ad una. Il mattino arriva in pace.'];
+
+  const resolve=(curP,ov={})=>{
+    const evs=[];const np=curP.map(p=>({...p}));const dying=new Set();
+    const wolfT=ov.wt!==undefined?ov.wt:wc;
+    const merT=ov.mt!==undefined?ov.mt:mc;
+    const arcT=ov.arcT!==undefined?ov.arcT:ac;
+    const pirT=ov.pt!==undefined?ov.pt:pirC;
+    const accRes=ov.accRes!==undefined?ov.accRes:accR;
+    const aAct=ov.aAct!==undefined?ov.aAct:alchAct;
+    const aT=ov.aT!==undefined?ov.aT:alchT;
+    const aTs=ov.aTs!==undefined?ov.aTs:alchTs;
+    const guardT=np.findIndex(p=>p.protected);
+
+    // block set (arciere)
+    const blocked=arcT!==null&&arcT!==undefined?new Set([arcT]):new Set();
+
+    // meretrice
+    const merIdx=np.findIndex(p=>p.role==='meretrice'&&p.alive);
+    const cricIdx=np.findIndex(p=>p.role==='criceto'&&p.alive);
+    const wolfOnMer=wolfT===merIdx&&merIdx!==-1;
+    let merOnWolf=false,merOnSameAsWolf=false,merOut=false;
+    if(merIdx!==-1&&merT!==null&&merT!==undefined){
+      merOnWolf=ROLES[np[merT].role].wolfTeam;
+      merOnSameAsWolf=merT===wolfT;
+      merOut=true;
+    }
+
+    // wolf attack
+    if(wolfT!==null&&wolfT!==undefined){
+      const isCric=wolfT===cricIdx&&cricIdx!==-1;
+      const isAlpha=np[wolfT]&&np[wolfT].role==='lupoAlpha'&&!alphaTransf&&!blocked.has(wolfT);
+      const isFun=np[wolfT]&&np[wolfT].role==='funambolo';
+      const funTesta=isFun&&funamboloCoin==='testa';
+      const funCroce=isFun&&funamboloCoin==='croce';
+      if(wolfOnMer){/* silent */}
+      else if(isCric){/* silent – criceto survives */}
+      else if(isAlpha){setAlphaTransf(true);/* silent */}
+      else if(funTesta){/* funambolo immune stanotte */}
+      else if(guardT===wolfT&&!funCroce){
+        evs.push({t:'protected',tx:'🛡️ I morsi della notte non hanno trovato carne — qualcuno era sotto protezione.'});
+        if(merOnSameAsWolf&&merIdx!==-1){/* also protected, silent */}
+      }else{
+        if(np[wolfT].role==='contaminato'){
+          dying.add(wolfT);
+          const laIdx=np.findIndex(p=>p.role==='lupoAlpha'&&p.alive);
+          if(laIdx!==-1)dying.add(laIdx);
+        }else{dying.add(wolfT);}
+        if(merOnSameAsWolf&&merIdx!==-1)dying.add(merIdx);
+        if(np[wolfT].role==='orfano')setOrfanoEff(true);
+        if(np[wolfT].role==='cappuccetto')setCappKilled(true);
+      }
+    }
+
+    // meretrice slept with wolf
+    if(merIdx!==-1&&merOut&&merOnWolf&&!wolfOnMer)dying.add(merIdx);
+
+    // veggente kills criceto
+    if(seerKill!==null&&seerKill!==undefined&&np[seerKill]?.alive)dying.add(seerKill);
+
+    // piromane
+    if(pirT!==null&&pirT!==undefined&&np[pirT]){
+      if(ROLES[np[pirT].role].wolfTeam)dying.add(pirT);
+      else{const pIdx=np.findIndex(p=>p.role==='piromane'&&p.alive);if(pIdx!==-1)dying.add(pIdx);}
+    }
+
+    // accusatore
+    if(accRes&&!accRes.isWolf){const aIdx=np.findIndex(p=>p.role==='accusatore'&&p.alive);if(aIdx!==-1)dying.add(aIdx);}
+
+    // alchimista pozione nera (apply poison from PREVIOUS night)
+    np.forEach((p,i)=>{if(p.poisoned&&p.alive){dying.add(i);np[i]={...np[i],poisoned:false};}});
+    // mark new poison
+    if(aAct==='nera'&&aT!==null&&aT!==undefined&&np[aT])np[aT]={...np[aT],poisoned:true};
+    // pozione rossa
+    if(aAct==='rossa'&&aTs.length===2){
+      const chosen=aTs[Math.floor(Math.random()*2)];
+      if(np[chosen]&&!np[chosen].alive){np[chosen]={...np[chosen],alive:true};evs.push({t:'revive',tx:`✨ La magia dell'Alchimista riporta in vita qualcuno… ${np[chosen].name} risorge!`});}
+    }
+
+    // apply deaths
+    dying.forEach(i=>{
+      if(np[i]?.alive){
+        // funambolo testa: immune a qualsiasi morte
+        const funIdx2=np.findIndex(p=>p.role==='funambolo'&&p.alive);
+        if(i===funIdx2&&funamboloCoin==='testa')return;
+        np[i]={...np[i],alive:false};
+        evs.push({t:'death',tx:`💀 ${np[i].name} è stato trovato morto all'alba.`});
+        // Romeo/Giulietta chain
+        if(np[i].role==='romeo'){const gi=np.findIndex(p=>p.role==='giulietta'&&p.alive);if(gi!==-1){np[gi]={...np[gi],alive:false};evs.push({t:'death',tx:`💀 ${np[gi].name} non regge al dolore — muore anche lei.`});}}
+        if(np[i].role==='giulietta'){const ri2=np.findIndex(p=>p.role==='romeo'&&p.alive);if(ri2!==-1){np[ri2]={...np[ri2],alive:false};evs.push({t:'death',tx:`💀 ${np[ri2].name} non regge al dolore — muore anche lui.`});}}
+      }
+    });
+
+    // accusatore reveal
+    if(accRes?.isWolf&&np[accRes.idx]){evs.push({t:'info',tx:`👁️ L'Accusatore rivela: ${np[accRes.idx].name} è un ${ROLES[np[accRes.idx].role].name}!`});}
+
+    if(evs.length===0)evs.push({t:'peaceful',tx:PEACEFUL[Math.floor(Math.random()*PEACEFUL.length)]});
+
+    // cucciolo transform
+    const lupoOk=np.some(p=>p.role==='lupo'&&p.alive);
+    const cucOk=np.some(p=>p.role==='cucciolo'&&p.alive);
+    let nca=cAlone,ncf=false;
+    if(!lupoOk&&cucOk&&!cAlone){nca=true;ncf=true;}
+    else if(cAlone&&cFirst){nca=true;ncf=false;const ci=np.findIndex(p=>p.role==='cucciolo'&&p.alive);if(ci!==-1)np[ci]={...np[ci],role:'lupo'};}
+
+    // lupoAlpha transform
+    if(alphaTransf){const lai=np.findIndex(p=>p.role==='lupoAlpha'&&p.alive);if(lai!==-1){np[lai]={...np[lai],role:'lupo'};setAlphaTransf(false);}}
+
+    // gesù resurrezione
+    if(gesuDeath!==null&&round-gesuDeath>=2){
+      const gi=np.findIndex(p=>p.role==='gesu'&&!p.alive);
+      if(gi!==-1){np[gi]={...np[gi],alive:true};evs.push({t:'revive',tx:`✝️ Miracolo! ${np[gi].name} (Gesù) risorge dalla morte!`});setGesuDeath(null);}
+    }
+
+    setPlayers(np);setDe(evs);setSeerKill(null);setCAlone(nca);setCFirst(ncf);
+    const w=checkWin(np,ordineMode,vampPrede);
+    if(w){setWin(w);setSc('gameOver');}
+    else{setVi(null);setSc('day');}
+  };
+
+  // ── VOTE ────────────────────────────────────────────────────────────────────
+  const elimVote=()=>{
+    if(vi===null)return;
+    let np=players.map((p,i)=>i===vi?{...p,alive:false}:p);
+    const vRole=players[vi].role;
+    if(vRole==='suicida'){setWin('suicida');setPlayers(np);setSc('gameOver');return;}
+    if(vRole==='romeo'){const gi=np.findIndex(p=>p.role==='giulietta'&&p.alive);if(gi!==-1)np[gi]={...np[gi],alive:false};}
+    if(vRole==='giulietta'){const ri2=np.findIndex(p=>p.role==='romeo'&&p.alive);if(ri2!==-1)np[ri2]={...np[ri2],alive:false};}
+    if(vRole==='gesu')setGesuDeath(round);
+    // cappuccetto revival
+    if(cappKilled&&ROLES[vRole].wolfTeam){
+      np=np.map(p=>p.role==='cappuccetto'?{...p,alive:true}:p);
+      setCappKilled(false);
+    }
+    setOrfanoEff(false);setSilenced(null);setAvvRm(null);
+    setPlayers(np);
+    const w=checkWin(np,ordineMode,vampPrede);
+    if(w){setWin(w);setSc('gameOver');}
+    else{
+      setRound(r=>r+1);
+      const la=np.some(p=>p.role==='lupo'&&p.alive),ca2=np.some(p=>p.role==='cucciolo'&&p.alive);
+      let nca=cAlone,ncf=cFirst;
+      if(!la&&ca2&&!cAlone){nca=true;ncf=true;}
+      startNight(np,nca,ncf);
+    }
+  };
+
+  const skipVote=()=>{setOrfanoEff(false);setSilenced(null);setAvvRm(null);setRound(r=>r+1);startNight(players,cAlone,cFirst);};
+
+  // ── DERIVED ────────────────────────────────────────────────────────────────
+  const alive=players.map((p,i)=>({...p,_i:i})).filter(p=>p.alive);
+  const dead=players.map((p,i)=>({...p,_i:i})).filter(p=>!p.alive);
+  // returns true if the arciere has blocked the ONLY alive player of that role
+  const isBlocked=(role)=>{
+    if(ac===null||ac===undefined)return false;
+    const idx=players.findIndex(p=>p.role===role&&p.alive);
+    return idx!==-1&&ac===idx;
+  };
+
+  // ── NIGHT BACK ───────────────────────────────────────────────────────────────
+  const goBackNightStep=()=>{
+    const available=NIGHT_STEPS.filter(s=>stepHasPlayer(s,players));
+    const idx=available.indexOf(ns);
+    if(idx<=0)return;
+    const prev=available[idx-1];
+    setNs(prev);
+    if(prev==='guardia'){setGc(null);setPlayers(ps=>ps.map(p=>({...p,protected:false})));}
+    if(prev==='meretrice')setMc(null);
+    if(prev==='lupi'){setWc(null);}
+    if(prev==='veggente'){setVc(null);setVr(null);}
+    if(prev==='arciere')setAc(null);
+    setShowStepHint(false);
+    if(prev==='custode')setCusC(null);
+    if(prev==='negromante')setNegC(null);
+    if(prev==='accusatore'){setAccC(null);setAccR(null);}
+    if(prev==='piromane')setPirC(null);
+    if(prev==='alchimista'){setAlchT(null);setAlchTs([]);}
+    if(prev==='araldo')setAraldoCands([]);
+    if(prev==='mutaforma')setMutC(null);
+    if(prev==='condor')setConC(null);
+    if(prev==='corvo')setCorC(null);
+  };
+  const canGoBack=()=>{
+    const available=NIGHT_STEPS.filter(s=>stepHasPlayer(s,players));
+    return available.indexOf(ns)>0;
+  };
+
+  // ── NightWrap component ────────────────────────────────────────────────────
+  const NW=({color,emoji,title,children})=>(
+    <div className="app night" style={{'--ni-col':color}}><MuteBtn/><div className="astro moon"/>
+    <div style={{position:'fixed',inset:0,background:`radial-gradient(ellipse 60% 45% at 50% 20%,${color}18 0%,transparent 65%)`,pointerEvents:'none',zIndex:0}}/>
+    {diceEv&&(
+      <div className="dev-bg" onClick={()=>setDiceEv(null)}>
+        <div className="dev-box" onClick={e=>e.stopPropagation()}>
+          <button className="dev-close" onClick={()=>setDiceEv(null)}>✕</button>
+          <span className="dev-icon">{diceEv.icon}</span>
+          <div className="dev-name">{diceEv.name}</div>
+          <div className="dev-when" style={{color:diceEv.color}}>⏱ {diceEv.when} • #{diceEv.id}/6</div>
+          <p className="dev-desc">{diceEv.desc}</p>
+          <button className="btn btn-outline" style={{marginBottom:8}} onClick={()=>setDiceEv(RANDOM_EVENTS[Math.floor(Math.random()*RANDOM_EVENTS.length)])}>🎲 Tira di nuovo</button>
+          <button className="btn btn-gold" onClick={()=>setDiceEv(null)}>Applica questo evento</button>
+        </div>
+      </div>
+    )}
+    <div className="screen fade">
+      <div className="dice-row">
+        <span className="pill">🌙 Notte {round}</span>
+        <div style={{display:'flex',gap:6}}>
+          {canGoBack()&&<button className="dbtn" style={{color:'#a09070',borderColor:'rgba(160,140,90,.3)'}} onClick={goBackNightStep}>← Indietro</button>}
+          <button className="dbtn" onClick={()=>setDiceEv(RANDOM_EVENTS[Math.floor(Math.random()*RANDOM_EVENTS.length)])}>🎲 Dado</button>
+        </div>
+      </div>
+      <div className="night-hdr"><span className="ni-em">{emoji}</span><div className="ni-title">{title}</div></div>
+      {(()=>{
+        // Progress dots: only steps with active players tonight
+        const actSteps=NIGHT_STEPS.filter(s=>s==='lupi'?players.some(p=>(p.role==='lupo'||p.role==='cucciolo')&&p.alive):players.some(p=>p.role===s&&p.alive));
+        const curIdx=actSteps.indexOf(ns);
+        const hint=STEP_HINTS[ns];
+        return(<>
+          {actSteps.length>1&&(
+            <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:5,marginBottom:14,flexWrap:'wrap'}}>
+              {actSteps.map((s,i)=>{
+                const done=i<curIdx, active=i===curIdx;
+                return(<div key={s} title={ROLES[s==='lupi'?'lupo':s]?.name||s} style={{width:active?28:8,height:8,borderRadius:4,background:active?color:done?'rgba(201,162,39,.5)':'rgba(255,255,255,.12)',transition:'all .25s',flexShrink:0}}/>);
+              })}
+              <span style={{fontFamily:'Cinzel,serif',fontSize:'.6rem',letterSpacing:'.12em',color:'#4a3a20',marginLeft:4}}>{curIdx+1}/{actSteps.length}</span>
+            </div>
+          )}
+          {hint&&(
+            <div style={{marginBottom:14}}>
+              <button onClick={()=>setShowStepHint(v=>!v)} style={{display:'flex',alignItems:'center',gap:6,background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.09)',borderRadius:20,padding:'5px 13px',cursor:'pointer',color:'#6a5a3a',fontFamily:'Cinzel,serif',fontSize:'.62rem',letterSpacing:'.1em',textTransform:'uppercase',WebkitTapHighlightColor:'transparent',transition:'border-color .15s',width:'100%',justifyContent:'space-between'}}
+                onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(201,162,39,.3)'}} onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,.09)'}}>
+                <span>📖 Regole del ruolo</span>
+                <span style={{fontSize:'.7rem',transform:showStepHint?'rotate(180deg)':'none',transition:'transform .2s'}}>▼</span>
+              </button>
+              {showStepHint&&(
+                <div style={{marginTop:6,background:'rgba(201,162,39,.05)',border:'1px solid rgba(201,162,39,.14)',borderRadius:10,padding:'12px 14px',animation:'fadeUp .2s ease'}}>
+                  <ul style={{listStyle:'none',padding:0,margin:0}}>
+                    {hint.rules.map((r,i)=>(
+                      <li key={i} style={{display:'flex',gap:8,padding:'4px 0',fontSize:'.86rem',color:'#9a8660',lineHeight:1.5,borderBottom:i<hint.rules.length-1?'1px solid rgba(255,255,255,.04)':'none'}}>
+                        <span style={{color:color,flexShrink:0,marginTop:2}}>•</span><span>{r}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </>);
+      })()}
+      {children}
+      <div className="div"/>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
+        <div className="lbl" style={{marginBottom:0}}>Stato Giocatori</div>
+        <button onClick={()=>setShowRoles(r=>!r)} style={{fontFamily:'Cinzel,serif',fontSize:'.62rem',letterSpacing:'.1em',textTransform:'uppercase',border:'1px solid rgba(200,160,90,.35)',borderRadius:20,padding:'4px 12px',background:showRoles?'rgba(200,160,90,.15)':'transparent',color:showRoles?'#c8a05a':'#6a5a40',cursor:'pointer',transition:'all .15s'}}>
+          {showRoles?'👁 Nascondi':'👁 Ruoli'}
+        </button>
+      </div>
+      <div className="player-grid">
+        {players.map(p=>{
+          const r=ROLES[p.role];
+          return(
+            <div key={p.id} className={`p-tok ${p.alive?'alive':'dead'}`}>
+              {sindacoIdx>=0&&players[sindacoIdx]?.id===p.id&&p.alive&&<span className="pt-sindaco">🏛️</span>}
+              {!p.alive&&<span className="pt-dead-x">✕</span>}
+              <span className="pt-em">{showRoles||!p.alive?r.emoji:'👤'}</span>
+              <span className="pt-name">{p.name}</span>
+              {(showRoles||!p.alive)&&<span className="pt-role" style={{color:r.color}}>{r.name}</span>}
+            </div>
+          );
+        })}
+      </div>
+      <div className="div"/>
+      {!menuConfirm?(
+        <button className="btn btn-outline" style={{color:'#6a5a40',borderColor:'rgba(100,80,50,.3)',fontSize:'.68rem'}} onClick={()=>setMenuConfirm(true)}>↩ Menu Principale</button>
+      ):(
+        <div style={{background:'rgba(192,57,43,.08)',border:'1px solid rgba(192,57,43,.25)',borderRadius:10,padding:'14px 16px'}}>
+          <p style={{fontFamily:'Cinzel,serif',fontSize:'.78rem',color:'#e07060',letterSpacing:'.06em',marginBottom:10}}>⚠️ Tornare al menu? La partita verrà salvata.</p>
+          <div style={{display:'flex',gap:8}}>
+            <button className="btn btn-red" style={{flex:1,padding:'10px'}} onClick={()=>{setMenuConfirm(false);newGame();}}>✓ Conferma</button>
+            <button className="btn btn-outline" style={{flex:1,padding:'10px'}} onClick={()=>setMenuConfirm(false)}>✗ Annulla</button>
+          </div>
+        </div>
+      )}
+    </div></div>
+  );
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ── SETUP ──────────────────────────────────────────────────────────────────
+  // ── SCOREBOARD MODAL ──────────────────────────────────────────────────────
+  const ScoreboardModal=()=>{
+    const sorted=Object.entries(scores).sort((a,b)=>b[1].pts-a[1].pts);
+    const medals=['🥇','🥈','🥉'];
+    const resetScores=()=>{if(window.confirm('Azzerare lo scoreboard?')){const ns={};setScores(ns);saveScores(ns);}};
+    return(
+      <div className="modal-bg" onClick={()=>setShowScores(false)}>
+        <div className="modal fade" onClick={e=>e.stopPropagation()} style={{maxWidth:420,width:'100%'}}>
+          <button className="modal-close" onClick={()=>setShowScores(false)}>✕</button>
+          <div style={{textAlign:'center',marginBottom:20}}>
+            <span style={{fontSize:'2rem',display:'block',marginBottom:6}}>🏆</span>
+            <div style={{fontFamily:'Cinzel Decorative,serif',fontSize:'1.1rem',color:'#c8a05a'}}>Scoreboard</div>
+          </div>
+          {sorted.length===0?(
+            <p style={{textAlign:'center',color:'#5a4a30',fontStyle:'italic',padding:'20px 0'}}>Nessuna partita registrata</p>
+          ):(
+            <div style={{background:'rgba(0,0,0,.3)',borderRadius:10,border:'1px solid rgba(200,160,90,.12)',marginBottom:16,overflow:'hidden'}}>
+              <div style={{display:'flex',padding:'8px 14px',borderBottom:'1px solid rgba(255,255,255,.06)'}}>
+                <span style={{width:22,flexShrink:0}}/>
+                <span style={{flex:1,fontFamily:'Cinzel,serif',fontSize:'.62rem',letterSpacing:'.15em',textTransform:'uppercase',color:'#6a5a40'}}>Giocatore</span>
+                <span style={{width:44,textAlign:'right',flexShrink:0,fontFamily:'Cinzel,serif',fontSize:'.62rem',letterSpacing:'.1em',textTransform:'uppercase',color:'#6a5a40'}}>Punti</span>
+                <span style={{width:72,textAlign:'right',flexShrink:0,fontFamily:'Cinzel,serif',fontSize:'.62rem',letterSpacing:'.1em',textTransform:'uppercase',color:'#6a5a40'}}>Partite</span>
+              </div>
+              {sorted.map(([name,data],i)=>(
+                <div key={name} className="sb-row">
+                  <span className="sb-rank">{medals[i]||`${i+1}.`}</span>
+                  <span className="sb-name">{name}</span>
+                  <span className="sb-pts">{data.pts.toFixed(1)}</span>
+                  <span className="sb-meta">{data.wins}V / {data.games}P</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <button className="btn btn-outline" style={{fontSize:'.7rem',color:'#7a3030',borderColor:'rgba(192,57,43,.3)'}} onClick={resetScores}>🗑️ Azzera Scoreboard</button>
+        </div>
+      </div>
+    );
+  };
+
+  // ── MUTE BUTTON (always visible) ───────────────────────────────────────────
+  const MuteBtn=()=>(
+    <button className="mute-btn" onClick={()=>setMuted(m=>!m)} title={muted?'Attiva audio':'Disattiva audio'}>
+      {muted?'🔇':'🔊'}
+    </button>
+  );
+
+  if(sc==='setup'){
+    const saved=loadGame();
+    return(
+      <div className="app night"><MuteBtn/><div className="astro moon"/>
+      {showGuide&&<GuideModal/>}
+      {infoModal&&<RoleModal roleKey={infoModal} onClose={()=>setInfoModal(null)}/>}
+      {libro&&<LibroMagico onClose={()=>{setLibro(false);setLibroTab('tutti');}} initialCat={libroTab}/>}
+      {showScores&&<ScoreboardModal/>}
+      <div className="screen fade">
+        <h1 className="title glow">Lupus in Fabula</h1>
+        <p className="subtitle">Narratore — Gestione Partita</p>
+        <div style={{position:"absolute",top:14,left:14,display:'flex',alignItems:'center',gap:8}}>
+          <span style={{fontFamily:"Cinzel,serif",fontSize:".55rem",letterSpacing:".12em",color:"#2e2414",textTransform:"uppercase"}}>v2.1</span>
+          <button onClick={()=>{setGuideStep(0);setShowGuide(true);}} title="Guida introduttiva"
+            style={{background:'rgba(201,162,39,.08)',border:'1px solid rgba(201,162,39,.22)',borderRadius:'50%',width:22,height:22,color:'#6a5030',fontFamily:'Cinzel,serif',fontWeight:700,fontSize:'.72rem',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',lineHeight:1}}>?</button>
+        </div>
+        {/* ── TOP BAR: quick access ── */}
+        <div style={{display:'flex',gap:6,marginBottom:18,justifyContent:'center'}}>
+          <button className="btn btn-outline" style={{flex:1,padding:'9px 8px',fontSize:'.68rem',letterSpacing:'.1em'}} onClick={()=>{setLibroTab('regole');setLibro(true);}}>📋 Regole</button>
+          <button className="btn btn-outline" style={{flex:1,padding:'9px 8px',fontSize:'.68rem',letterSpacing:'.1em'}} onClick={()=>{setLibroTab('varianti');setLibro(true);}}>🎭 Varianti</button>
+          <button className="btn btn-outline" style={{padding:'9px 14px',fontSize:'.82rem'}} onClick={()=>setShowScores(true)}>🏆</button>
+        </div>
+        {/* ── SCOREBOARD MINI INLINE ── */}
+        {Object.keys(scores).length>0&&(()=>{
+          const top=Object.entries(scores).sort((a,b)=>b[1].pts-a[1].pts).slice(0,3);
+          const medals=['🥇','🥈','🥉'];
+          return(
+            <div style={{background:'rgba(241,196,15,.04)',border:'1px solid rgba(200,160,90,.15)',borderRadius:10,padding:'8px 12px',marginBottom:16,cursor:'pointer'}} onClick={()=>setShowScores(true)}>
+              <div style={{fontFamily:'Cinzel,serif',fontSize:'.6rem',letterSpacing:'.18em',textTransform:'uppercase',color:'#6a5a40',marginBottom:6}}>🏆 Classifica</div>
+              <div style={{display:'flex',flexDirection:'column',gap:3}}>
+                {top.map(([name,data],i)=>(
+                  <div key={name} style={{display:'flex',alignItems:'center',gap:8,fontSize:'.82rem'}}>
+                    <span style={{width:18,flexShrink:0,fontSize:'.78rem'}}>{medals[i]}</span>
+                    <span style={{flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',color:'#b09070'}}>{name}</span>
+                    <span style={{fontFamily:'Cinzel Decorative,serif',fontSize:'.8rem',color:'#f1c40f',flexShrink:0}}>{data.pts.toFixed(1)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+        {saved&&(
+          <div className="card mb16" style={{borderColor:'rgba(200,160,90,.35)'}}>
+            <div className="lbl mb8">Partita salvata</div>
+            <p style={{fontSize:'.88rem',color:'#a09070',marginBottom:12,fontStyle:'italic'}}>
+              {saved.vName||'Villaggio'} — Giorno {saved.round||1} — {(saved.players||[]).filter(p=>p.alive).length} giocatori vivi
+            </p>
+            <button className="btn btn-gold mb8" onClick={()=>{const s=loadGame();if(!s)return;
+              setSc(s.sc||'setup');setNames(s.names||[]);setVName(s.vName||'');setPlayers(s.players||[]);
+              setRi(s.ri||0);setRound(s.round||1);setNs(s.ns||'lupi');setDist(s.dist??null);
+              setDe(s.de||[]);setVi(s.vi??null);setWin(s.win??null);
+              setCAlone(s.cAlone||false);setCFirst(s.cFirst||false);
+              setPirUsed(s.pirUsed||false);setAlchUsed(s.alchUsed||false);setAraldoUsed(s.araldoUsed||false);
+              setAccLast(s.accLast??-1);setGesuDeath(s.gesuDeath??null);setCappKilled(s.cappKilled||false);
+              setAlphaTransf(s.alphaTransf||false);setMutRole(s.mutRole??null);setConRole(s.conRole??null);
+              setCorvoVotes(s.corvoVotes||{});setOrfanoEff(s.orfanoEff||false);
+              setSilenced(s.silenced??null);setAvvRm(s.avvRm??null);
+            }}>↩ Riprendi Partita</button>
+            <button className="btn btn-outline" onClick={()=>{clearGame();window.location.reload();}}>✕ Elimina Salvataggio</button>
+          </div>
+        )}
+        <div className="lbl">1 · Nome del Villaggio</div>
+        <div className="input-row" style={{marginBottom:20}}>
+          <input type="text" placeholder="Es. Roccaverde..." value={vInp} onChange={e=>setVInp(e.target.value)} maxLength={30}/>
+        </div>
+        <div className="lbl">2 · Aggiungi Giocatori ({names.length}/20)</div>
+        <div className="input-row">
+          <input type="text" placeholder="Nome giocatore..." value={inp} onChange={e=>setInp(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addP()} maxLength={20}/>
+          <button className="btn btn-outline btn-sm" onClick={addP} disabled={!inp.trim()||names.length>=20}>+</button>
+        </div>
+        {names.length>0&&<div className="chips">{names.map((n,i)=><span key={i} className="chip">{n}<button onClick={()=>setNames(p=>p.filter((_,j)=>j!==i))}>✕</button></span>)}</div>}
+        {names.length>0&&names.length<6&&<p className="warn">⚠️ Minimo 6 giocatori ({6-names.length} mancanti)</p>}
+        <button className="btn btn-gold mb8" onClick={goRolePick} disabled={names.length<6}>Configura Ruoli →</button>
+        <button className="btn btn-magic" style={{marginTop:8}} onClick={()=>{setLibroTab('tutti');setLibro(true);}}>📖 Libro Magico</button>
+      </div></div>
+    );
+  }
+
+  // ── ROLE PICK ──────────────────────────────────────────────────────────────
+  if(sc==='rolePick'&&dist){
+    const n=names.length;
+    const nonV=ROLE_ORDER.filter(k=>k!=='villico').reduce((s,k)=>s+(dist[k]||0),0);
+    const villici=n-nonV;
+    const tw=(dist.lupo||0)+(dist.cucciolo||0);
+    const to=n-tw;
+    const valid=tw>=1&&villici>=0&&nonV<=n&&tw<to;
+    const change=(key,delta)=>{
+      if(key==='villico')return;
+      setDist(p=>{
+        const c=p[key]||0,nx=Math.max(0,Math.min(ROLE_MAX[key],c+delta));
+        const u={...p,[key]:nx};
+        if(key==='romeo')u.giulietta=nx;
+        if(key==='giulietta')u.romeo=nx;
+        return u;
+      });
+    };
+    return(
+      <div className="app night"><MuteBtn/><div className="astro moon"/>
+      {infoModal&&<RoleModal roleKey={infoModal} onClose={()=>setInfoModal(null)}/>}
+      <div className="screen fade">
+        <h1 className="title">Configura Ruoli</h1>
+        <p className="subtitle">{vName} — {n} giocatori</p>
+        {/* ── ROLE CATEGORIES ACCORDION ── */}
+        {ROLE_CATS_CONFIG.map(cat=>{
+          const catTotal=cat.roles.reduce((s,k)=>s+(dist[k]||0),0);
+          const isOpen=openCats[cat.id];
+          return(
+            <div key={cat.id} style={{marginBottom:10}}>
+              {/* Header */}
+              <div onClick={()=>toggleCat(cat.id)} className={`cat-hdr${isOpen?' open':''}`}>
+                <div style={{display:'flex',alignItems:'center',gap:10}}>
+                  <span style={{fontFamily:'Cinzel,serif',fontSize:'.82rem',color:'#c8a05a',letterSpacing:'.08em'}}>{cat.label}</span>
+                  {catTotal>0&&<span style={{fontFamily:'Cinzel,serif',fontSize:'.65rem',padding:'2px 8px',borderRadius:10,background:'rgba(200,160,90,.15)',color:'#c8a05a',border:'1px solid rgba(200,160,90,.25)'}}>{catTotal} attivi</span>}
+                </div>
+                <span style={{color:'#6a5a40',fontSize:'.9rem',transform:isOpen?'rotate(180deg)':'none',transition:'transform .2s'}}>▼</span>
+              </div>
+              {/* Body */}
+              {isOpen&&(
+                <div className="cat-body">
+                  {cat.roles.map(key=>{
+                    const r=ROLES[key];
+                    const cnt=dist[key]||0;
+                    return(
+                      <div key={key} className="role-row">
+                        <span style={{fontSize:'1.2rem',marginRight:8}}>{r.emoji}</span>
+                        <span style={{flex:1,fontSize:'.88rem'}}>{r.name}</span>
+                        <button className="ibtn" onClick={e=>{e.stopPropagation();setInfoModal(key);}} style={{marginRight:10}}>i</button>
+                        {key==='giulietta'?(
+                          <span style={{fontFamily:'Cinzel,serif',fontSize:'.78rem',minWidth:80,textAlign:'center',color:'#e91e63',fontStyle:'italic'}}>= Romeo ({cnt})</span>
+                        ):(
+                          <div style={{display:'flex',alignItems:'center'}}>
+                            <button onClick={e=>{e.stopPropagation();change(key,-1);}} className="rr-cnt-btn" style={{borderRadius:'8px 0 0 8px'}}>−</button>
+                            <span className="rr-cnt-val" style={{color:cnt>0?r.color:'var(--text-muted)'}}>{cnt}</span>
+                            <button onClick={e=>{e.stopPropagation();change(key,+1);}} className="rr-cnt-btn" style={{borderRadius:'0 8px 8px 0'}}>+</button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
+        {/* Villici auto */}
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 16px',background:'rgba(255,255,255,.02)',border:'1px solid rgba(255,255,255,.06)',borderRadius:10,marginBottom:14}}>
+          <span style={{display:'flex',alignItems:'center',gap:8}}><span style={{fontSize:'1.2rem'}}>🧑‍🌾</span><span style={{fontSize:'.88rem'}}>{ROLES.villico.name}</span></span>
+          <span style={{fontFamily:'Cinzel,serif',fontSize:'.8rem',color:villici<0?'#e74c3c':'#6a5a40',fontStyle:'italic'}}>auto: {Math.max(0,villici)}</span>
+        </div>
+        {villici<0&&<p className="warn">⚠️ Troppi ruoli speciali! ({Math.abs(villici)} in eccesso)</p>}
+        {tw===0&&<p className="warn">⚠️ Serve almeno 1 Lupo o Cucciolo.</p>}
+        {tw>=to&&tw>0&&<p className="warn">⚠️ I lupi sono troppi rispetto agli altri.</p>}
+        {(()=>{
+          const soloKeys=['suicida','criceto','piromane','corvo','misantropo','vampiro','orfano','funambolo'];
+          const ordineKeys=['veggente','negromante','alchimista','custode','araldo','condor','mutaforma','accusatore'];
+          const tSolo=soloKeys.reduce((s,k)=>s+(dist[k]||0),0);
+          const tOrd=ordineKeys.reduce((s,k)=>s+(dist[k]||0),0);
+          const tVill=Math.max(0,villici);
+          const tAll=tw+tSolo+tOrd+tVill;
+          if(tAll===0)return null;
+          return(<div style={{marginBottom:14}}>
+            <div style={{display:'flex',height:8,borderRadius:4,overflow:'hidden',marginBottom:8}}>
+              {tw>0&&<div style={{flex:tw,background:'#c0392b',opacity:.8}}/>}
+              {tVill>0&&<div style={{flex:tVill,background:'#27ae60',opacity:.7}}/>}
+              {tOrd>0&&<div style={{flex:tOrd,background:'#1abc9c',opacity:.7}}/>}
+              {tSolo>0&&<div style={{flex:tSolo,background:'#9b59b6',opacity:.7}}/>}
+            </div>
+            <div style={{display:'flex',flexWrap:'wrap',gap:'6px 12px',fontSize:'.75rem',fontFamily:'Cinzel,serif',letterSpacing:'.06em'}}>
+              {tw>0&&<span style={{color:'#e74c3c'}}>🐺 {tw} {tw===1?'Lupo':'Lupi'}</span>}
+              {tVill>0&&<span style={{color:'#2ecc71'}}>🧑‍🌾 {tVill} Villici</span>}
+              {tOrd>0&&<span style={{color:'#1abc9c'}}>⚖️ {tOrd} Ordine</span>}
+              {tSolo>0&&<span style={{color:'#9b59b6'}}>🎭 {tSolo} Solisti</span>}
+            </div>
+          </div>);
+        })()}
+        {valid&&<p style={{color:'#2ecc71',fontSize:'.84rem',fontStyle:'italic',marginBottom:12,textAlign:'center'}}>✓ Configurazione valida</p>}
+
+        {/* ── ORDINE MODE TOGGLE ── */}
+        <div style={{background:'rgba(26,188,156,.07)',border:'1px solid rgba(26,188,156,.2)',borderRadius:12,padding:'14px 16px',marginBottom:14}}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:ordineMode?10:0}}>
+            <div>
+              <span style={{fontFamily:'Cinzel,serif',fontSize:'.78rem',color:'#1abc9c',letterSpacing:'.08em'}}>🔮 Modalità Ordine</span>
+              <p style={{fontSize:'.76rem',color:'#5a8070',marginTop:3,fontStyle:'italic'}}>Veggente, Negromante, Alchimista, Custode, Araldo → fazione Ordine</p>
+            </div>
+            <button onClick={()=>setOrdineMode(m=>!m)} style={{fontFamily:'Cinzel,serif',fontSize:'.65rem',letterSpacing:'.1em',textTransform:'uppercase',border:'none',borderRadius:9,padding:'8px 14px',cursor:'pointer',background:ordineMode?'rgba(26,188,156,.25)':'rgba(255,255,255,.06)',color:ordineMode?'#1abc9c':'#6a8070',border:ordineMode?'1px solid rgba(26,188,156,.5)':'1px solid rgba(255,255,255,.1)',transition:'all .2s'}}>
+              {ordineMode?'✓ Attiva':'Off'}
+            </button>
+          </div>
+          {ordineMode&&(
+            <div style={{padding:'8px 10px',background:'rgba(26,188,156,.05)',borderRadius:8,border:'1px solid rgba(26,188,156,.15)'}}>
+              <p style={{fontSize:'.8rem',color:'#1abc9c',fontFamily:'Cinzel,serif',marginBottom:4,letterSpacing:'.06em'}}>Condizione di vittoria Ordine:</p>
+              <p style={{fontSize:'.8rem',color:'#5a8070',fontStyle:'italic',lineHeight:1.6}}>Tutti i Lupi eliminati <strong style={{color:'#1abc9c'}}>E</strong> i membri dell'Ordine in vita superano i Contadini. Min. 3 membri consigliati.</p>
+            </div>
+          )}
+        </div>
+
+        <button className="btn btn-gold mb8" onClick={confirmRoles} disabled={!valid}>Inizia Partita</button>
+        <button className="btn btn-outline mb8" onClick={()=>setSc('setup')}>← Modifica Giocatori</button>
+        <button className="btn btn-outline" onClick={()=>setDist(getSuggestedDist(names.length))}>↺ Reimposta Suggeriti</button>
+      </div></div>
+    );
+  }
+
+  // ── ROLE REVEAL ─────────────────────────────────────────────────────────────
+  if(sc==='roleReveal'){
+    const p=players[ri];const r=ROLES[p.role];
+    const isOrdineRole=ordineMode&&r.isOrdine;
+    const tl=r.soloTeam?'⚖️ Fazione Solitaria':r.wolfTeam?'🐺 Squadra Lupi':r.winsWithWolves?'😒 Vinci coi Lupi':isOrdineRole?'🔮 Ordine':'🏘️ Squadra Villaggio';
+    const tc=r.soloTeam?'#f39c12':r.wolfTeam||r.winsWithWolves?'#e74c3c':isOrdineRole?'#1abc9c':'#2ecc71';
+    return(
+      <div className="app night"><MuteBtn/><div className="astro moon"/>
+      <div className="screen fade">
+        <h1 className="title" style={{fontSize:'1.3rem',marginBottom:4}}>Assegnazione Ruoli</h1>
+        <p className="subtitle" style={{marginBottom:16}}>{vName}</p>
+        <div className="pill-center" style={{marginBottom:20}}>
+          <span className="pill">{ri+1} / {players.length} — {p.name}</span>
+        </div>
+        {!rv?(
+          <div className="reveal-back" onClick={()=>setRv(true)}>
+            <span style={{fontSize:'3.5rem',filter:'blur(2px)',opacity:.5}}>🃏</span>
+            <span className="reveal-hint">Tocca per scoprire il tuo ruolo</span>
+            <span style={{fontSize:'.8rem',color:'#3a2c14',fontStyle:'italic'}}>Assicurati di essere solo tu a guardare</span>
+          </div>
+        ):(
+          <div className="reveal-front" style={{'--role-glow':r.color+'44'}}>
+            <span className="re">{r.emoji}</span>
+            <div className="rn" style={{color:r.color}}>{r.name}</div>
+            <p className="rd">{r.desc}</p>
+            <div className="rt" style={{color:tc,borderColor:tc+'44'}}>{tl}</div>
+          </div>
+        )}
+        <button className="btn btn-gold" onClick={nextReveal} disabled={!rv}>
+          {ri+1===players.length?'🌙 Inizia la Notte':`Passa a ${players[ri+1].name} →`}
+        </button>
+      </div></div>
+    );
+  }
+
+  // ── NIGHT ───────────────────────────────────────────────────────────────────
+  if(sc==='night'){
+    if(ns==='guardia'){
+      const guardIdx=players.findIndex(p=>p.role==='guardia'&&p.alive);
+      const guardBlocked=ac!==null&&ac===guardIdx&&guardIdx!==-1;
+      return(
+        <NW color="#2980b9" emoji="🛡️" title="La Guardia del Corpo si sveglia">
+          {guardBlocked?(
+            <><div className="instr" style={{borderColor:'rgba(39,174,96,.3)',color:'#70a080'}}>🏹 L'Arciere ha bloccato la Guardia. Non può proteggere nessuno stanotte.</div>
+            <button className="btn btn-gold" onClick={()=>advance('guardia',players)}>Continua →</button></>
+          ):(
+            <><div className="instr">La Guardia indica silenziosamente chi proteggere stanotte.</div>
+            <div className="nlbl">Chi protegge?</div>
+            <PList players={alive} sel={gc} onSel={setGc}/>
+            <button className="btn btn-gold" onClick={confGuard} disabled={gc===null}>Conferma Protezione</button></>
+          )}
+        </NW>
+      );
+    }
+
+    if(ns==='arciere') return(
+      <NW color="#27ae60" emoji="🏹" title="L'Arciere si sveglia">
+        <div className="instr">L'Arciere scocca una freccia silenziosa — la persona scelta perde i suoi poteri stanotte.</div>
+        <div className="nlbl">Chi blocca?</div>
+        <PList players={alive.filter(p=>p.role!=='arciere')} sel={ac} onSel={setAc}/>
+        <button className="btn btn-gold mb8" onClick={confArc} disabled={ac===null}>Conferma</button>
+        <button className="btn btn-outline" onClick={skipArc}>Passa senza agire</button>
+      </NW>
+    );
+
+    if(ns==='custode') return(
+      <NW color="#95a5a6" emoji="🤫" title="Il Custode del Silenzio si sveglia">
+        {isBlocked('custode')?(
+          <><div className="instr" style={{borderColor:'rgba(39,174,96,.3)',color:'#70a080'}}>🏹 L'Arciere ha bloccato il Custode. Non può silenziare nessuno stanotte.</div>
+          <button className="btn btn-gold" onClick={skipCus}>Continua →</button></>
+        ):round<2?(
+          <><div className="instr">Il Custode non può ancora agire — il suo potere si attiva dalla seconda notte.</div>
+          <button className="btn btn-gold" onClick={skipCus}>Continua →</button></>
+        ):(
+          <><div className="instr">Il Custode indica chi sarà costretto al silenzio domani.</div>
+          <div className="nlbl">Chi silenziare?</div>
+          <PList players={alive.filter(p=>p.role!=='custode')} sel={cusC} onSel={setCusC}/>
+          <button className="btn btn-gold mb8" onClick={confCus} disabled={cusC===null}>Conferma</button>
+          <button className="btn btn-outline" onClick={skipCus}>Passa senza agire</button></>
+        )}
+      </NW>
+    );
+
+    if(ns==='funambolo'){
+      const flipCoin=()=>{setFunamboloCoin(Math.random()<0.5?'testa':'croce');};
+      return(
+        <NW color="#16a085" emoji="🎪" title="Il Funambolo cammina sul filo">
+          <div className="instr">Il Narratore lancia in segreto la moneta del destino. Il risultato è solo suo.</div>
+          {!funamboloCoin?(
+            <>
+              <div style={{textAlign:'center',padding:'24px 0'}}>
+                <div style={{fontSize:'4rem',marginBottom:16,filter:'drop-shadow(0 0 12px rgba(22,160,133,.6))'}}>🪙</div>
+                <p style={{color:'#5a8070',fontStyle:'italic',fontSize:'.88rem',marginBottom:20}}>Testa = immune a qualsiasi morte stanotte<br/>Croce = muore comunque, anche se protetto</p>
+              </div>
+              <button className="btn btn-gold mb8" style={{background:'rgba(22,160,133,.2)',borderColor:'rgba(22,160,133,.5)',color:'#1abc9c'}} onClick={flipCoin}>🪙 Lancia la Moneta</button>
+            </>
+          ):(
+            <>
+              <div style={{textAlign:'center',padding:'20px 0'}}>
+                <div style={{fontSize:'4rem',marginBottom:12,animation:'fadeUp .4s ease'}}>{funamboloCoin==='testa'?'⭕':'❌'}</div>
+                <div style={{fontFamily:'Cinzel,serif',fontSize:'1.2rem',color:funamboloCoin==='testa'?'#1abc9c':'#e74c3c',marginBottom:8,fontWeight:600}}>
+                  {funamboloCoin==='testa'?'TESTA — Immune!':'CROCE — Vulnerabile!'}
+                </div>
+                <p style={{color:'#5a8070',fontStyle:'italic',fontSize:'.85rem'}}>
+                  {funamboloCoin==='testa'?'Il Funambolo non può morire stanotte.':'Il Funambolo muore anche se protetto dalla Guardia.'}
+                </p>
+              </div>
+              <button className="btn btn-outline mb8" style={{fontSize:'.72rem',color:'#5a8070'}} onClick={flipCoin}>↺ Rilancia</button>
+              <button className="btn btn-gold" onClick={()=>advance('funambolo',players)}>Conferma →</button>
+            </>
+          )}
+        </NW>
+      );
+    }
+
+    if(ns==='lupi'){
+      const lupoOk=players.some(p=>p.role==='lupo'&&p.alive);
+      const cucHere=!lupoOk&&players.some(p=>p.role==='cucciolo'&&p.alive);
+      const cucBlock=cucHere&&cFirst;
+      // Arciere logic: lupoAlpha blocked = no attack; lupo (Lupo Alpha) blocked = no attack; cucciolo-solo blocked = no attack
+      const alphaIdx=players.findIndex(p=>p.role==='lupoAlpha'&&p.alive);
+      const arcBlockedAlpha=ac!==null&&ac===alphaIdx&&alphaIdx!==-1;
+      const arcBlockedLupo=ac!==null&&players[ac]?.role==='lupo';
+      const arcBlockedCucSolo=cucHere&&ac!==null&&players[ac]?.role==='cucciolo';
+      const wolvesBlocked=arcBlockedAlpha||arcBlockedLupo||arcBlockedCucSolo;
+      return(
+        <NW color="#e74c3c" emoji="🐺" title={cucHere?'Il Lupo Cucciolo si sveglia':'I Lupi si svegliano'}>
+          {wolvesBlocked?(
+            <><div className="instr" style={{borderColor:'rgba(39,174,96,.3)',color:'#70a080'}}>🏹 L'Arciere ha bloccato {arcBlockedAlpha?'il Lupo Mannaro':arcBlockedLupo?'il Lupo Alpha':'il Cucciolo'}. Nessun attacco questa notte.</div>
+            <button className="btn btn-gold" onClick={()=>confWolves(true)}>Conferma — nessuna vittima →</button></>
+          ):cucBlock?(
+            <><div className="instr">🐶 Il Cucciolo ha perso il suo branco. Questa notte non riesce ad agire — dalla prossima potrà uccidere.</div>
+            <button className="btn btn-gold" onClick={()=>confWolves(true)}>Notte senza vittima →</button></>
+          ):(
+            <><div className="instr">{cucHere?'Il Cucciolo si è trasformato. Indica la vittima.':'I Lupi si riconoscono e scelgono la vittima in silenzio.'}</div>
+            <div className="nlbl">Chi attaccano i Lupi?</div>
+            <PList players={alive.filter(p=>!ROLES[p.role].wolfTeam&&p.role!=='cucciolo')} sel={wc} onSel={setWc}/>
+            <button className="btn btn-gold mb8" onClick={()=>confWolves(false)} disabled={wc===null}>Conferma Vittima</button>
+            <button className="btn btn-outline" onClick={()=>confWolves(true)}>Nessuna vittima</button></>
+          )}
+        </NW>
+      );
+    }
+
+    if(ns==='veggente') return(
+      <NW color="#9b59b6" emoji="🔮" title="La Veggente si sveglia">
+        {isBlocked('veggente')?(
+          <><div className="instr" style={{borderColor:'rgba(39,174,96,.3)',color:'#70a080'}}>🏹 L'Arciere ha bloccato la Veggente. Non può scrutare nessuno stanotte.</div>
+          <button className="btn btn-gold" onClick={endSeer}>Continua →</button></>
+        ):<><div className="instr">La Veggente scruta l'anima di un giocatore.</div>
+        {vr?(
+          <><div className="vbox fade">
+            <div className="vlbl">Solo per il Narratore</div>
+            <div style={{marginBottom:8,fontSize:'.95rem'}}><strong style={{color:'#c8a05a'}}>{players[vr.idx].name}</strong> appare come...</div>
+            {vr.seen==='criceto'?(
+              <><div style={{fontSize:'2.5rem',marginBottom:8}}>☠️</div>
+              <div style={{color:'#f39c12',fontFamily:'Cinzel,serif',fontWeight:600}}>Creatura Oscura</div>
+              <div style={{fontSize:'.74rem',marginTop:6,color:'#c0392b',fontStyle:'italic'}}>⚠️ Morirà all'alba.</div></>
+            ):(
+              <><div style={{fontSize:'2.5rem',marginBottom:8}}>{vr.seen==='lupo'?'🐺':'🧑‍🌾'}</div>
+              <div style={{color:vr.seen==='lupo'?'#e74c3c':'#2ecc71',fontFamily:'Cinzel,serif',fontWeight:600}}>{vr.seen==='lupo'?'Lupo Mannaro':'Innocente'}</div>
+              {vr.role==='cucciolo'&&<div style={{fontSize:'.74rem',marginTop:6,color:'#6a5a40',fontStyle:'italic'}}>(In realtà è il Lupo Cucciolo)</div>}
+              {vr.role==='incompreso'&&<div style={{fontSize:'.74rem',marginTop:6,color:'#6a5a40',fontStyle:'italic'}}>(In realtà è l'Incompreso — è innocente)</div>}
+              {vr.role==='lupoAlpha'&&<div style={{fontSize:'.74rem',marginTop:6,color:'#6a5a40',fontStyle:'italic'}}>(In realtà è il Lupo Alpha — ancora innocente)</div>}</>
+            )}
+          </div>
+          <p className="muted mb8" style={{textAlign:'center'}}>La Veggente richiude gli occhi</p>
+          <button className="btn btn-gold" onClick={endSeer}>Fine turno →</button></>
+        ):(
+          <><div className="nlbl">Chi scruta?</div>
+          <PList players={alive.filter(p=>p.role!=='veggente')} sel={vc} onSel={setVc}/>
+          <button className="btn btn-gold" onClick={confSeer} disabled={vc===null}>Rivela Identità</button></>
+        )}</>}
+      </NW>
+    );
+
+    if(ns==='meretrice') return(
+      <NW color="#c0392b" emoji="💋" title="La Meretrice si sveglia">
+        {isBlocked('meretrice')?(
+          <><div className="instr" style={{borderColor:'rgba(39,174,96,.3)',color:'#70a080'}}>🏹 L'Arciere ha bloccato la Meretrice. Resta a casa stanotte.</div>
+          <button className="btn btn-gold" onClick={skipMer}>Continua →</button></>
+        ):(
+          <><div className="instr">La Meretrice indica da chi vuole passare la notte.</div>
+          <div className="nlbl">Da chi va?</div>
+          <PList players={alive.filter(p=>p.role!=='meretrice')} sel={mc} onSel={setMc}/>
+          <button className="btn btn-gold mb8" onClick={confMer} disabled={mc===null}>Conferma</button>
+          <button className="btn btn-outline" onClick={skipMer}>Resta a casa stanotte</button></>
+        )}
+      </NW>
+    );
+
+    if(ns==='negromante') return(
+      <NW color="#7f8c8d" emoji="💀" title="Il Negromante si sveglia">
+        {isBlocked('negromante')?(
+          <><div className="instr" style={{borderColor:'rgba(39,174,96,.3)',color:'#70a080'}}>🏹 L'Arciere ha bloccato il Negromante. Non può interrogare i morti stanotte.</div>
+          <button className="btn btn-gold" onClick={()=>{setNegC(null);endNeg();}}>Continua →</button></>
+        ):negR?(
+          <><div className="vbox fade">
+            <div className="vlbl">Solo per il Narratore</div>
+            <div style={{marginBottom:8}}><strong style={{color:'#c8a05a'}}>{players[negR.idx].name}</strong> era...</div>
+            <div style={{fontSize:'2rem',marginBottom:6}}>{ROLES[negR.role].emoji}</div>
+            <div style={{color:ROLES[negR.role].color,fontFamily:'Cinzel,serif',fontWeight:600}}>{ROLES[negR.role].name}</div>
+          </div>
+          <button className="btn btn-gold" onClick={endNeg}>Fine turno →</button></>
+        ):(
+          <>{dead.length===0?(
+            <><div className="instr">Non ci sono ancora morti.</div>
+            <button className="btn btn-gold" onClick={()=>{setNegC(null);endNeg();}}>Continua →</button></>
+          ):(
+            <><div className="nlbl">Quale morto esamina?</div>
+            <PList players={dead} sel={negC} onSel={setNegC}/>
+            <button className="btn btn-gold mb8" onClick={confNeg} disabled={negC===null}>Rivela Ruolo</button>
+            <button className="btn btn-outline" onClick={()=>{setNegC(null);endNeg();}}>Passa senza agire</button></>
+          )}</>
+        )}
+      </NW>
+    );
+
+    if(ns==='accusatore'){
+      const canAct=(round-accLast)>=2||(accLast===-1);
+      return(
+        <NW color="#c0392b" emoji="👉" title="L'Accusatore si sveglia">
+          {isBlocked('accusatore')?(
+            <><div className="instr" style={{borderColor:'rgba(39,174,96,.3)',color:'#70a080'}}>🏹 L'Arciere ha bloccato l'Accusatore. Non può accusare stanotte.</div>
+            <button className="btn btn-gold" onClick={skipAcc}>Continua →</button></>
+          ):!canAct?(
+            <><div className="instr">L'Accusatore deve aspettare ancora una notte.</div>
+            <button className="btn btn-gold" onClick={skipAcc}>Continua →</button></>
+          ):accR?(
+            <><div className="vbox fade">
+              <div className="vlbl">Solo per il Narratore</div>
+              {accR.isWolf?(<><div style={{fontSize:'2rem',marginBottom:6}}>🐺</div><div style={{color:'#e74c3c',fontFamily:'Cinzel,serif',fontWeight:600}}>È un Lupo! Verrà rivelato all'alba.</div></>
+              ):(<><div style={{fontSize:'2rem',marginBottom:6}}>☠️</div><div style={{color:'#e74c3c',fontFamily:'Cinzel,serif',fontWeight:600}}>È innocente. L'Accusatore muore.</div></>)}
+            </div>
+            <button className="btn btn-gold" onClick={endAcc}>Fine turno →</button></>
+          ):(
+            <><div className="instr">L'Accusatore punta il dito. Se sbaglia, paga con la vita.</div>
+            <div className="nlbl">Chi accusa?</div>
+            <PList players={alive.filter(p=>p.role!=='accusatore')} sel={accC} onSel={setAccC}/>
+            <button className="btn btn-gold mb8" onClick={confAcc} disabled={accC===null}>Accusa</button>
+            <button className="btn btn-outline" onClick={skipAcc}>Passa senza agire</button></>
+          )}
+        </NW>
+      );
+    }
+
+    if(ns==='piromane') return(
+      <NW color="#e67e22" emoji="🔥" title="Il Piromane si sveglia">
+        {isBlocked('piromane')?(
+          <><div className="instr" style={{borderColor:'rgba(39,174,96,.3)',color:'#70a080'}}>🏹 L'Arciere ha bloccato il Piromane. Non può incendiare stanotte.</div>
+          <button className="btn btn-gold" onClick={skipPir}>Continua →</button></>
+        ):pirUsed?(
+          <><div className="instr">Il Piromane ha già usato il suo fuoco. Osserva in silenzio.</div>
+          <button className="btn btn-gold" onClick={skipPir}>Continua →</button></>
+        ):(
+          <><div className="instr">Il Piromane può incendiare una casa. Se è un lupo muore lui; se è innocente muore il Piromane.</div>
+          <div className="nlbl">Chi incendia?</div>
+          <PList players={alive.filter(p=>p.role!=='piromane')} sel={pirC} onSel={setPirC}/>
+          <button className="btn btn-gold mb8" onClick={confPir} disabled={pirC===null}>Appicca il fuoco</button>
+          <button className="btn btn-outline" onClick={skipPir}>Passa senza agire</button></>
+        )}
+      </NW>
+    );
+
+    if(ns==='alchimista') return(
+      <NW color="#1abc9c" emoji="⚗️" title="L'Alchimista si sveglia">
+        {isBlocked('alchimista')?(
+          <><div className="instr" style={{borderColor:'rgba(39,174,96,.3)',color:'#70a080'}}>🏹 L'Arciere ha bloccato l'Alchimista. Non può usare pozioni stanotte.</div>
+          <button className="btn btn-gold" onClick={skipAlch}>Continua →</button></>
+        ):alchUsed?(
+          <><div className="instr">L'Alchimista ha già usato la sua pozione.</div>
+          <button className="btn btn-gold" onClick={skipAlch}>Continua →</button></>
+        ):!alchAct?(
+          <><div className="instr">L'Alchimista sceglie quale pozione usare.</div>
+          <button className="btn btn-gold mb8" onClick={()=>confAlchAct('rossa')}>🔴 Pozione Rossa — Resuscita</button>
+          <button className="btn btn-gold mb8" onClick={()=>confAlchAct('nera')}>⚫ Pozione Nera — Avvelena</button>
+          <button className="btn btn-outline" onClick={skipAlch}>Passa senza agire</button></>
+        ):alchAct==='rossa'?(
+          <><div className="instr">Scegli 2 giocatori morti: uno verrà resuscitato a caso.</div>
+          <div className="nlbl">Scegli 2 morti ({alchTs.length}/2)</div>
+          <PList players={dead} sel={alchTs} onSel={setAlchTs} multi={true}/>
+          <button className="btn btn-gold mb8" onClick={confAlchTarget} disabled={alchTs.length!==2}>Usa Pozione</button>
+          <button className="btn btn-outline" onClick={()=>{setAlchAct(null);setAlchUsed(false);}}>← Indietro</button></>
+        ):(
+          <><div className="instr">Scegli un giocatore vivo da avvelenare. Morirà la prossima notte.</div>
+          <div className="nlbl">Chi avvelena?</div>
+          <PList players={alive.filter(p=>p.role!=='alchimista')} sel={alchT} onSel={setAlchT}/>
+          <button className="btn btn-gold mb8" onClick={confAlchTarget} disabled={alchT===null}>Usa Pozione</button>
+          <button className="btn btn-outline" onClick={()=>{setAlchAct(null);setAlchUsed(false);}}>← Indietro</button></>
+        )}
+      </NW>
+    );
+
+    if(ns==='araldo') return(
+      <NW color="#d4ac0d" emoji="📯" title="L'Araldo del Crepuscolo si desta">
+        {isBlocked('araldo')?(
+          <><div className="instr" style={{borderColor:'rgba(39,174,96,.3)',color:'#70a080'}}>🏹 L'Arciere ha bloccato l'Araldo. Non può agire stanotte.</div>
+          <button className="btn btn-gold" onClick={()=>advance('araldo',players)}>Continua →</button></>
+        ):araldoUsed?(
+          <><div className="instr">L'Araldo ha già usato il suo potere. Giace in silenzio.</div>
+          <button className="btn btn-gold" onClick={()=>advance('araldo',players)}>Continua →</button></>
+        ):round>3?(
+          <><div className="instr">Il potere dell'Araldo è scaduto — poteva agire solo entro la terza notte.</div>
+          <button className="btn btn-gold" onClick={()=>advance('araldo',players)}>Continua →</button></>
+        ):(
+          <>
+            <div className="instr">L'Araldo forza il villaggio a scegliere tra due soli candidati per la votazione di oggi. Scegli i due nomi da imporre — poi l'Araldo muore.</div>
+            <div className="nlbl">Primo candidato ({araldoCands.length>=1?players[araldoCands[0]].name:'non scelto'})</div>
+            <PList players={alive.filter(p=>p.role!=='araldo'&&p._i!==araldoCands[1])} sel={araldoCands[0]??null} onSel={i=>{
+              setAraldoCands(prev=>{const n=[...prev];n[0]=i;return n.filter((_,idx)=>idx<2);});
+            }}/>
+            <div className="nlbl" style={{marginTop:8}}>Secondo candidato ({araldoCands.length>=2?players[araldoCands[1]].name:'non scelto'})</div>
+            <PList players={alive.filter(p=>p.role!=='araldo'&&p._i!==araldoCands[0])} sel={araldoCands[1]??null} onSel={i=>{
+              setAraldoCands(prev=>{const n=[...prev];n[1]=i;return n.filter((_,idx)=>idx<2);});
+            }}/>
+            <button className="btn btn-gold mb8" onClick={()=>{
+              setAraldoUsed(true);
+              // l'araldo muore dopo aver usato il potere
+              const np=players.map(p=>p.role==='araldo'?{...p,alive:false}:p);
+              setPlayers(np);
+              advance('araldo',np);
+            }} disabled={araldoCands.length<2}>📯 Attiva il Potere (e muori)</button>
+            <button className="btn btn-outline" onClick={()=>advance('araldo',players)}>Passa senza agire</button>
+          </>
+        )}
+      </NW>
+    );
+
+    if(ns==='mutaforma') return(
+      <NW color="#bdc3c7" emoji="👤" title="Il Mutaforma si sveglia">
+        {isBlocked('mutaforma')?(
+          <><div className="instr" style={{borderColor:'rgba(39,174,96,.3)',color:'#70a080'}}>🏹 L'Arciere ha bloccato il Mutaforma. Non può copiare stanotte.</div>
+          <button className="btn btn-gold" onClick={skipMut}>Continua →</button></>
+        ):round<2?(
+          <><div className="instr">Il Mutaforma non può ancora agire — si attiva dalla seconda notte.</div>
+          <button className="btn btn-gold" onClick={skipMut}>Continua →</button></>
+        ):(
+          <><div className="instr">Il Mutaforma copia i poteri di un giocatore vivo.</div>
+          {mutRole&&<p style={{color:ROLES[mutRole]?.color,fontFamily:'Cinzel,serif',fontSize:'.8rem',marginBottom:10,textAlign:'center'}}>Ruolo attuale: {ROLES[mutRole]?.name}</p>}
+          <div className="nlbl">Chi copia?</div>
+          <PList players={alive.filter(p=>p.role!=='mutaforma')} sel={mutC} onSel={setMutC}/>
+          <button className="btn btn-gold mb8" onClick={confMut} disabled={mutC===null}>Copia</button>
+          <button className="btn btn-outline" onClick={skipMut}>{mutRole?'Mantieni ruolo attuale':'Passa senza agire'}</button></>
+        )}
+      </NW>
+    );
+
+    if(ns==='condor') return(
+      <NW color="#d35400" emoji="🦅" title="Il Condor si sveglia">
+        {isBlocked('condor')?(
+          <><div className="instr" style={{borderColor:'rgba(39,174,96,.3)',color:'#70a080'}}>🏹 L'Arciere ha bloccato il Condor. Non può assorbire stanotte.</div>
+          <button className="btn btn-gold" onClick={skipCon}>Continua →</button></>
+        ):round<2?(
+          <><div className="instr">Il Condor non può ancora agire — si attiva dalla seconda notte.</div>
+          <button className="btn btn-gold" onClick={skipCon}>Continua →</button></>
+        ):dead.length===0?(
+          <><div className="instr">Non ci sono ancora morti da cui assorbire i poteri.</div>
+          <button className="btn btn-gold" onClick={skipCon}>Continua →</button></>
+        ):(
+          <><div className="instr">Il Condor assorbe i poteri di un giocatore morto.</div>
+          {conRole&&<p style={{color:ROLES[conRole]?.color,fontFamily:'Cinzel,serif',fontSize:'.8rem',marginBottom:10,textAlign:'center'}}>Ruolo attuale: {ROLES[conRole]?.name}</p>}
+          <div className="nlbl">Chi assorbe?</div>
+          <PList players={dead} sel={conC} onSel={setConC}/>
+          <button className="btn btn-gold mb8" onClick={confCon} disabled={conC===null}>Assorbi</button>
+          <button className="btn btn-outline" onClick={skipCon}>{conRole?'Mantieni ruolo attuale':'Passa senza agire'}</button></>
+        )}
+      </NW>
+    );
+
+    if(ns==='corvo') return(
+      <NW color="#2c3e50" emoji="🪶" title="Il Corvo gracchia nell'ombra">
+        {isBlocked('corvo')?(
+          <><div className="instr" style={{borderColor:'rgba(39,174,96,.3)',color:'#70a080'}}>🏹 L'Arciere ha bloccato il Corvo. Non può aggiungere voti stanotte.</div>
+          <button className="btn btn-gold" onClick={skipCor}>Continua →</button></>
+        ):(
+          <><div className="instr">Il Corvo aggiunge un voto nascosto. Domani quel giocatore inizierà con un voto in più.</div>
+          <div className="nlbl">Chi colpisce?</div>
+          <PList players={alive.filter(p=>p.role!=='corvo')} sel={corC} onSel={setCorC}/>
+          <button className="btn btn-gold mb8" onClick={confCor} disabled={corC===null}>Aggiungi Voto</button>
+          <button className="btn btn-outline" onClick={skipCor}>Passa senza agire</button></>
+        )}
+      </NW>
+    );
+
+    if(ns==='vampiro'){
+      const alivePrede=vampPrede.filter(i=>players[i]&&players[i].alive);
+      const aliveNotPredaNotVamp=alive.filter(p=>p.role!=='vampiro'&&!vampPrede.includes(p._i));
+      return(
+        <NW color="#6c3483" emoji="🧛" title="Il Vampiro si desta nell'ombra">
+          {isBlocked('vampiro')?(
+            <><div className="instr" style={{borderColor:'rgba(39,174,96,.3)',color:'#70a080'}}>🏹 L'Arciere ha bloccato il Vampiro. Non può mordere stanotte.</div>
+            <button className="btn btn-gold" onClick={skipVamp}>Continua →</button></>
+          ):(
+            <>
+              {alivePrede.length>0&&(
+                <div style={{background:'rgba(108,52,131,.1)',border:'1px solid rgba(108,52,131,.3)',borderRadius:10,padding:'10px 14px',marginBottom:14}}>
+                  <div style={{fontFamily:'Cinzel,serif',fontSize:'.65rem',letterSpacing:'.15em',textTransform:'uppercase',color:'#9b59b6',marginBottom:6}}>🩸 Prede in vita ({alivePrede.length})</div>
+                  <div style={{display:'flex',flexWrap:'wrap',gap:5}}>
+                    {alivePrede.map(i=>(
+                      <span key={i} style={{fontFamily:'Cinzel,serif',fontSize:'.7rem',padding:'3px 9px',borderRadius:10,background:'rgba(108,52,131,.2)',border:'1px solid rgba(108,52,131,.35)',color:'#b080d0'}}>{players[i].name}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="instr">Il Vampiro sceglie chi mordere stanotte. La nuova Preda non lo saprà finché non sarà troppo tardi.</div>
+              <div className="nlbl">Chi morde?</div>
+              <PList players={aliveNotPredaNotVamp} sel={vampC} onSel={setVampC}/>
+              <button className="btn btn-gold mb8" style={{background:'rgba(108,52,131,.2)',borderColor:'rgba(108,52,131,.5)',color:'#b080d0'}} onClick={confVamp} disabled={vampC===null}>🩸 Morde</button>
+              <button className="btn btn-outline" onClick={skipVamp}>Passa senza mordere</button>
+            </>
+          )}
+        </NW>
+      );
+    }
+  }
+
+  // ── DAY ─────────────────────────────────────────────────────────────────────
+  if(sc==='day'){
+    const corvoThisRound=Object.entries(corvoVotes).filter(([i])=>players[i]?.alive);
+    const silName=silenced!==null&&players[silenced]?players[silenced].name:null;
+    const rollDice=()=>setDiceEv(RANDOM_EVENTS[Math.floor(Math.random()*RANDOM_EVENTS.length)]);
+    return(
+      <div className="app day"><MuteBtn/><div className="astro sun"/>
+      {diceEv&&(
+        <div className="dev-bg" onClick={()=>setDiceEv(null)}>
+          <div className="dev-box" onClick={e=>e.stopPropagation()}>
+            <button className="dev-close" onClick={()=>setDiceEv(null)}>✕</button>
+            <span className="dev-icon">{diceEv.icon}</span>
+            <div className="dev-name">{diceEv.name}</div>
+            <div className="dev-when" style={{color:diceEv.color}}>⏱ {diceEv.when} • #{diceEv.id}/6</div>
+            <p className="dev-desc">{diceEv.desc}</p>
+            <button className="btn btn-outline" style={{marginBottom:8}} onClick={()=>setDiceEv(RANDOM_EVENTS[Math.floor(Math.random()*RANDOM_EVENTS.length)])}>🎲 Tira di nuovo</button>
+            <button className="btn btn-gold" onClick={()=>setDiceEv(null)}>Applica questo evento</button>
+          </div>
+        </div>
+      )}
+      <div className="screen fade">
+        <div className="dice-row">
+          <span className="pill" style={{background:'rgba(200,120,20,.12)',borderColor:'rgba(200,120,20,.28)',color:'#d4821a'}}>☀️ Giorno {round}</span>
+          <button className="dbtn" onClick={rollDice}>🎲 Dado</button>
+        </div>
+        <div style={{textAlign:'center',marginBottom:20}}>
+          <span style={{fontSize:'2.8rem',display:'block',marginBottom:6,filter:'drop-shadow(0 0 20px rgba(210,120,10,.35))'}}>☀️</span>
+          <div style={{fontFamily:'Cinzel,serif',fontSize:'1rem',color:'#d4821a',letterSpacing:'.06em'}}>{vName} si sveglia</div>
+        </div>
+        {/* ── GUIDA FASI GIORNO ── */}
+        <div style={{background:'rgba(200,120,10,.05)',border:'1px solid rgba(200,120,10,.14)',borderRadius:10,marginBottom:16,overflow:'hidden'}}>
+          <button onClick={()=>setDayGuideOpen(v=>!v)} style={{display:'flex',alignItems:'center',justifyContent:'space-between',width:'100%',padding:'10px 14px',background:'none',border:'none',cursor:'pointer',WebkitTapHighlightColor:'transparent'}}>
+            <span style={{fontFamily:'Cinzel,serif',fontSize:'.65rem',letterSpacing:'.14em',textTransform:'uppercase',color:'#9a6820'}}>📋 Cosa fare oggi</span>
+            <span style={{color:'#6a4a18',fontSize:'.75rem',transform:dayGuideOpen?'rotate(180deg)':'none',transition:'transform .2s'}}>▼</span>
+          </button>
+          {dayGuideOpen&&(
+            <div style={{padding:'0 14px 12px',display:'flex',flexDirection:'column',gap:5}}>
+              {[
+                {n:1,icon:'🌅',lbl:'Annuncia gli eventi della notte'},
+                {n:2,icon:'🏛️',lbl:round===1?'Eleggi il Sindaco (solo oggi)':'(elezione Sindaco già avvenuta)'},
+                {n:3,icon:'💬',lbl:'Fase di discussione — i giocatori parlano liberamente'},
+                {n:4,icon:'🗳️',lbl:'Votazione: seleziona chi viene eliminato'},
+              ].map(s=>(
+                <div key={s.n} style={{display:'flex',alignItems:'flex-start',gap:9,fontSize:'.84rem',color:'#7a6040',lineHeight:1.4}}>
+                  <span style={{fontFamily:'Cinzel,serif',fontSize:'.68rem',color:'#5a4020',minWidth:16,marginTop:2}}>{s.n}.</span>
+                  <span>{s.icon} {s.lbl}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="lbl mb8">Cosa è successo stanotte</div>
+        {de.map((e,i)=><div key={i} className={`ev ev-${e.t}`}>{e.tx}</div>)}
+        {silName&&<div className="ev ev-info">🤫 <strong>{silName}</strong> è silenziato — non può parlare né votare oggi.</div>}
+        {araldoUsed&&araldoCands.length>=2&&players[araldoCands[0]]&&players[araldoCands[1]]&&(
+          <div className="ev" style={{background:'rgba(212,172,13,.1)',border:'1px solid rgba(212,172,13,.3)'}}>
+            📯 L'Araldo ha parlato! Il villaggio deve scegliere SOLO tra: <strong style={{color:'#d4ac0d'}}>{players[araldoCands[0]].name}</strong> e <strong style={{color:'#d4ac0d'}}>{players[araldoCands[1]].name}</strong>.
+          </div>
+        )}
+        {corvoThisRound.length>0&&<div className="ev ev-info" style={{fontSize:'.82rem'}}>🪶 Voti nascosti del Corvo: {corvoThisRound.map(([i,n])=>`${players[i].name} (+${n})`).join(', ')}<span style={{color:'#4a3a20',display:'block',fontSize:'.75rem',marginTop:4}}>(solo per il Narratore)</span></div>}
+        {orfanoEff&&<div className="ev ev-info">🍵 L'Orfano è morto stanotte — oggi i voti contro Lupi e Misantropo valgono doppio!</div>}
+        <div className="div"/>
+
+        {/* ── ELEZIONE SINDACO (solo Round 1, non ancora eletto) ── */}
+        {round===1&&sindacoIdx===null&&(
+          <div style={{background:'rgba(243,156,18,.07)',border:'1px solid rgba(243,156,18,.2)',borderRadius:12,padding:'14px 16px',marginBottom:14}}>
+            <div className="lbl mb8">🏛️ Elezione del Sindaco</div>
+            <p className="muted mb8">Il villaggio elegge il Sindaco: il suo voto varrà il doppio in ogni votazione.</p>
+            <PList players={alive} sel={sindacoTmp} onSel={setSindacoTmp}/>
+            <button className="btn btn-gold mb8" disabled={sindacoTmp===null} onClick={()=>{setSindacoIdx(sindacoTmp);setSindacoTmp(null);}}>🏛️ Eleggi Sindaco</button>
+            <button className="btn btn-outline" onClick={()=>setSindacoIdx(-1)}>Salta (nessun Sindaco)</button>
+          </div>
+        )}
+
+        {/* Sindaco morto → elezione successore */}
+        {sindacoIdx>=0&&players[sindacoIdx]&&!players[sindacoIdx].alive&&(
+          <div style={{background:'rgba(243,156,18,.07)',border:'1px solid rgba(243,156,18,.2)',borderRadius:12,padding:'14px 16px',marginBottom:14}}>
+            <div className="lbl mb8">🏛️ Il Sindaco è morto</div>
+            <p className="muted mb8">{players[sindacoIdx].name} non è più in vita. Eleggi un successore?</p>
+            <PList players={alive} sel={sindacoTmp} onSel={setSindacoTmp}/>
+            <button className="btn btn-gold mb8" disabled={sindacoTmp===null} onClick={()=>{setSindacoIdx(sindacoTmp);setSindacoTmp(null);}}>🏛️ Eleggi nuovo Sindaco</button>
+            <button className="btn btn-outline" onClick={()=>setSindacoIdx(-1)}>Nessun successore</button>
+          </div>
+        )}
+
+        {/* Sindaco attivo reminder */}
+        {sindacoIdx>=0&&players[sindacoIdx]?.alive&&(
+          <div className="ev ev-info" style={{marginBottom:14}}>🏛️ Sindaco: <strong>{players[sindacoIdx].name}</strong> — il suo voto vale doppio</div>
+        )}
+
+        <div className="lbl mb8">Il Villaggio vota</div>
+        <p className="muted mb16">Dopo la discussione seleziona chi viene eliminato.</p>
+        {players.some(p=>p.role==='avvocato'&&p.alive)&&(
+          <div style={{marginBottom:14}}>
+            <div className="nlbl">⚖️ Avvocato — toglie 1 voto a</div>
+            <PList players={alive} sel={avvRm} onSel={setAvvRm}/>
+            {avvRm!==null&&<p style={{fontSize:'.8rem',color:'#f39c12',fontStyle:'italic',marginBottom:8}}>-1 voto a {players[avvRm].name}</p>}
+          </div>
+        )}
+        <PList players={alive.filter(p=>silenced===null||p._i!==silenced)} sel={vi} onSel={i=>{setVi(i);setElimConfirm(false);}}/>
+        {!elimConfirm?(
+          <button className="btn btn-red mb8" onClick={()=>setElimConfirm(true)} disabled={vi===null}>Elimina dal Voto</button>
+        ):(
+          <div style={{background:'rgba(192,57,43,.1)',border:'1px solid rgba(192,57,43,.3)',borderRadius:10,padding:'14px 16px',marginBottom:8}}>
+            <p style={{fontFamily:'Cinzel,serif',fontSize:'.8rem',color:'#e07060',letterSpacing:'.06em',marginBottom:10}}>
+              ⚠️ Confermi l'eliminazione di <strong>{players[vi]?.name}</strong>?
+            </p>
+            <div style={{display:'flex',gap:8}}>
+              <button className="btn btn-red" style={{flex:1,padding:'10px'}} onClick={()=>{setElimConfirm(false);elimVote();}}>✓ Conferma</button>
+              <button className="btn btn-outline" style={{flex:1,padding:'10px'}} onClick={()=>{setElimConfirm(false);setVi(null);}}>✗ Annulla</button>
+            </div>
+          </div>
+        )}
+        <button className="btn btn-outline" onClick={()=>{setElimConfirm(false);skipVote();}}>Nessuna eliminazione</button>
+        <div className="div"/>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
+          <div className="lbl" style={{marginBottom:0}}>Stato Giocatori</div>
+          <button onClick={()=>setShowRoles(r=>!r)} style={{fontFamily:'Cinzel,serif',fontSize:'.62rem',letterSpacing:'.1em',textTransform:'uppercase',border:'1px solid rgba(200,160,90,.35)',borderRadius:20,padding:'4px 12px',background:showRoles?'rgba(200,160,90,.15)':'transparent',color:showRoles?'#c8a05a':'#6a5a40',cursor:'pointer',transition:'all .15s'}}>
+            {showRoles?'👁 Nascondi Ruoli':'👁 Mostra Ruoli'}
+          </button>
+        </div>
+        <div className="player-grid">
+          {players.map(p=>{
+            const r=ROLES[p.role];
+            return(
+              <div key={p.id} className={`p-tok ${p.alive?'alive':'dead'}`}>
+                {sindacoIdx>=0&&players[sindacoIdx]?.id===p.id&&p.alive&&<span className="pt-sindaco">🏛️</span>}
+                {!p.alive&&<span className="pt-dead-x">✕</span>}
+                <span className="pt-em">{showRoles||!p.alive?r.emoji:'👤'}</span>
+                <span className="pt-name">{p.name}</span>
+                {(showRoles||!p.alive)&&<span className="pt-role" style={{color:r.color}}>{r.name}</span>}
+                {ordineMode&&r.isOrdine&&p.alive&&<span style={{fontSize:'.55rem',fontFamily:'Cinzel,serif',color:'#1abc9c',display:'block',marginTop:2}}>Ordine</span>}
+              </div>
+            );
+          })}
+        </div>
+        <div className="div"/>
+        {!menuConfirm?(
+          <button className="btn btn-outline" style={{color:'#6a5a40',borderColor:'rgba(100,80,50,.3)',fontSize:'.68rem'}} onClick={()=>setMenuConfirm(true)}>↩ Menu Principale</button>
+        ):(
+          <div style={{background:'rgba(192,57,43,.08)',border:'1px solid rgba(192,57,43,.25)',borderRadius:10,padding:'14px 16px'}}>
+            <p style={{fontFamily:'Cinzel,serif',fontSize:'.78rem',color:'#e07060',letterSpacing:'.06em',marginBottom:10}}>⚠️ Tornare al menu? La partita verrà salvata.</p>
+            <div style={{display:'flex',gap:8}}>
+              <button className="btn btn-red" style={{flex:1,padding:'10px'}} onClick={()=>{setMenuConfirm(false);newGame();}}>✓ Conferma</button>
+              <button className="btn btn-outline" style={{flex:1,padding:'10px'}} onClick={()=>setMenuConfirm(false)}>✗ Annulla</button>
+            </div>
+          </div>
+        )}
+      </div></div>
+    );
+  }
+
+  // ── GAME OVER ───────────────────────────────────────────────────────────────
+  if(sc==='gameOver'){
+    const isSui=win==='suicida',isC=win==='criceto',isL=win==='lupi',isO=win==='ordine',isV=win==='vampiro';
+    const em=isSui?'🪦':isC?'🐹':isL?'🐺':isO?'🔮':isV?'🧛':'🏘️';
+    const col=isSui?'#636e72':isC?'#f39c12':isL?'#e74c3c':isO?'#1abc9c':isV?'#6c3483':'#2ecc71';
+    const ttl=isSui?'Il Suicida Vince!':isC?'Il Criceto Mannaro Vince!':isL?'I Lupi Vincono!':isO?"L'Ordine Vince!":isV?'Il Vampiro Regna!':'Il Villaggio Vince!';
+    const sub=isSui?'Voleva solo essere condannato. Finalmente qualcuno lo ha ascoltato.':isC?'La piccola creatura solitaria ha sopravvissuto a tutto.':isL?`I lupi hanno preso il controllo di ${vName}.`:isO?`Le forze mistiche dell'Ordine hanno prevalso su ${vName}.`:isV?`Il Vampiro ha corrotto abbastanza anime. ${vName} è nelle sue mani.`:`${vName} ha sconfitto i lupi e può dormire in pace!`;
+    const winNote=p=>{
+      if(win==='suicida'&&p.role==='suicida'&&!p.alive)return'🏆 Vince';
+      if(win==='lupi'&&(ROLES[p.role].wolfTeam||ROLES[p.role].winsWithWolves)&&p.alive)return'🏆 Vince';
+      if(win==='villici'&&!ROLES[p.role].wolfTeam&&!ROLES[p.role].soloTeam&&!ROLES[p.role].winsWithWolves&&!ROLES[p.role].isOrdine&&p.alive)return'🏆 Vince';
+      if(win==='ordine'&&ROLES[p.role].isOrdine&&p.alive)return'🏆 Vince';
+      if(win==='criceto'&&p.role==='criceto'&&p.alive)return'🏆 Vince';
+      if(win==='vampiro'&&p.role==='vampiro'&&p.alive)return'🏆 Vince';
+      if(win==='vampiro'&&vampPrede.includes(p.id)&&p.alive)return'🩸 Preda';
+      return null;
+    };
+    return(
+      <div className="app"><MuteBtn/><div className="moon"/>
+      {showScores&&<ScoreboardModal/>}
+      <div className="screen fade">
+        <div className="wh">
+          <span className="we">{em}</span>
+          <div className="wt" style={{color:col}}>{ttl}</div>
+          <p className="ws">{sub}</p>
+          {isO&&<div style={{marginTop:12,padding:'10px 14px',background:'rgba(26,188,156,.08)',borderRadius:10,border:'1px solid rgba(26,188,156,.2)'}}><p style={{fontSize:'.8rem',color:'#1abc9c',fontStyle:'italic'}}>I membri dell'Ordine hanno superato i Contadini dopo aver eliminato tutti i Lupi.</p></div>}
+          {isV&&vampPrede.filter(i=>players[i]?.alive).length>0&&(
+            <div style={{marginTop:12,padding:'10px 14px',background:'rgba(108,52,131,.08)',borderRadius:10,border:'1px solid rgba(108,52,131,.25)'}}>
+              <div style={{fontFamily:'Cinzel,serif',fontSize:'.65rem',letterSpacing:'.15em',textTransform:'uppercase',color:'#9b59b6',marginBottom:5}}>🩸 Prede del Vampiro</div>
+              <p style={{fontSize:'.82rem',color:'#b080d0',fontStyle:'italic'}}>{vampPrede.filter(i=>players[i]?.alive).map(i=>players[i].name).join(', ')}</p>
+            </div>
+          )}
+        </div>
+
+        {/* ── PUNTEGGI PARTITA ── */}
+        <div className="div"/>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
+          <div className="lbl" style={{marginBottom:0}}>🪙 Punteggi questa partita</div>
+          <button className="dbtn" onClick={()=>setShowScores(true)}>🏆 Scoreboard</button>
+        </div>
+        {players.map(p=>{
+          const pts=getPoints(p,win);
+          const won=pts>0;
+          return(
+            <div key={p.id} className={`pts-earned${won?' winner':''}`}>
+              <div style={{display:'flex',alignItems:'center',gap:8}}>
+                <span style={{fontSize:'1rem'}}>{ROLES[p.role].emoji}</span>
+                <span style={{textDecoration:!p.alive?'line-through':'none',opacity:!p.alive?.7:1}}>{p.name}</span>
+                <span style={{fontSize:'.75rem',color:ROLES[p.role].color,fontFamily:'Cinzel,serif'}}>{ROLES[p.role].name}</span>
+              </div>
+              <span style={{fontFamily:'Cinzel Decorative,serif',fontSize:won?'1rem':'.85rem',color:won?'#f1c40f':'#4a3a20',flexShrink:0}}>
+                {won?`+${pts.toFixed(1)}`:'0'}
+              </span>
+            </div>
+          );
+        })}
+
+        <div className="div"/>
+        <div className="lbl mb8">Ruoli Rivelati</div>
+        {players.map(p=>{const n=winNote(p);return(
+          <div key={p.id} className={`fr${!p.alive?' fdead':''}`}>
+            <span>{ROLES[p.role].emoji}</span>
+            <span className="fn" style={{textDecoration:!p.alive?'line-through':'none'}}>{p.name}{sindacoIdx>=0&&players[sindacoIdx]?.id===p.id?'  🏛️':''}</span>
+            {n&&<span style={{fontSize:'.7rem',color:'#f1c40f',marginRight:4}}>{n}</span>}
+            <span className="frn" style={{color:isO&&ROLES[p.role].isOrdine?'#1abc9c':ROLES[p.role].color}}>{ROLES[p.role].name}{isO&&ROLES[p.role].isOrdine?' (Ordine)':''}</span>
+          </div>
+        );})}
+        <div style={{marginTop:24,display:'flex',gap:8}}>
+          <button className="btn btn-gold" style={{flex:1}} onClick={replayGame}>🔁 Rigioca</button>
+          <button className="btn btn-outline" style={{flex:1}} onClick={newGame}>🏠 Nuova Partita</button>
+        </div>
+      </div></div>
+    );
+  }
+
+  return null;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
