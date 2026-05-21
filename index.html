@@ -749,6 +749,24 @@ function RoleModal({roleKey,onClose}){
 }
 
 // ─── APP ──────────────────────────────────────────────────────────────────────
+const STEP_HINTS={
+  arciere:   {rules:['Sceglie un giocatore che perde i poteri stanotte','Non può bloccare se stesso','Può scegliere di passare']},
+  guardia:   {rules:['Protegge un giocatore dalla morte notturna','Non può proteggere la stessa persona due notti di fila','Non può proteggere se stesso']},
+  custode:   {rules:['Silenzia un giocatore per tutto il giorno seguente','Non agisce la prima notte','Il bersaglio non può parlare né votare']},
+  funambolo: {rules:['Il Narratore lancia la moneta in segreto','Testa = immune a qualsiasi morte stanotte','Croce = muore comunque anche se protetto']},
+  lupi:      {rules:['I Lupi concordano silenziosamente la vittima','Il Lupo Maggiore ha l'ultima parola','Non possono attaccare un altro Lupo']},
+  veggente:  {rules:['Scopre se il giocatore scelto è buono o cattivo','Il Vampiro appare come Lupo','Il Lupo Alpha appare come innocente']},
+  meretrice: {rules:['Visita un giocatore: quella notte è fuori casa','Se visita il Lupo Cucciolo, muore','Se i Lupi attaccano la Meretrice mentre è fuori, non trovano nessuno']},
+  negromante:{rules:['Indica un morto per attivare un'azione speciale la notte successiva','Il giocatore rianimato agisce come zombie','Vince con l'Ordine']},
+  accusatore:{rules:['Aggiunge voti bonus contro un giocatore nella votazione diurna','Non può accusare se stesso','L'effetto si accumula notte dopo notte']},
+  piromane:  {rules:['Segna case (con fiamma silenziosa) o accende tutto ciò che è segnato','Le morti da fuoco sembrano morti normali','Vince solo se è l'unico sopravvissuto']},
+  alchimista:{rules:['Usabile UNA SOLA VOLTA in tutta la partita','Pozione Rossa: sceglie 2 morti, uno resuscita a caso','Pozione Nera: avvelena un vivo (muore la notte dopo, nessuna protezione)']},
+  mutaforma: {rules:['Copia il ruolo di un giocatore morto','Acquisisce poteri e condizioni di vittoria del ruolo copiato','Vince con l'Ordine']},
+  condor:    {rules:['Vede i ruoli di tutti i giocatori morti','Può comunicare informazioni segrete all'Ordine','Vince con l'Ordine']},
+  corvo:     {rules:['Aggiunge voti nascosti contro un giocatore ogni notte','Il Narratore annuncia i voti del Corvo durante il giorno','Vince se sopravvive alla fine della partita']},
+  vampiro:   {rules:['Morde un giocatore: diventa sua Preda (rimane segreto)','Le Prede votano a favore del Vampiro','Vince quando lui + Prede vivi > tutti gli altri vivi']},
+};
+
 function App(){
   useEffect(()=>{const l=document.getElementById('loading');if(l)l.style.display='none';},[]);
 
@@ -817,7 +835,9 @@ function App(){
   const [showRoles,setShowRoles]=useState(false);
   const [menuConfirm,setMenuConfirm]=useState(false);
   // funambolo coin
-  const [funamboloCoin,setFunamboloCoin]=useState(null); // null | 'testa' | 'croce'
+  const [funamboloCoin,setFunamboloCoin]=useState(null);
+  const [showStepHint,setShowStepHint]=useState(false);
+  const [dayGuideOpen,setDayGuideOpen]=useState(true); // null | 'testa' | 'croce'
   // vampiro
   const [vampPrede,setVampPrede]=useState([]); // array of player indices
   const [vampC,setVampC]=useState(null);
@@ -1176,6 +1196,7 @@ function App(){
     if(prev==='lupi'){setWc(null);}
     if(prev==='veggente'){setVc(null);setVr(null);}
     if(prev==='arciere')setAc(null);
+    setShowStepHint(false);
     if(prev==='custode')setCusC(null);
     if(prev==='negromante')setNegC(null);
     if(prev==='accusatore'){setAccC(null);setAccR(null);}
@@ -1216,6 +1237,43 @@ function App(){
         </div>
       </div>
       <div className="night-hdr"><span className="ni-em">{emoji}</span><div className="ni-title">{title}</div></div>
+      {(()=>{
+        // Progress dots: only steps with active players tonight
+        const actSteps=NIGHT_STEPS.filter(s=>s==='lupi'?players.some(p=>(p.role==='lupo'||p.role==='cucciolo')&&p.alive):players.some(p=>p.role===s&&p.alive));
+        const curIdx=actSteps.indexOf(ns);
+        const hint=STEP_HINTS[ns];
+        return(<>
+          {actSteps.length>1&&(
+            <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:5,marginBottom:14,flexWrap:'wrap'}}>
+              {actSteps.map((s,i)=>{
+                const done=i<curIdx, active=i===curIdx;
+                return(<div key={s} title={ROLES[s==='lupi'?'lupo':s]?.name||s} style={{width:active?28:8,height:8,borderRadius:4,background:active?color:done?'rgba(201,162,39,.5)':'rgba(255,255,255,.12)',transition:'all .25s',flexShrink:0}}/>);
+              })}
+              <span style={{fontFamily:'Cinzel,serif',fontSize:'.6rem',letterSpacing:'.12em',color:'#4a3a20',marginLeft:4}}>{curIdx+1}/{actSteps.length}</span>
+            </div>
+          )}
+          {hint&&(
+            <div style={{marginBottom:14}}>
+              <button onClick={()=>setShowStepHint(v=>!v)} style={{display:'flex',alignItems:'center',gap:6,background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.09)',borderRadius:20,padding:'5px 13px',cursor:'pointer',color:'#6a5a3a',fontFamily:'Cinzel,serif',fontSize:'.62rem',letterSpacing:'.1em',textTransform:'uppercase',WebkitTapHighlightColor:'transparent',transition:'border-color .15s',width:'100%',justifyContent:'space-between'}}
+                onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(201,162,39,.3)'}} onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,.09)'}}>
+                <span>📖 Regole del ruolo</span>
+                <span style={{fontSize:'.7rem',transform:showStepHint?'rotate(180deg)':'none',transition:'transform .2s'}}>▼</span>
+              </button>
+              {showStepHint&&(
+                <div style={{marginTop:6,background:'rgba(201,162,39,.05)',border:'1px solid rgba(201,162,39,.14)',borderRadius:10,padding:'12px 14px',animation:'fadeUp .2s ease'}}>
+                  <ul style={{listStyle:'none',padding:0,margin:0}}>
+                    {hint.rules.map((r,i)=>(
+                      <li key={i} style={{display:'flex',gap:8,padding:'4px 0',fontSize:'.86rem',color:'#9a8660',lineHeight:1.5,borderBottom:i<hint.rules.length-1?'1px solid rgba(255,255,255,.04)':'none'}}>
+                        <span style={{color:color,flexShrink:0,marginTop:2}}>•</span><span>{r}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </>);
+      })()}
       {children}
       <div className="div"/>
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
@@ -1311,6 +1369,7 @@ function App(){
       <div className="screen fade">
         <h1 className="title glow">Lupus in Fabula</h1>
         <p className="subtitle">Narratore — Gestione Partita</p>
+        <div style={{position:"absolute",top:14,left:14,fontFamily:"Cinzel,serif",fontSize:".55rem",letterSpacing:".12em",color:"#2e2414",textTransform:"uppercase"}}>v2.1</div>
         {/* ── TOP BAR: quick access ── */}
         <div style={{display:'flex',gap:6,marginBottom:18,justifyContent:'center'}}>
           <button className="btn btn-outline" style={{flex:1,padding:'9px 8px',fontSize:'.68rem',letterSpacing:'.1em'}} onClick={()=>{setLibroTab('regole');setLibro(true);}}>📋 Regole</button>
@@ -1356,11 +1415,11 @@ function App(){
             <button className="btn btn-outline" onClick={()=>{clearGame();window.location.reload();}}>✕ Elimina Salvataggio</button>
           </div>
         )}
-        <div className="lbl">Nome del Villaggio</div>
+        <div className="lbl">1 · Nome del Villaggio</div>
         <div className="input-row" style={{marginBottom:20}}>
           <input type="text" placeholder="Es. Roccaverde..." value={vInp} onChange={e=>setVInp(e.target.value)} maxLength={30}/>
         </div>
-        <div className="lbl">Aggiungi Giocatori ({names.length}/20)</div>
+        <div className="lbl">2 · Aggiungi Giocatori ({names.length}/20)</div>
         <div className="input-row">
           <input type="text" placeholder="Nome giocatore..." value={inp} onChange={e=>setInp(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addP()} maxLength={20}/>
           <button className="btn btn-outline btn-sm" onClick={addP} disabled={!inp.trim()||names.length>=20}>+</button>
@@ -1447,6 +1506,29 @@ function App(){
         {villici<0&&<p className="warn">⚠️ Troppi ruoli speciali! ({Math.abs(villici)} in eccesso)</p>}
         {tw===0&&<p className="warn">⚠️ Serve almeno 1 Lupo o Cucciolo.</p>}
         {tw>=to&&tw>0&&<p className="warn">⚠️ I lupi sono troppi rispetto agli altri.</p>}
+        {(()=>{
+          const soloKeys=['suicida','criceto','piromane','corvo','misantropo','vampiro','orfano','funambolo'];
+          const ordineKeys=['veggente','negromante','alchimista','custode','araldo','condor','mutaforma','accusatore'];
+          const tSolo=soloKeys.reduce((s,k)=>s+(dist[k]||0),0);
+          const tOrd=ordineKeys.reduce((s,k)=>s+(dist[k]||0),0);
+          const tVill=Math.max(0,villici);
+          const tAll=tw+tSolo+tOrd+tVill;
+          if(tAll===0)return null;
+          return(<div style={{marginBottom:14}}>
+            <div style={{display:'flex',height:8,borderRadius:4,overflow:'hidden',marginBottom:8}}>
+              {tw>0&&<div style={{flex:tw,background:'#c0392b',opacity:.8}}/>}
+              {tVill>0&&<div style={{flex:tVill,background:'#27ae60',opacity:.7}}/>}
+              {tOrd>0&&<div style={{flex:tOrd,background:'#1abc9c',opacity:.7}}/>}
+              {tSolo>0&&<div style={{flex:tSolo,background:'#9b59b6',opacity:.7}}/>}
+            </div>
+            <div style={{display:'flex',flexWrap:'wrap',gap:'6px 12px',fontSize:'.75rem',fontFamily:'Cinzel,serif',letterSpacing:'.06em'}}>
+              {tw>0&&<span style={{color:'#e74c3c'}}>🐺 {tw} {tw===1?'Lupo':'Lupi'}</span>}
+              {tVill>0&&<span style={{color:'#2ecc71'}}>🧑‍🌾 {tVill} Villici</span>}
+              {tOrd>0&&<span style={{color:'#1abc9c'}}>⚖️ {tOrd} Ordine</span>}
+              {tSolo>0&&<span style={{color:'#9b59b6'}}>🎭 {tSolo} Solisti</span>}
+            </div>
+          </div>);
+        })()}
         {valid&&<p style={{color:'#2ecc71',fontSize:'.84rem',fontStyle:'italic',marginBottom:12,textAlign:'center'}}>✓ Configurazione valida</p>}
 
         {/* ── ORDINE MODE TOGGLE ── */}
@@ -1883,6 +1965,28 @@ function App(){
         <div style={{textAlign:'center',marginBottom:20}}>
           <span style={{fontSize:'2.8rem',display:'block',marginBottom:6,filter:'drop-shadow(0 0 20px rgba(210,120,10,.35))'}}>☀️</span>
           <div style={{fontFamily:'Cinzel,serif',fontSize:'1rem',color:'#d4821a',letterSpacing:'.06em'}}>{vName} si sveglia</div>
+        </div>
+        {/* ── GUIDA FASI GIORNO ── */}
+        <div style={{background:'rgba(200,120,10,.05)',border:'1px solid rgba(200,120,10,.14)',borderRadius:10,marginBottom:16,overflow:'hidden'}}>
+          <button onClick={()=>setDayGuideOpen(v=>!v)} style={{display:'flex',alignItems:'center',justifyContent:'space-between',width:'100%',padding:'10px 14px',background:'none',border:'none',cursor:'pointer',WebkitTapHighlightColor:'transparent'}}>
+            <span style={{fontFamily:'Cinzel,serif',fontSize:'.65rem',letterSpacing:'.14em',textTransform:'uppercase',color:'#9a6820'}}>📋 Cosa fare oggi</span>
+            <span style={{color:'#6a4a18',fontSize:'.75rem',transform:dayGuideOpen?'rotate(180deg)':'none',transition:'transform .2s'}}>▼</span>
+          </button>
+          {dayGuideOpen&&(
+            <div style={{padding:'0 14px 12px',display:'flex',flexDirection:'column',gap:5}}>
+              {[
+                {n:1,icon:'🌅',lbl:'Annuncia gli eventi della notte'},
+                {n:2,icon:'🏛️',lbl:round===1?'Eleggi il Sindaco (solo oggi)':'(elezione Sindaco già avvenuta)'},
+                {n:3,icon:'💬',lbl:'Fase di discussione — i giocatori parlano liberamente'},
+                {n:4,icon:'🗳️',lbl:'Votazione: seleziona chi viene eliminato'},
+              ].map(s=>(
+                <div key={s.n} style={{display:'flex',alignItems:'flex-start',gap:9,fontSize:'.84rem',color:'#7a6040',lineHeight:1.4}}>
+                  <span style={{fontFamily:'Cinzel,serif',fontSize:'.68rem',color:'#5a4020',minWidth:16,marginTop:2}}>{s.n}.</span>
+                  <span>{s.icon} {s.lbl}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
         <div className="lbl mb8">Cosa è successo stanotte</div>
         {de.map((e,i)=><div key={i} className={`ev ev-${e.t}`}>{e.tx}</div>)}
