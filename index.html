@@ -865,6 +865,9 @@ function App(){
   const [dayGuideOpen,setDayGuideOpen]=useState(true); // null | 'testa' | 'croce'
   // vampiro
   const [vampPrede,setVampPrede]=useState([]); // array of player indices
+  const [mimicSel,setMimicSel]=useState(null);
+  const [mimicPhase,setMimicPhase]=useState('select');
+  const [mimicData,setMimicData]=useState(null);
   const [vampC,setVampC]=useState(null);
   const toggleCat=id=>setOpenCats(p=>({...p,[id]:!p[id]}));
 
@@ -1058,7 +1061,7 @@ function App(){
 
   const nextReveal=()=>{if(ri+1<players.length){setRi(r=>r+1);setRv(false);}else startNight(players,false,false);};
 
-  const resetNight=()=>{setGc(null);setWc(null);setVc(null);setVr(null);setMc(null);setAc(null);setCusC(null);setNegC(null);setNegR(null);setPirC(null);setAccC(null);setAccR(null);setAlchAct(null);setAlchT(null);setAlchTs([]);setMutC(null);setConC(null);setCorC(null);setSeerKill(null);setFunamboloCoin(null);setVampC(null);setAraldoCands([]);setSuicidaWonInfo(null);};
+  const resetNight=()=>{setGc(null);setWc(null);setVc(null);setVr(null);setMc(null);setAc(null);setCusC(null);setNegC(null);setNegR(null);setPirC(null);setAccC(null);setAccR(null);setAlchAct(null);setAlchT(null);setAlchTs([]);setMutC(null);setConC(null);setCorC(null);setSeerKill(null);setFunamboloCoin(null);setVampC(null);setAraldoCands([]);setSuicidaWonInfo(null);setMimicSel(null);setMimicPhase('select');setMimicData(null);};
 
   const startNight=(ps,ca,cf)=>{
     const fr=ps.map(p=>({...p,protected:false}));
@@ -1634,12 +1637,14 @@ function App(){
                           {advanced&&<span style={{marginLeft:6,fontSize:'.58rem',fontFamily:'Cinzel,serif',color:'#f39c12',border:'1px solid rgba(243,156,18,.35)',borderRadius:4,padding:'1px 5px',letterSpacing:'.05em',verticalAlign:'middle'}}>avanzato</span>}
                         </span>
                         {locked?(
-                          <button onClick={e=>{e.stopPropagation();unlockRole(key);}}
-                            style={{background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.12)',borderRadius:8,padding:'5px 10px',cursor:'pointer',fontSize:'.74rem',color:'#5a4a30',whiteSpace:'nowrap',transition:'all .15s'}}
-                            title="Sblocca questo ruolo avanzato">🔒 Sblocca</button>
+                          (()=>{const dk=DIFFICULTY.medio.roles.has(key)?'medio':'difficile';const di=DIFFICULTY[dk];return(
+                            <button onClick={e=>{e.stopPropagation();unlockRole(key);}}
+                              style={{background:'rgba(255,255,255,.03)',border:`1px solid ${di.color}55`,borderRadius:8,padding:'5px 9px',cursor:'pointer',fontSize:'.64rem',color:di.color,whiteSpace:'nowrap',fontFamily:'Cinzel,serif',letterSpacing:'.04em',opacity:.75}}
+                              title="Clicca per sbloccare">{di.label}</button>
+                          );})()
                         ):(
                           <>
-                            <button className="ibtn" onClick={e=>{e.stopPropagation();setInfoModal(key);}} style={{marginRight:10}}>i</button>
+                            <button className="ibtn" onClick={e=>{e.stopPropagation();setInfoModal(key);}} style={{marginRight:10,fontStyle:'italic',fontFamily:'Georgia,serif',fontWeight:400,fontSize:'.9rem'}}>𝑖</button>
                             {key==='giulietta'?(
                               <span style={{fontFamily:'Cinzel,serif',fontSize:'.78rem',minWidth:80,textAlign:'center',color:'#e91e63',fontStyle:'italic'}}>= Romeo ({cnt})</span>
                             ):(
@@ -1854,6 +1859,7 @@ function App(){
             <button className="btn btn-gold" onClick={()=>confWolves(true)}>Notte senza vittima →</button></>
           ):(
             <><div className="instr">{cucHere?'Il Cucciolo si è trasformato. Indica la vittima.':'I Lupi si riconoscono e scelgono la vittima in silenzio.'}</div>
+            {(()=>{const mIdx=players.findIndex(p=>p.role==='mutaforma'&&p.alive);const cIdx=players.findIndex(p=>p.role==='condor'&&p.alive);const mutW=mutRole&&ROLES[mutRole]?.wolfTeam;const conW=conRole&&ROLES[conRole]?.wolfTeam;return(<>{mutW&&mIdx!==-1&&<div style={{fontSize:'.78rem',color:'#bdc3c7',fontStyle:'italic',marginBottom:8,padding:'6px 10px',background:'rgba(189,195,199,.08)',borderRadius:6,border:'1px solid rgba(189,195,199,.2)'}}>🔄 {players[mIdx].name} (Mutaforma → {ROLES[mutRole].emoji}{ROLES[mutRole].name}) si sveglia con il branco.</div>}{conW&&cIdx!==-1&&<div style={{fontSize:'.78rem',color:'#d35400',fontStyle:'italic',marginBottom:8,padding:'6px 10px',background:'rgba(211,84,0,.08)',borderRadius:6,border:'1px solid rgba(211,84,0,.2)'}}>🦅 {players[cIdx].name} (Condor → {ROLES[conRole].emoji}{ROLES[conRole].name}) si sveglia con il branco.</div>}</>);})()}
             <div className="nlbl">Chi attaccano i Lupi?</div>
             <PList players={alive.filter(p=>!ROLES[p.role].wolfTeam&&p.role!=='cucciolo')} sel={wc} onSel={setWc}/>
             <button className="btn btn-gold mb8" onClick={()=>confWolves(false)} disabled={wc===null}>Conferma Vittima</button>
@@ -2048,46 +2054,206 @@ function App(){
       </NW>
     );
 
-    if(ns==='mutaforma') return(
-      <NW color="#bdc3c7" emoji="👤" title="Il Mutaforma si sveglia">
-        {isBlocked('mutaforma')?(
-          <><div className="instr" style={{borderColor:'rgba(39,174,96,.3)',color:'#70a080'}}>🏹 L'Arciere ha bloccato il Mutaforma. Non può copiare stanotte.</div>
-          <button className="btn btn-gold" onClick={skipMut}>Continua →</button></>
-        ):round<2?(
-          <><div className="instr">Il Mutaforma non può ancora agire — si attiva dalla seconda notte.</div>
-          <button className="btn btn-gold" onClick={skipMut}>Continua →</button></>
-        ):(
-          <><div className="instr">Il Mutaforma copia i poteri di un giocatore vivo.</div>
-          {mutRole&&<p style={{color:ROLES[mutRole]?.color,fontFamily:'Cinzel,serif',fontSize:'.8rem',marginBottom:10,textAlign:'center'}}>Ruolo attuale: {ROLES[mutRole]?.name}</p>}
-          <div className="nlbl">Chi copia?</div>
-          <PList players={alive.filter(p=>p.role!=='mutaforma')} sel={mutC} onSel={setMutC}/>
-          <button className="btn btn-gold mb8" onClick={confMut} disabled={mutC===null}>Copia</button>
-          <button className="btn btn-outline" onClick={skipMut}>{mutRole?'Mantieni ruolo attuale':'Passa senza agire'}</button></>
-        )}
-      </NW>
-    );
 
-    if(ns==='condor') return(
-      <NW color="#d35400" emoji="🦅" title="Il Condor si sveglia">
-        {isBlocked('condor')?(
-          <><div className="instr" style={{borderColor:'rgba(39,174,96,.3)',color:'#70a080'}}>🏹 L'Arciere ha bloccato il Condor. Non può assorbire stanotte.</div>
-          <button className="btn btn-gold" onClick={skipCon}>Continua →</button></>
-        ):round<2?(
-          <><div className="instr">Il Condor non può ancora agire — si attiva dalla seconda notte.</div>
-          <button className="btn btn-gold" onClick={skipCon}>Continua →</button></>
-        ):dead.length===0?(
-          <><div className="instr">Non ci sono ancora morti da cui assorbire i poteri.</div>
-          <button className="btn btn-gold" onClick={skipCon}>Continua →</button></>
-        ):(
-          <><div className="instr">Il Condor assorbe i poteri di un giocatore morto.</div>
-          {conRole&&<p style={{color:ROLES[conRole]?.color,fontFamily:'Cinzel,serif',fontSize:'.8rem',marginBottom:10,textAlign:'center'}}>Ruolo attuale: {ROLES[conRole]?.name}</p>}
-          <div className="nlbl">Chi assorbe?</div>
-          <PList players={dead} sel={conC} onSel={setConC}/>
-          <button className="btn btn-gold mb8" onClick={confCon} disabled={conC===null}>Assorbi</button>
-          <button className="btn btn-outline" onClick={skipCon}>{conRole?'Mantieni ruolo attuale':'Passa senza agire'}</button></>
-        )}
-      </NW>
-    );
+    // ── MIMIC ACTION RENDERER (Mutaforma & Condor) ─────────────────────────────
+    const renderMimicAction=(copiedRole,skipFn,advFn,actLabel)=>{
+      const r=ROLES[copiedRole];
+      if(!r)return(<><div className="instr">Ruolo sconosciuto.</div><button className="btn btn-gold" onClick={skipFn}>Continua →</button></>);
+      const hdr=<p style={{fontSize:'.76rem',color:r.color,fontStyle:'italic',textAlign:'center',marginBottom:10}}>{actLabel} {r.emoji} {r.name}</p>;
+      // Wolf → handled in lupi step
+      if(r.wolfTeam)return(<><div className="instr">Agisce con il branco nel turno dei Lupi.</div>{hdr}<button className="btn btn-gold" onClick={skipFn}>Continua →</button></>);
+      // Powerless roles
+      const powerless=['villico','avvocato','gesu','cappuccetto','romeo','giulietta','orfano','contaminato','misantropo','incompreso','suicida','criceto','lupoAlpha'];
+      if(powerless.includes(copiedRole))return(<><div className="instr">Nessun potere notturno da esercitare.</div>{hdr}<button className="btn btn-gold" onClick={skipFn}>Continua →</button></>);
+      // Funambolo
+      if(copiedRole==='funambolo'){
+        const coin=funamboloCoin!==null?funamboloCoin:null;
+        return(<><div className="instr">Il Funambolo lancia la moneta ogni notte. Risultato di questa notte:<br/><strong style={{color:coin===true?'#2ecc71':coin===false?'#e74c3c':'#c9a227'}}>{coin===true?'🟢 Testa — Protetto':coin===false?'🔴 Croce — Esposto':'⏳ Ancora da lanciare questa notte'}</strong></div>{hdr}<button className="btn btn-gold" onClick={skipFn}>Continua →</button></>);
+      }
+      // Veggente → two-phase
+      if(copiedRole==='veggente'){
+        if(mimicPhase==='result'&&mimicData){
+          const seen=mimicData.seen;
+          return(<><div className="vbox fade"><div className="vlbl">Solo per il Narratore</div>
+            <div style={{marginBottom:8,fontSize:'.95rem'}}><strong style={{color:'#c8a05a'}}>{players[mimicData.idx]?.name}</strong> appare come...</div>
+            <div style={{fontSize:'2.5rem',marginBottom:8}}>{seen==='lupo'?'🐺':'🧑‍🌾'}</div>
+            <div style={{color:seen==='lupo'?'#e74c3c':'#2ecc71',fontFamily:'Cinzel,serif',fontWeight:600}}>{seen==='lupo'?'Lupo Mannaro':'Innocente'}</div>
+            {mimicData.role==='criceto'&&<div style={{fontSize:'.74rem',marginTop:8,color:'#c0392b',fontStyle:'italic',borderTop:'1px solid rgba(192,57,43,.25)',paddingTop:8}}>⚠️ Narratore: è il Criceto — morirà all'alba.</div>}
+          </div>{hdr}
+          <button className="btn btn-gold" onClick={()=>{setMimicPhase('select');setMimicData(null);setMimicSel(null);advFn();}}>Fine turno →</button></>);
+        }
+        return(<><div className="instr">Scruta l'anima di un giocatore.</div>{hdr}
+          <div className="nlbl">Chi scruta?</div>
+          <PList players={alive.filter(p=>p.role!=='mutaforma'&&p.role!=='condor')} sel={mimicSel} onSel={setMimicSel}/>
+          <button className="btn btn-gold" onClick={()=>{if(mimicSel===null)return;const role=players[mimicSel].role;const seen=ROLES[role].seerSees;if(role==='criceto')setSeerKill(mimicSel);setMimicData({idx:mimicSel,role,seen});setMimicPhase('result');}} disabled={mimicSel===null}>Rivela Identità</button></>);
+      }
+      // Negromante → two-phase
+      if(copiedRole==='negromante'){
+        if(mimicPhase==='result'&&mimicData){
+          const dr=ROLES[players[mimicData.idx]?.role];
+          return(<><div className="vbox fade"><div className="vlbl">Solo per il Narratore</div>
+            <div style={{marginBottom:8,fontSize:'.95rem'}}><strong style={{color:'#c8a05a'}}>{players[mimicData.idx]?.name}</strong> in vita era...</div>
+            <div style={{fontSize:'2.5rem',marginBottom:8}}>{dr?.emoji}</div>
+            <div style={{color:dr?.color,fontFamily:'Cinzel,serif',fontWeight:600}}>{dr?.name}</div>
+          </div>{hdr}
+          <button className="btn btn-gold" onClick={()=>{setMimicPhase('select');setMimicData(null);setMimicSel(null);advFn();}}>Fine turno →</button></>);
+        }
+        return(<><div className="instr">Evoca lo spirito di un morto per scoprirne il ruolo.</div>{hdr}
+          <div className="nlbl">Chi evoca?</div>
+          <PList players={dead} sel={mimicSel} onSel={setMimicSel}/>
+          <button className="btn btn-gold" onClick={()=>{if(mimicSel===null||!dead.length)return;setMimicData({idx:mimicSel});setMimicPhase('result');}} disabled={mimicSel===null||!dead.length}>Evoca Spirito</button></>);
+      }
+      // Accusatore → two-phase
+      if(copiedRole==='accusatore'){
+        if(mimicPhase==='result'&&mimicData){
+          const isW=mimicData.isWolf;
+          return(<><div className="vbox fade"><div className="vlbl">Solo per il Narratore</div>
+            <div style={{marginBottom:8,fontSize:'.95rem'}}><strong style={{color:'#c8a05a'}}>{players[mimicData.idx]?.name}</strong>...</div>
+            {isW?(<><div style={{fontSize:'2rem',marginBottom:6}}>🐺</div><div style={{color:'#e74c3c',fontFamily:'Cinzel,serif',fontWeight:600}}>È un Lupo! Viene rivelato domani.</div></>):
+              (<><div style={{fontSize:'2rem',marginBottom:6}}>☠️</div><div style={{color:'#9a8870',fontFamily:'Cinzel,serif',fontWeight:600}}>Innocente — l'Accusatore sarebbe morto.</div></>)}
+          </div>{hdr}
+          <button className="btn btn-gold" onClick={()=>{setMimicPhase('select');setMimicData(null);setMimicSel(null);advFn();}}>Continua →</button></>);
+        }
+        return(<><div className="instr">Accusa un giocatore — scopre se è Lupo o innocente (con conseguenze).</div>{hdr}
+          <div className="nlbl">Chi accusa?</div>
+          <PList players={alive.filter(p=>p.role!=='mutaforma'&&p.role!=='condor')} sel={mimicSel} onSel={setMimicSel}/>
+          <button className="btn btn-gold" onClick={()=>{if(mimicSel===null)return;setMimicData({idx:mimicSel,isWolf:ROLES[players[mimicSel].role].wolfTeam});setMimicPhase('result');}} disabled={mimicSel===null}>Accusa</button></>);
+      }
+      // Guardia → protect
+      if(copiedRole==='guardia'){
+        if(mimicPhase==='result'&&mimicData)return(<><div className="instr">✅ <strong>{players[mimicData.idx]?.name}</strong> è protetto stanotte.</div>{hdr}<button className="btn btn-gold" onClick={()=>{setMimicPhase('select');setMimicData(null);setMimicSel(null);advFn();}}>Continua →</button></>);
+        return(<><div className="instr">Protegge silenziosamente un giocatore.</div>{hdr}
+          <div className="nlbl">Chi protegge?</div>
+          <PList players={alive.filter(p=>p.role!=='mutaforma'&&p.role!=='condor')} sel={mimicSel} onSel={setMimicSel}/>
+          <button className="btn btn-gold" onClick={()=>{if(mimicSel===null)return;setPlayers(ps=>ps.map((p,i)=>({...p,protected:i===mimicSel?true:p.protected})));setMimicData({idx:mimicSel});setMimicPhase('result');}} disabled={mimicSel===null}>Conferma Protezione</button></>);
+      }
+      // Custode → silence
+      if(copiedRole==='custode'){
+        if(mimicPhase==='result'&&mimicData)return(<><div className="instr">🤫 <strong>{players[mimicData.idx]?.name}</strong> sarà silenziato domani.</div>{hdr}<button className="btn btn-gold" onClick={()=>{setMimicPhase('select');setMimicData(null);setMimicSel(null);advFn();}}>Continua →</button></>);
+        return(<><div className="instr">Silenzia un giocatore: non potrà parlare né votare domani.</div>{hdr}
+          <div className="nlbl">Chi silenzia?</div>
+          <PList players={alive.filter(p=>p.role!=='mutaforma'&&p.role!=='condor')} sel={mimicSel} onSel={setMimicSel}/>
+          <button className="btn btn-gold" onClick={()=>{if(mimicSel===null)return;setSilenced(mimicSel);setMimicData({idx:mimicSel});setMimicPhase('result');}} disabled={mimicSel===null}>Silenzia</button></>);
+      }
+      // Corvo → add hidden vote
+      if(copiedRole==='corvo'){
+        if(mimicPhase==='result'&&mimicData)return(<><div className="instr">🪶 Voto nascosto aggiunto contro <strong>{players[mimicData.idx]?.name}</strong>.</div>{hdr}<button className="btn btn-gold" onClick={()=>{setMimicPhase('select');setMimicData(null);setMimicSel(null);advFn();}}>Continua →</button></>);
+        return(<><div className="instr">Aggiunge un voto nascosto contro un giocatore.</div>{hdr}
+          <div className="nlbl">Chi colpisce?</div>
+          <PList players={alive.filter(p=>p.role!=='mutaforma'&&p.role!=='condor')} sel={mimicSel} onSel={setMimicSel}/>
+          <button className="btn btn-gold" onClick={()=>{if(mimicSel===null)return;setCorvoVotes(cv=>({...cv,[mimicSel]:(cv[mimicSel]||0)+1}));setMimicData({idx:mimicSel});setMimicPhase('result');}} disabled={mimicSel===null}>Aggiungi Voto</button></>);
+      }
+      // Vampiro → bite
+      if(copiedRole==='vampiro'){
+        if(mimicPhase==='result'&&mimicData)return(<><div className="instr">🧛 <strong>{players[mimicData.idx]?.name}</strong> è stata morsa — è una nuova Preda.</div>{hdr}<button className="btn btn-gold" onClick={()=>{setMimicPhase('select');setMimicData(null);setMimicSel(null);advFn();}}>Continua →</button></>);
+        const bitable=alive.filter(p=>p.role!=='mutaforma'&&p.role!=='condor'&&p.role!=='vampiro'&&!vampPrede.includes(p._i));
+        return(<><div className="instr">Morde una vittima che diventa sua Preda segreta.</div>{hdr}
+          <div className="nlbl">Chi morde?</div>
+          <PList players={bitable} sel={mimicSel} onSel={setMimicSel}/>
+          <button className="btn btn-gold mb8" onClick={()=>{if(mimicSel===null)return;setVampPrede(vp=>[...vp,mimicSel]);setMimicData({idx:mimicSel});setMimicPhase('result');}} disabled={mimicSel===null}>Mordi</button>
+          <button className="btn btn-outline" onClick={skipFn}>Passa senza mordere</button></>);
+      }
+      // Arciere → narrator note
+      if(copiedRole==='arciere'){
+        if(mimicPhase==='result'&&mimicData)return(<><div className="instr">🏹 <strong>{players[mimicData.idx]?.name}</strong> è bloccato stanotte (il Narratore gestisce gli effetti).</div>{hdr}<button className="btn btn-gold" onClick={()=>{setMimicPhase('select');setMimicData(null);setMimicSel(null);advFn();}}>Continua →</button></>);
+        return(<><div className="instr">Blocca i poteri di un giocatore stanotte (il Narratore gestisce gli effetti).</div>{hdr}
+          <div className="nlbl">Chi blocca?</div>
+          <PList players={alive.filter(p=>p.role!=='mutaforma'&&p.role!=='condor')} sel={mimicSel} onSel={setMimicSel}/>
+          <button className="btn btn-gold" onClick={()=>{if(mimicSel===null)return;setMimicData({idx:mimicSel});setMimicPhase('result');}} disabled={mimicSel===null}>Conferma</button></>);
+      }
+      // Meretrice → narrator note
+      if(copiedRole==='meretrice'){
+        return(<><div className="instr">Visita qualcuno stanotte — il Narratore gestisce gli effetti.</div>{hdr}
+          <div className="nlbl">Chi visita?</div>
+          <PList players={alive.filter(p=>p.role!=='mutaforma'&&p.role!=='condor')} sel={mimicSel} onSel={setMimicSel}/>
+          <button className="btn btn-gold mb8" onClick={()=>{setMimicSel(null);advFn();}} disabled={mimicSel===null}>Azione compiuta →</button>
+          <button className="btn btn-outline" onClick={skipFn}>Passa senza agire</button></>);
+      }
+      // Alchimista → narrator note
+      if(copiedRole==='alchimista'){
+        return(<><div className="instr">Usa la pozione (Rossa o Nera) — il Narratore gestisce l'effetto.</div>{hdr}
+          <button className="btn btn-gold mb8" onClick={()=>advFn()}>Pozione usata →</button>
+          <button className="btn btn-outline" onClick={skipFn}>Passa senza usarla</button></>);
+      }
+      // Piromane → narrator note
+      if(copiedRole==='piromane'){
+        return(<><div className="instr">Può incendiare una casa (una volta per partita) — il Narratore gestisce.</div>{hdr}
+          <div className="nlbl">Chi incendia (opzionale)?</div>
+          <PList players={alive.filter(p=>p.role!=='mutaforma'&&p.role!=='condor')} sel={mimicSel} onSel={setMimicSel}/>
+          <button className="btn btn-gold mb8" onClick={()=>advFn()}>Azione compiuta →</button>
+          <button className="btn btn-outline" onClick={skipFn}>Passa senza agire</button></>);
+      }
+      // Araldo → narrator note
+      if(copiedRole==='araldo'){
+        return(<><div className="instr">Forza il voto tra due candidati (una volta per partita) — il Narratore gestisce.</div>{hdr}
+          <button className="btn btn-gold" onClick={()=>advFn()}>Azione compiuta →</button></>);
+      }
+      // Fallback
+      return(<><div className="instr">Agisce come <strong style={{color:r.color}}>{r.name}</strong>. Il Narratore gestisce.</div>{hdr}
+        <button className="btn btn-gold mb8" onClick={()=>advFn()}>Azione compiuta →</button>
+        <button className="btn btn-outline" onClick={skipFn}>Passa senza agire</button></>);
+    };
+
+    if(ns==='mutaforma'){
+      const mutIsWolf=mutRole&&ROLES[mutRole]?.wolfTeam;
+      return(
+        <NW color="#bdc3c7" emoji="👤" title="Il Mutaforma si sveglia">
+          {isBlocked('mutaforma')?(
+            <><div className="instr" style={{borderColor:'rgba(39,174,96,.3)',color:'#70a080'}}>🏹 L'Arciere ha bloccato il Mutaforma. Non può agire stanotte.</div>
+            <button className="btn btn-gold" onClick={skipMut}>Continua →</button></>
+          ):round<2?(
+            <><div className="instr">Il Mutaforma è in attesa — si attiva dalla seconda notte.</div>
+            <button className="btn btn-gold" onClick={skipMut}>Continua →</button></>
+          ):mutRole?(
+            mutIsWolf?(
+              <><div className="instr">🐺 Il Mutaforma si è trasformato in <strong style={{color:ROLES[mutRole].color}}>{ROLES[mutRole].name}</strong>.<br/>Ha già agito con il branco — nessuna azione separata.</div>
+              <p style={{fontSize:'.76rem',color:'#7a6a50',fontStyle:'italic',textAlign:'center',marginBottom:10}}>🔄 In metamorfosi: {ROLES[mutRole].emoji} {ROLES[mutRole].name}</p>
+              <button className="btn btn-gold" onClick={skipMut}>Continua →</button></>
+            ):(
+              renderMimicAction(mutRole,skipMut,()=>advance('mutaforma',players),'🔄 In metamorfosi:')
+            )
+          ):(
+            <><div className="instr">Prima trasformazione — il Mutaforma sceglie chi assumere per sempre.</div>
+            <div className="nlbl">Chi copia?</div>
+            <PList players={alive.filter(p=>p.role!=='mutaforma')} sel={mutC} onSel={setMutC}/>
+            <button className="btn btn-gold mb8" onClick={confMut} disabled={mutC===null}>🔄 Trasformati</button>
+            <button className="btn btn-outline" onClick={skipMut}>Passa senza scegliere</button></>
+          )}
+        </NW>
+      );
+    }
+
+    if(ns==='condor'){
+      const conIsWolf=conRole&&ROLES[conRole]?.wolfTeam;
+      return(
+        <NW color="#d35400" emoji="🦅" title="Il Condor si sveglia">
+          {isBlocked('condor')?(
+            <><div className="instr" style={{borderColor:'rgba(39,174,96,.3)',color:'#70a080'}}>🏹 L'Arciere ha bloccato il Condor. Non può agire stanotte.</div>
+            <button className="btn btn-gold" onClick={skipCon}>Continua →</button></>
+          ):round<2?(
+            <><div className="instr">Il Condor non è ancora pronto — si attiva dalla seconda notte.</div>
+            <button className="btn btn-gold" onClick={skipCon}>Continua →</button></>
+          ):conRole?(
+            conIsWolf?(
+              <><div className="instr">🐺 Il Condor ha assorbito l'essenza di <strong style={{color:ROLES[conRole].color}}>{ROLES[conRole].name}</strong>.<br/>Ha già agito con il branco — nessuna azione separata.</div>
+              <p style={{fontSize:'.76rem',color:'#7a6a50',fontStyle:'italic',textAlign:'center',marginBottom:10}}>🦅 Assorbito: {ROLES[conRole].emoji} {ROLES[conRole].name}</p>
+              <button className="btn btn-gold" onClick={skipCon}>Continua →</button></>
+            ):(
+              renderMimicAction(conRole,skipCon,()=>advance('condor',players),'🦅 Assorbito:')
+            )
+          ):dead.length===0?(
+            <><div className="instr">Nessun morto da cui assorbire ancora — il Condor attende.</div>
+            <button className="btn btn-gold" onClick={skipCon}>Continua →</button></>
+          ):(
+            <><div className="instr">Prima apertura d'ali — il Condor assorbe l'essenza di un caduto per sempre.</div>
+            <div className="nlbl">Chi assorbe?</div>
+            <PList players={dead} sel={conC} onSel={setConC}/>
+            <button className="btn btn-gold mb8" onClick={confCon} disabled={conC===null}>🦅 Assorbi</button>
+            <button className="btn btn-outline" onClick={skipCon}>Passa senza scegliere</button></>
+          )}
+        </NW>
+      );
+    }
 
     if(ns==='corvo') return(
       <NW color="#2c3e50" emoji="🪶" title="Il Corvo gracchia nell'ombra">
@@ -2269,6 +2435,8 @@ function App(){
                 <span className="pt-name">{p.name}</span>
                 {(showRoles||!p.alive)&&<span className="pt-role" style={{color:r.color}}>{r.name}</span>}
                 {ordineMode&&r.isOrdine&&p.alive&&<span style={{fontSize:'.55rem',fontFamily:'Cinzel,serif',color:'#1abc9c',display:'block',marginTop:2}}>Ordine</span>}
+                {(showRoles||!p.alive)&&p.role==='mutaforma'&&mutRole&&<span style={{fontSize:'.52rem',color:ROLES[mutRole]?.color,display:'block',marginTop:1,fontFamily:'Cinzel,serif'}}>🔄 {ROLES[mutRole]?.emoji}{ROLES[mutRole]?.name}</span>}
+                {(showRoles||!p.alive)&&p.role==='condor'&&conRole&&<span style={{fontSize:'.52rem',color:ROLES[conRole]?.color,display:'block',marginTop:1,fontFamily:'Cinzel,serif'}}>🦅 {ROLES[conRole]?.emoji}{ROLES[conRole]?.name}</span>}
               </div>
             );
           })}
