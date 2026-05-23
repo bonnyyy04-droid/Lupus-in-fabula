@@ -308,7 +308,7 @@ const ROLES = {
   custode:     {name:'Custode del Silenzio', emoji:'🤫',wolfTeam:false,winsWithWolves:false,soloTeam:false,isOrdine:true, seerSees:'villico',survivesWolf:false,color:'#95a5a6',bg:'rgba(149,165,166,.10)', desc:'Dalla seconda notte puoi silenziare un giocatore: non potrà parlare né votare il giorno successivo.'},
   araldo:      {name:'Araldo del Crepuscolo',emoji:'📯',wolfTeam:false,winsWithWolves:false,soloTeam:false,isOrdine:true, seerSees:'villico',survivesWolf:false,color:'#d4ac0d',bg:'rgba(212,172,13,.10)',  desc:'Una sola volta puoi forzare il villaggio a scegliere tra due candidati. Dopo muori. Scade alla terza notte.'},
   alchimista:  {name:'Alchimista',           emoji:'⚗️',wolfTeam:false,winsWithWolves:false,soloTeam:false,isOrdine:true, seerSees:'villico',survivesWolf:false,color:'#1abc9c',bg:'rgba(26,188,156,.10)',  desc:'Una sola volta: Pozione Rossa (resuscita 1 di 2 morti a caso) o Pozione Nera (avvelena un vivo che muore la notte dopo).'},
-  criceto:     {name:'Criceto Mannaro',      emoji:'🐹',wolfTeam:false,winsWithWolves:false,soloTeam:true, seerSees:'criceto',survivesWolf:true, color:'#f39c12',bg:'rgba(243,156,18,.13)',  desc:'Fazione solitaria. Sopravvivi agli attacchi dei lupi. Muori se il Veggente ti scruta o se vieni votato. Vinci da solo se sopravvivi con una sola fazione rimasta.'},
+  criceto:     {name:'Criceto Mannaro',      emoji:'🐹',wolfTeam:false,winsWithWolves:false,soloTeam:true, seerSees:'villico',survivesWolf:true, color:'#f39c12',bg:'rgba(243,156,18,.13)',  desc:'Fazione solitaria. Sopravvivi agli attacchi dei lupi. Muori se il Veggente ti scruta o se vieni votato. Vinci da solo se sopravvivi con una sola fazione rimasta.'},
   misantropo:  {name:'Misantropo',           emoji:'😒',wolfTeam:false,winsWithWolves:true, soloTeam:false,seerSees:'villico',survivesWolf:false,color:'#7f8c8d',bg:'rgba(127,140,141,.13)', desc:'Sembri un normale cittadino senza poteri. Vinci solo se vincono i lupi.'},
   incompreso:  {name:'Incompreso',           emoji:'🥀',wolfTeam:false,winsWithWolves:false,soloTeam:false,seerSees:'lupo',   survivesWolf:false,color:'#8e44ad',bg:'rgba(142,68,173,.13)',  desc:'Sei innocente e vinci col villaggio. Ma il Veggente ti vede come un lupo.'},
   lupoAlpha:   {name:'Lupo Mannaro',        emoji:'🐾',wolfTeam:false,winsWithWolves:false,soloTeam:false,seerSees:'villico',survivesWolf:true, color:'#8e44ad',bg:'rgba(142,68,173,.13)',  desc:'Appari come contadino. Se i lupi ti attaccano non muori: la notte successiva diventi un Lupo Alpha.'},
@@ -660,12 +660,18 @@ function getSuggestedDist(n){
 
 const ROLE_MAX={lupo:5,cucciolo:2,veggente:1,guardia:1,meretrice:1,arciere:1,avvocato:1,negromante:1,gesu:1,cappuccetto:1,romeo:1,giulietta:1,orfano:1,contaminato:1,piromane:1,accusatore:1,funambolo:1,custode:1,araldo:1,alchimista:1,criceto:1,misantropo:2,incompreso:2,lupoAlpha:1,suicida:1,mutaforma:1,condor:1,corvo:1,vampiro:1,villico:99};
 const ROLE_ORDER=['lupo','cucciolo','lupoAlpha','veggente','guardia','meretrice','arciere','avvocato','negromante','gesu','cappuccetto','romeo','giulietta','orfano','contaminato','piromane','accusatore','funambolo','custode','araldo','alchimista','criceto','misantropo','incompreso','suicida','mutaforma','condor','corvo','vampiro','villico'];
+const DIFFICULTY={
+  facile:   {label:'🌱 Facile',   color:'#2ecc71',bg:'rgba(46,204,113,.1)', desc:'Ruoli classici. Perfetto per la prima partita.',       roles:new Set(['lupo','cucciolo','lupoAlpha','veggente','guardia','meretrice'])},
+  medio:    {label:'⚔️ Medio',    color:'#f39c12',bg:'rgba(243,156,18,.1)', desc:'Interazioni elaborate. Per chi conosce le basi.',      roles:new Set(['lupo','cucciolo','lupoAlpha','veggente','guardia','meretrice','arciere','custode','araldo','romeo','giulietta','orfano','incompreso','criceto','mutaforma','condor'])},
+  difficile:{label:'💀 Difficile',color:'#e74c3c',bg:'rgba(231,76,60,.1)',  desc:'Tutti i ruoli. Solo per gruppi esperti.',              roles:new Set(['lupo','cucciolo','lupoAlpha','veggente','guardia','meretrice','arciere','custode','araldo','romeo','giulietta','orfano','incompreso','criceto','mutaforma','condor','funambolo','accusatore','negromante','alchimista','corvo','vampiro','piromane','suicida','misantropo','gesu','cappuccetto','avvocato','contaminato'])},
+};
 const ROLE_CATS_CONFIG=[
-  {id:'classici',label:'⚔️ Classici',      roles:['lupo','cucciolo','lupoAlpha','meretrice','veggente','guardia','arciere','incompreso']},
-  {id:'extra',   label:'🌟 Extra',          roles:['avvocato','negromante','mutaforma','condor','romeo','giulietta','criceto','suicida','misantropo','vampiro']},
-  {id:'arcani',  label:'🔮 Arcani',         roles:['cappuccetto','gesu','orfano','contaminato','piromane','accusatore','funambolo','custode','araldo','alchimista','corvo']},
+  {id:'classici', label:'⚔️ Classici',      roles:['lupo','cucciolo','veggente','guardia','meretrice']},
+  {id:'lupi',     label:'🐺 Fazione Lupi',  roles:['lupoAlpha','incompreso','misantropo']},
+  {id:'villaggio',label:'🏘️ Fazione Villaggio', roles:['arciere','avvocato','negromante','gesu','cappuccetto','romeo','giulietta','orfano','contaminato','piromane','accusatore','funambolo','custode','araldo','alchimista']},
+  {id:'neutri',   label:'⚖️ Fazione Neutri', roles:['criceto','suicida','mutaforma','condor','corvo','vampiro']},
 ];
-const NIGHT_STEPS=['arciere','guardia','custode','funambolo','lupi','veggente','meretrice','negromante','accusatore','piromane','alchimista','mutaforma','condor','corvo','vampiro'];
+const NIGHT_STEPS=['arciere','guardia','custode','funambolo','lupi','veggente','meretrice','negromante','accusatore','piromane','alchimista','araldo','mutaforma','condor','corvo','vampiro'];
 // helper: check if a night step has an active player
 function stepHasPlayer(step,ps){
   if(step==='lupi')return ps.some(p=>(p.role==='lupo'||p.role==='cucciolo')&&p.alive);
@@ -682,17 +688,18 @@ function checkWin(ps, ordineMode, vampPrede=[]){
     const aliveNonVamp=aliveAll-1;
     if(prAlive>0&&1+prAlive>aliveNonVamp-prAlive)return'vampiro';
   }
-  const wolves =ps.filter(p=>p.alive&&p.role!=='criceto'&&p.role!=='suicida'&&ROLES[p.role].wolfTeam).length;
+  // wolves include misantropo (winsWithWolves) — contano come minaccia per il villaggio
+  const wolves =ps.filter(p=>p.alive&&p.role!=='criceto'&&p.role!=='suicida'&&(ROLES[p.role].wolfTeam||ROLES[p.role].winsWithWolves)).length;
   const criceto=ps.find(p=>p.alive&&p.role==='criceto');
   if(ordineMode){
-    const ordine  =ps.filter(p=>p.alive&&p.role!=='criceto'&&p.role!=='suicida'&&!ROLES[p.role].wolfTeam&&ROLES[p.role].isOrdine).length;
-    const regular =ps.filter(p=>p.alive&&p.role!=='criceto'&&p.role!=='suicida'&&!ROLES[p.role].wolfTeam&&!ROLES[p.role].isOrdine).length;
+    const ordine  =ps.filter(p=>p.alive&&p.role!=='criceto'&&p.role!=='suicida'&&!ROLES[p.role].wolfTeam&&!ROLES[p.role].winsWithWolves&&ROLES[p.role].isOrdine).length;
+    const regular =ps.filter(p=>p.alive&&p.role!=='criceto'&&p.role!=='suicida'&&!ROLES[p.role].wolfTeam&&!ROLES[p.role].winsWithWolves&&!ROLES[p.role].isOrdine).length;
     const others  =ordine+regular;
     if(criceto&&((wolves===0)!==(others===0)))return'criceto';
     if(wolves===0){if(ordine>0&&ordine>regular)return'ordine';return'villici';}
     if(wolves>=others)return'lupi';
   }else{
-    const others=ps.filter(p=>p.alive&&p.role!=='criceto'&&p.role!=='suicida'&&!ROLES[p.role].wolfTeam).length;
+    const others=ps.filter(p=>p.alive&&p.role!=='criceto'&&p.role!=='suicida'&&!ROLES[p.role].wolfTeam&&!ROLES[p.role].winsWithWolves).length;
     if(criceto&&((wolves===0)!==(others===0)))return'criceto';
     if(wolves===0)return'villici';
     if(wolves>=others)return'lupi';
@@ -777,6 +784,7 @@ const STEP_HINTS={
   condor:    {rules:["Vede i ruoli di tutti i giocatori morti","Pu\u00f2 comunicare informazioni segrete all\u2019Ordine","Vince con l\u2019Ordine"]},
   corvo:     {rules:["Aggiunge voti nascosti contro un giocatore ogni notte","Il Narratore annuncia i voti del Corvo durante il giorno","Vince se sopravvive alla fine della partita"]},
   vampiro:   {rules:["Morde un giocatore: diventa sua Preda (rimane segreto)","Le Prede votano a favore del Vampiro","Vince quando lui + Prede vivi > tutti gli altri vivi"]},
+  araldo:    {rules:["Può agire solo entro la terza notte (poi scade)","Usabile una sola volta: sceglie 2 candidati obbligatori","Dopo aver usato il potere, muore"]},
 };
 
 function App(){
@@ -824,6 +832,7 @@ function App(){
   const [pirUsed,setPirUsed]=useState(false);
   const [alchUsed,setAlchUsed]=useState(false);
   const [araldoUsed,setAraldoUsed]=useState(false);
+  const [araldoCands,setAraldoCands]=useState([]);  // [idx1, idx2] candidati forzati
   const [accLast,setAccLast]=useState(-1);
   const [gesuDeath,setGesuDeath]=useState(null);
   const [cappKilled,setCappKilled]=useState(false);
@@ -836,6 +845,7 @@ function App(){
   const [avvRm,setAvvRm]=useState(null);
 
   const [de,setDe]=useState([]);
+  const [suicidaWonInfo,setSuicidaWonInfo]=useState(null);
   const [vi,setVi]=useState(null);
   const [win,setWin]=useState(null);
   const [diceEv,setDiceEv]=useState(null);
@@ -843,6 +853,9 @@ function App(){
   const [sindacoIdx,setSindacoIdx]=useState(null);
   const [sindacoTmp,setSindacoTmp]=useState(null);
   const [openCats,setOpenCats]=useState({classici:true,extra:false,arcani:false});
+  const [difficulty,setDifficulty]=useState('facile');
+  const [unlockedRoles,setUnlockedRoles]=useState(()=>new Set());
+  const [useSindaco,setUseSindaco]=useState(true);
   const [elimConfirm,setElimConfirm]=useState(false);
   const [showRoles,setShowRoles]=useState(false);
   const [menuConfirm,setMenuConfirm]=useState(false);
@@ -1006,6 +1019,7 @@ function App(){
     setDe(s.de||[]);setVi(s.vi??null);setWin(s.win??null);
     setOrdineMode(s.ordineMode||false);setSindacoIdx(s.sindacoIdx??null);setShowRoles(s.showRoles||false);
     setFunamboloCoin(s.funamboloCoin??null);setVampPrede(s.vampPrede||[]);
+    setAraldoCands(s.araldoCands||[]);
   },[]);
 
   // ── SAVE ──
@@ -1014,11 +1028,11 @@ function App(){
     saveGame({sc,names,vName,players,ri,round,ns,dist,gc,wc,vc,vr,mc,ac,cusC,negC,negR,pirC,accC,accR,
       alchAct,alchT,alchTs,mutC,conC,corC,seerKill,cAlone,cFirst,pirUsed,alchUsed,araldoUsed,accLast,
       gesuDeath,cappKilled,alphaTransf,mutRole,conRole,corvoVotes,orfanoEff,silenced,avvRm,de,vi,win,
-      ordineMode,sindacoIdx,showRoles,funamboloCoin,vampPrede});
+      ordineMode,sindacoIdx,showRoles,funamboloCoin,vampPrede,araldoCands});
   },[sc,players,ri,round,ns,gc,wc,vc,vr,mc,ac,cusC,negC,negR,pirC,accC,accR,
     alchAct,alchT,alchTs,mutC,conC,corC,seerKill,cAlone,cFirst,pirUsed,alchUsed,
     araldoUsed,accLast,gesuDeath,cappKilled,alphaTransf,mutRole,conRole,corvoVotes,
-    orfanoEff,silenced,de,vi,win,funamboloCoin,vampPrede]);
+    orfanoEff,silenced,de,vi,win,funamboloCoin,vampPrede,araldoCands]);
 
   const addP=()=>{const n=inp.trim();if(!n||names.length>=20||names.includes(n))return;setNames(p=>[...p,n]);setInp('');};
 
@@ -1035,16 +1049,16 @@ function App(){
     setAraldoUsed(false);setAccLast(-1);setGesuDeath(null);setCappKilled(false);
     setAlphaTransf(false);setMutRole(null);setConRole(null);
     setCorvoVotes({});setOrfanoEff(false);setSilenced(null);setAvvRm(null);
-    setSindacoIdx(null);setSindacoTmp(null);setVampPrede([]);
+    setSindacoIdx(useSindaco?null:-1);setSindacoTmp(null);setVampPrede([]);setAraldoCands([]);
     setSc('roleReveal');
   };
 
-  const newGame=()=>{clearGame();setNames([]);setPlayers([]);setWin(null);setVName('');setVInp('');setOrdineMode(false);setSindacoIdx(null);setSindacoTmp(null);setVampPrede([]);scoresSavedRef.current=false;setSc('setup');};
+  const newGame=()=>{clearGame();setNames([]);setPlayers([]);setWin(null);setVName('');setVInp('');setOrdineMode(false);setSindacoIdx(null);setSindacoTmp(null);setVampPrede([]);setAraldoCands([]);scoresSavedRef.current=false;setSc('setup');};
   const replayGame=()=>{clearGame();setPlayers([]);setWin(null);setSindacoIdx(null);setSindacoTmp(null);setOrdineMode(false);scoresSavedRef.current=false;setDist(getSuggestedDist(names.length));setSc('rolePick');};
 
   const nextReveal=()=>{if(ri+1<players.length){setRi(r=>r+1);setRv(false);}else startNight(players,false,false);};
 
-  const resetNight=()=>{setGc(null);setWc(null);setVc(null);setVr(null);setMc(null);setAc(null);setCusC(null);setNegC(null);setNegR(null);setPirC(null);setAccC(null);setAccR(null);setAlchAct(null);setAlchT(null);setAlchTs([]);setMutC(null);setConC(null);setCorC(null);setSeerKill(null);setFunamboloCoin(null);setVampC(null);};
+  const resetNight=()=>{setGc(null);setWc(null);setVc(null);setVr(null);setMc(null);setAc(null);setCusC(null);setNegC(null);setNegR(null);setPirC(null);setAccC(null);setAccR(null);setAlchAct(null);setAlchT(null);setAlchTs([]);setMutC(null);setConC(null);setCorC(null);setSeerKill(null);setFunamboloCoin(null);setVampC(null);setAraldoCands([]);setSuicidaWonInfo(null);};
 
   const startNight=(ps,ca,cf)=>{
     const fr=ps.map(p=>({...p,protected:false}));
@@ -1228,7 +1242,18 @@ function App(){
     if(vi===null)return;
     let np=players.map((p,i)=>i===vi?{...p,alive:false}:p);
     const vRole=players[vi].role;
-    if(vRole==='suicida'){setWin('suicida');setPlayers(np);setSc('gameOver');return;}
+    if(vRole==='suicida'){
+      // Award suicida points immediately and continue the game
+      const sName=players[vi].name;
+      if(sName){
+        const newSc={...scores};
+        if(!newSc[sName])newSc[sName]={pts:0,wins:0,games:0};
+        newSc[sName].pts+=2.5;newSc[sName].wins+=1;newSc[sName].games+=1;
+        saveScores(newSc);setScores(newSc);
+      }
+      setSuicidaWonInfo(sName);
+      // Fall through — game continues normally
+    }
     if(vRole==='romeo'){const gi=np.findIndex(p=>p.role==='giulietta'&&p.alive);if(gi!==-1)np[gi]={...np[gi],alive:false};}
     if(vRole==='giulietta'){const ri2=np.findIndex(p=>p.role==='romeo'&&p.alive);if(ri2!==-1)np[ri2]={...np[ri2],alive:false};}
     if(vRole==='gesu')setGesuDeath(round);
@@ -1280,6 +1305,7 @@ function App(){
     if(prev==='accusatore'){setAccC(null);setAccR(null);}
     if(prev==='piromane')setPirC(null);
     if(prev==='alchimista'){setAlchT(null);setAlchTs([]);}
+    if(prev==='araldo')setAraldoCands([]);
     if(prev==='mutaforma')setMutC(null);
     if(prev==='condor')setConC(null);
     if(prev==='corvo')setCorC(null);
@@ -1523,6 +1549,16 @@ function App(){
     const tw=(dist.lupo||0)+(dist.cucciolo||0);
     const to=n-tw;
     const valid=tw>=1&&villici>=0&&nonV<=n&&tw<to;
+    const diffInfo=DIFFICULTY[difficulty];
+    const changeDifficulty=(newDiff)=>{
+      setDifficulty(newDiff);
+      setUnlockedRoles(new Set());
+      const newRoles=DIFFICULTY[newDiff].roles;
+      setDist(p=>{const u={...p};Object.keys(u).forEach(k=>{if(k!=='villico'&&!newRoles.has(k))u[k]=0;});return u;});
+    };
+    const isLocked=(key)=>!diffInfo.roles.has(key)&&!unlockedRoles.has(key);
+    const isAdvanced=(key)=>!diffInfo.roles.has(key)&&unlockedRoles.has(key);
+    const unlockRole=(key)=>setUnlockedRoles(s=>{const n=new Set(s);n.add(key);return n;});
     const change=(key,delta)=>{
       if(key==='villico')return;
       setDist(p=>{
@@ -1539,13 +1575,43 @@ function App(){
       <div className="screen fade">
         <h1 className="title">Configura Ruoli</h1>
         <p className="subtitle">{vName} — {n} giocatori</p>
+
+        {/* ── DIFFICULTY SELECTOR ── */}
+        <div style={{marginBottom:16}}>
+          <div className="lbl" style={{marginBottom:8}}>Livello di difficoltà</div>
+          <div style={{display:'flex',gap:6}}>
+            {Object.entries(DIFFICULTY).map(([key,info])=>(
+              <button key={key} onClick={()=>changeDifficulty(key)}
+                style={{flex:1,fontFamily:'Cinzel,serif',fontSize:'.62rem',letterSpacing:'.05em',textTransform:'uppercase',
+                  padding:'11px 4px',borderRadius:10,cursor:'pointer',transition:'all .18s',
+                  background:difficulty===key?info.bg:'rgba(255,255,255,.03)',
+                  border:difficulty===key?`1.5px solid ${info.color}88`:'1px solid rgba(255,255,255,.08)',
+                  color:difficulty===key?info.color:'#4a3a28',
+                  fontWeight:difficulty===key?700:400,lineHeight:1.3}}>
+                {info.label}
+              </button>
+            ))}
+          </div>
+          <p style={{fontSize:'.77rem',color:'#5a4a30',fontStyle:'italic',marginTop:8,textAlign:'center',lineHeight:1.5}}>{diffInfo.desc}</p>
+        </div>
+
+        {/* ── SINDACO TOGGLE ── */}
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',background:'rgba(243,156,18,.06)',border:'1px solid rgba(243,156,18,.2)',borderRadius:12,padding:'12px 16px',marginBottom:14}}>
+          <div>
+            <span style={{fontFamily:'Cinzel,serif',fontSize:'.78rem',color:'#f39c12',letterSpacing:'.08em'}}>🏛️ Sindaco</span>
+            <p style={{fontSize:'.74rem',color:'#7a6030',marginTop:3,fontStyle:'italic'}}>{useSindaco?'Il villaggio elegge un sindaco al primo giorno.':'Nessun sindaco in questa partita.'}</p>
+          </div>
+          <button onClick={()=>setUseSindaco(m=>!m)} style={{fontFamily:'Cinzel,serif',fontSize:'.65rem',letterSpacing:'.1em',textTransform:'uppercase',borderRadius:9,padding:'8px 14px',cursor:'pointer',transition:'all .2s',background:useSindaco?'rgba(243,156,18,.22)':'rgba(255,255,255,.06)',color:useSindaco?'#f39c12':'#5a4030',border:useSindaco?'1px solid rgba(243,156,18,.5)':'1px solid rgba(255,255,255,.1)'}}>
+            {useSindaco?'✓ Sì':'No'}
+          </button>
+        </div>
+
         {/* ── ROLE CATEGORIES ACCORDION ── */}
         {ROLE_CATS_CONFIG.map(cat=>{
           const catTotal=cat.roles.reduce((s,k)=>s+(dist[k]||0),0);
           const isOpen=openCats[cat.id];
           return(
             <div key={cat.id} style={{marginBottom:10}}>
-              {/* Header */}
               <div onClick={()=>toggleCat(cat.id)} className={`cat-hdr${isOpen?' open':''}`}>
                 <div style={{display:'flex',alignItems:'center',gap:10}}>
                   <span style={{fontFamily:'Cinzel,serif',fontSize:'.82rem',color:'#c8a05a',letterSpacing:'.08em'}}>{cat.label}</span>
@@ -1553,25 +1619,37 @@ function App(){
                 </div>
                 <span style={{color:'#6a5a40',fontSize:'.9rem',transform:isOpen?'rotate(180deg)':'none',transition:'transform .2s'}}>▼</span>
               </div>
-              {/* Body */}
               {isOpen&&(
                 <div className="cat-body">
                   {cat.roles.map(key=>{
                     const r=ROLES[key];
                     const cnt=dist[key]||0;
+                    const locked=isLocked(key);
+                    const advanced=isAdvanced(key);
                     return(
-                      <div key={key} className="role-row">
-                        <span style={{fontSize:'1.2rem',marginRight:8}}>{r.emoji}</span>
-                        <span style={{flex:1,fontSize:'.88rem'}}>{r.name}</span>
-                        <button className="ibtn" onClick={e=>{e.stopPropagation();setInfoModal(key);}} style={{marginRight:10}}>i</button>
-                        {key==='giulietta'?(
-                          <span style={{fontFamily:'Cinzel,serif',fontSize:'.78rem',minWidth:80,textAlign:'center',color:'#e91e63',fontStyle:'italic'}}>= Romeo ({cnt})</span>
+                      <div key={key} className="role-row" style={{opacity:locked?.45:1,transition:'opacity .2s',background:locked?'rgba(0,0,0,.08)':'transparent'}}>
+                        <span style={{fontSize:'1.2rem',marginRight:8,filter:locked?'grayscale(1) opacity(.5)':'none'}}>{r.emoji}</span>
+                        <span style={{flex:1,fontSize:'.88rem',color:locked?'#3a2c18':advanced?r.color:'inherit'}}>
+                          {r.name}
+                          {advanced&&<span style={{marginLeft:6,fontSize:'.58rem',fontFamily:'Cinzel,serif',color:'#f39c12',border:'1px solid rgba(243,156,18,.35)',borderRadius:4,padding:'1px 5px',letterSpacing:'.05em',verticalAlign:'middle'}}>avanzato</span>}
+                        </span>
+                        {locked?(
+                          <button onClick={e=>{e.stopPropagation();unlockRole(key);}}
+                            style={{background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.12)',borderRadius:8,padding:'5px 10px',cursor:'pointer',fontSize:'.74rem',color:'#5a4a30',whiteSpace:'nowrap',transition:'all .15s'}}
+                            title="Sblocca questo ruolo avanzato">🔒 Sblocca</button>
                         ):(
-                          <div style={{display:'flex',alignItems:'center'}}>
-                            <button onClick={e=>{e.stopPropagation();change(key,-1);}} className="rr-cnt-btn" style={{borderRadius:'8px 0 0 8px'}}>−</button>
-                            <span className="rr-cnt-val" style={{color:cnt>0?r.color:'var(--text-muted)'}}>{cnt}</span>
-                            <button onClick={e=>{e.stopPropagation();change(key,+1);}} className="rr-cnt-btn" style={{borderRadius:'0 8px 8px 0'}}>+</button>
-                          </div>
+                          <>
+                            <button className="ibtn" onClick={e=>{e.stopPropagation();setInfoModal(key);}} style={{marginRight:10}}>i</button>
+                            {key==='giulietta'?(
+                              <span style={{fontFamily:'Cinzel,serif',fontSize:'.78rem',minWidth:80,textAlign:'center',color:'#e91e63',fontStyle:'italic'}}>= Romeo ({cnt})</span>
+                            ):(
+                              <div style={{display:'flex',alignItems:'center'}}>
+                                <button onClick={e=>{e.stopPropagation();change(key,-1);}} className="rr-cnt-btn" style={{borderRadius:'8px 0 0 8px'}}>−</button>
+                                <span className="rr-cnt-val" style={{color:cnt>0?r.color:'var(--text-muted)'}}>{cnt}</span>
+                                <button onClick={e=>{e.stopPropagation();change(key,+1);}} className="rr-cnt-btn" style={{borderRadius:'0 8px 8px 0'}}>+</button>
+                              </div>
+                            )}
+                          </>
                         )}
                       </div>
                     );
@@ -1581,6 +1659,7 @@ function App(){
             </div>
           );
         })}
+
         {/* Villici auto */}
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 16px',background:'rgba(255,255,255,.02)',border:'1px solid rgba(255,255,255,.06)',borderRadius:10,marginBottom:14}}>
           <span style={{display:'flex',alignItems:'center',gap:8}}><span style={{fontSize:'1.2rem'}}>🧑‍🌾</span><span style={{fontSize:'.88rem'}}>{ROLES.villico.name}</span></span>
@@ -1794,17 +1873,18 @@ function App(){
           <><div className="vbox fade">
             <div className="vlbl">Solo per il Narratore</div>
             <div style={{marginBottom:8,fontSize:'.95rem'}}><strong style={{color:'#c8a05a'}}>{players[vr.idx].name}</strong> appare come...</div>
-            {vr.seen==='criceto'?(
-              <><div style={{fontSize:'2.5rem',marginBottom:8}}>☠️</div>
-              <div style={{color:'#f39c12',fontFamily:'Cinzel,serif',fontWeight:600}}>Creatura Oscura</div>
-              <div style={{fontSize:'.74rem',marginTop:6,color:'#c0392b',fontStyle:'italic'}}>⚠️ Morirà all'alba.</div></>
-            ):(
-              <><div style={{fontSize:'2.5rem',marginBottom:8}}>{vr.seen==='lupo'?'🐺':'🧑‍🌾'}</div>
-              <div style={{color:vr.seen==='lupo'?'#e74c3c':'#2ecc71',fontFamily:'Cinzel,serif',fontWeight:600}}>{vr.seen==='lupo'?'Lupo Mannaro':'Innocente'}</div>
-              {vr.role==='cucciolo'&&<div style={{fontSize:'.74rem',marginTop:6,color:'#6a5a40',fontStyle:'italic'}}>(In realtà è il Lupo Cucciolo)</div>}
-              {vr.role==='incompreso'&&<div style={{fontSize:'.74rem',marginTop:6,color:'#6a5a40',fontStyle:'italic'}}>(In realtà è l'Incompreso — è innocente)</div>}
-              {vr.role==='lupoAlpha'&&<div style={{fontSize:'.74rem',marginTop:6,color:'#6a5a40',fontStyle:'italic'}}>(In realtà è il Lupo Alpha — ancora innocente)</div>}</>
-            )}
+            {(()=>{
+              const isLupo=vr.seen==='lupo';
+              return(
+                <><div style={{fontSize:'2.5rem',marginBottom:8}}>{isLupo?'🐺':'🧑‍🌾'}</div>
+                <div style={{color:isLupo?'#e74c3c':'#2ecc71',fontFamily:'Cinzel,serif',fontWeight:600}}>{isLupo?'Lupo Mannaro':'Innocente'}</div>
+                {vr.role==='cucciolo'&&<div style={{fontSize:'.74rem',marginTop:6,color:'#6a5a40',fontStyle:'italic'}}>(In realtà è il Lupo Cucciolo)</div>}
+                {vr.role==='incompreso'&&<div style={{fontSize:'.74rem',marginTop:6,color:'#6a5a40',fontStyle:'italic'}}>(In realtà è l'Incompreso — è innocente)</div>}
+                {vr.role==='lupoAlpha'&&<div style={{fontSize:'.74rem',marginTop:6,color:'#6a5a40',fontStyle:'italic'}}>(In realtà è il Lupo Alpha — ancora innocente)</div>}
+                {vr.role==='criceto'&&<div style={{fontSize:'.74rem',marginTop:8,color:'#c0392b',fontStyle:'italic',borderTop:'1px solid rgba(192,57,43,.25)',paddingTop:8}}>⚠️ Narratore: è il Criceto — morirà all'alba.</div>}
+                </>
+              );
+            })()}
           </div>
           <p className="muted mb8" style={{textAlign:'center'}}>La Veggente richiude gli occhi</p>
           <button className="btn btn-gold" onClick={endSeer}>Fine turno →</button></>
@@ -1929,6 +2009,41 @@ function App(){
           <PList players={alive.filter(p=>p.role!=='alchimista')} sel={alchT} onSel={setAlchT}/>
           <button className="btn btn-gold mb8" onClick={confAlchTarget} disabled={alchT===null}>Usa Pozione</button>
           <button className="btn btn-outline" onClick={()=>{setAlchAct(null);setAlchUsed(false);}}>← Indietro</button></>
+        )}
+      </NW>
+    );
+
+    if(ns==='araldo') return(
+      <NW color="#d4ac0d" emoji="📯" title="L'Araldo del Crepuscolo si desta">
+        {isBlocked('araldo')?(
+          <><div className="instr" style={{borderColor:'rgba(39,174,96,.3)',color:'#70a080'}}>🏹 L'Arciere ha bloccato l'Araldo. Non può agire stanotte.</div>
+          <button className="btn btn-gold" onClick={()=>advance('araldo',players)}>Continua →</button></>
+        ):araldoUsed?(
+          <><div className="instr">L'Araldo ha già usato il suo potere. Giace in silenzio.</div>
+          <button className="btn btn-gold" onClick={()=>advance('araldo',players)}>Continua →</button></>
+        ):round>3?(
+          <><div className="instr">Il potere dell'Araldo è scaduto — poteva agire solo entro la terza notte.</div>
+          <button className="btn btn-gold" onClick={()=>advance('araldo',players)}>Continua →</button></>
+        ):(
+          <>
+            <div className="instr">L'Araldo forza il villaggio a scegliere tra due soli candidati per la votazione di oggi. Scegli i due nomi da imporre — poi l'Araldo muore.</div>
+            <div className="nlbl">Primo candidato ({araldoCands.length>=1?players[araldoCands[0]].name:'non scelto'})</div>
+            <PList players={alive.filter(p=>p.role!=='araldo'&&p._i!==araldoCands[1])} sel={araldoCands[0]??null} onSel={i=>{
+              setAraldoCands(prev=>{const n=[...prev];n[0]=i;return n.filter((_,idx)=>idx<2);});
+            }}/>
+            <div className="nlbl" style={{marginTop:8}}>Secondo candidato ({araldoCands.length>=2?players[araldoCands[1]].name:'non scelto'})</div>
+            <PList players={alive.filter(p=>p.role!=='araldo'&&p._i!==araldoCands[0])} sel={araldoCands[1]??null} onSel={i=>{
+              setAraldoCands(prev=>{const n=[...prev];n[1]=i;return n.filter((_,idx)=>idx<2);});
+            }}/>
+            <button className="btn btn-gold mb8" onClick={()=>{
+              setAraldoUsed(true);
+              // l'araldo muore dopo aver usato il potere
+              const np=players.map(p=>p.role==='araldo'?{...p,alive:false}:p);
+              setPlayers(np);
+              advance('araldo',np);
+            }} disabled={araldoCands.length<2}>📯 Attiva il Potere (e muori)</button>
+            <button className="btn btn-outline" onClick={()=>advance('araldo',players)}>Passa senza agire</button>
+          </>
         )}
       </NW>
     );
@@ -2075,8 +2190,14 @@ function App(){
         <div className="lbl mb8">Cosa è successo stanotte</div>
         {de.map((e,i)=><div key={i} className={`ev ev-${e.t}`}>{e.tx}</div>)}
         {silName&&<div className="ev ev-info">🤫 <strong>{silName}</strong> è silenziato — non può parlare né votare oggi.</div>}
+        {araldoUsed&&araldoCands.length>=2&&players[araldoCands[0]]&&players[araldoCands[1]]&&(
+          <div className="ev" style={{background:'rgba(212,172,13,.1)',border:'1px solid rgba(212,172,13,.3)'}}>
+            📯 L'Araldo ha parlato! Il villaggio deve scegliere SOLO tra: <strong style={{color:'#d4ac0d'}}>{players[araldoCands[0]].name}</strong> e <strong style={{color:'#d4ac0d'}}>{players[araldoCands[1]].name}</strong>.
+          </div>
+        )}
         {corvoThisRound.length>0&&<div className="ev ev-info" style={{fontSize:'.82rem'}}>🪶 Voti nascosti del Corvo: {corvoThisRound.map(([i,n])=>`${players[i].name} (+${n})`).join(', ')}<span style={{color:'#4a3a20',display:'block',fontSize:'.75rem',marginTop:4}}>(solo per il Narratore)</span></div>}
         {orfanoEff&&<div className="ev ev-info">🍵 L'Orfano è morto stanotte — oggi i voti contro Lupi e Misantropo valgono doppio!</div>}
+        {suicidaWonInfo&&<div className="ev ev-info" style={{background:'rgba(99,110,114,.18)',borderColor:'rgba(99,110,114,.5)',marginBottom:10}}>🪦 <strong>{suicidaWonInfo}</strong> era il Suicida — il suo obiettivo è compiuto! Ha vinto 2.5 punti nello Scoreboard. La partita continua.</div>}
         <div className="div"/>
 
         {/* ── ELEZIONE SINDACO (solo Round 1, non ancora eletto) ── */}
