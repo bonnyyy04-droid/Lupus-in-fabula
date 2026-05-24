@@ -679,7 +679,9 @@ function stepHasPlayer(step,ps){
 }
 
 // ─── WIN CHECK ────────────────────────────────────────────────────────────────
-function checkWin(ps, ordineMode, vampPrede=[]){
+function checkWin(ps, ordineMode, vampPrede=[], mutRole=null, conRole=null){
+  // Effective role: mutaforma/condor adopt their copied role for win checks
+  const eR=p=>(p.role==='mutaforma'&&mutRole)?mutRole:(p.role==='condor'&&conRole)?conRole:p.role;
   // vampiro win: vamp + prede > others alive
   const vampAlive=ps.find(p=>p.alive&&p.role==='vampiro');
   if(vampAlive){
@@ -688,18 +690,17 @@ function checkWin(ps, ordineMode, vampPrede=[]){
     const aliveNonVamp=aliveAll-1;
     if(prAlive>0&&1+prAlive>aliveNonVamp-prAlive)return'vampiro';
   }
-  // wolves include misantropo (winsWithWolves) — contano come minaccia per il villaggio
-  const wolves =ps.filter(p=>p.alive&&p.role!=='criceto'&&p.role!=='suicida'&&(ROLES[p.role].wolfTeam||ROLES[p.role].winsWithWolves)).length;
-  const criceto=ps.find(p=>p.alive&&p.role==='criceto');
+  const wolves=ps.filter(p=>p.alive&&eR(p)!=='criceto'&&eR(p)!=='suicida'&&(ROLES[eR(p)].wolfTeam||ROLES[eR(p)].winsWithWolves)).length;
+  const criceto=ps.find(p=>p.alive&&eR(p)==='criceto');
   if(ordineMode){
-    const ordine  =ps.filter(p=>p.alive&&p.role!=='criceto'&&p.role!=='suicida'&&!ROLES[p.role].wolfTeam&&!ROLES[p.role].winsWithWolves&&ROLES[p.role].isOrdine).length;
-    const regular =ps.filter(p=>p.alive&&p.role!=='criceto'&&p.role!=='suicida'&&!ROLES[p.role].wolfTeam&&!ROLES[p.role].winsWithWolves&&!ROLES[p.role].isOrdine).length;
-    const others  =ordine+regular;
+    const ordine =ps.filter(p=>p.alive&&eR(p)!=='criceto'&&eR(p)!=='suicida'&&!ROLES[eR(p)].wolfTeam&&!ROLES[eR(p)].winsWithWolves&&ROLES[eR(p)].isOrdine).length;
+    const regular=ps.filter(p=>p.alive&&eR(p)!=='criceto'&&eR(p)!=='suicida'&&!ROLES[eR(p)].wolfTeam&&!ROLES[eR(p)].winsWithWolves&&!ROLES[eR(p)].isOrdine).length;
+    const others=ordine+regular;
     if(criceto&&((wolves===0)!==(others===0)))return'criceto';
     if(wolves===0){if(ordine>0&&ordine>regular)return'ordine';return'villici';}
     if(wolves>=others)return'lupi';
   }else{
-    const others=ps.filter(p=>p.alive&&p.role!=='criceto'&&p.role!=='suicida'&&!ROLES[p.role].wolfTeam&&!ROLES[p.role].winsWithWolves).length;
+    const others=ps.filter(p=>p.alive&&eR(p)!=='criceto'&&eR(p)!=='suicida'&&!ROLES[eR(p)].wolfTeam&&!ROLES[eR(p)].winsWithWolves).length;
     if(criceto&&((wolves===0)!==(others===0)))return'criceto';
     if(wolves===0)return'villici';
     if(wolves>=others)return'lupi';
@@ -718,10 +719,11 @@ const SSK='lupus_scores_v1';
 const saveScores=s=>{try{localStorage.setItem(SSK,JSON.stringify(s));}catch(e){}};
 const loadScores=()=>{try{const s=localStorage.getItem(SSK);return s?JSON.parse(s):{};}catch(e){return{};}};
 
-function getPoints(player,win){
-  const r=ROLES[player.role];const alive=player.alive;
-  if(win==='criceto'&&player.role==='criceto')return 3.5;
-  if(win==='suicida'&&player.role==='suicida'&&!alive)return 2.5;
+function getPoints(player,win,mutRole=null,conRole=null){
+  const effKey=(player.role==='mutaforma'&&mutRole)?mutRole:(player.role==='condor'&&conRole)?conRole:player.role;
+  const r=ROLES[effKey];const alive=player.alive;
+  if(win==='criceto'&&effKey==='criceto')return 3.5;
+  if(win==='suicida'&&effKey==='suicida'&&!alive)return 2.5;
   if(win==='lupi'&&(r.wolfTeam||r.winsWithWolves))return alive?2.5:2.0;
   if((win==='villici'||win==='ordine')&&!r.wolfTeam&&!r.soloTeam&&!r.winsWithWolves)return alive?1.5:1.0;
   return 0;
@@ -987,7 +989,7 @@ function App(){
       scoresSavedRef.current=true;
       const ns={...scores};
       players.forEach(p=>{
-        const pts=getPoints(p,win);
+        const pts=getPoints(p,win,mutRole,conRole);
         if(!ns[p.name])ns[p.name]={pts:0,games:0,wins:0};
         ns[p.name].pts=Math.round((ns[p.name].pts+pts)*10)/10;
         ns[p.name].games+=1;
@@ -1235,7 +1237,7 @@ function App(){
     }
 
     setPlayers(np);setDe(evs);setSeerKill(null);setCAlone(nca);setCFirst(ncf);
-    const w=checkWin(np,ordineMode,vampPrede);
+    const w=checkWin(np,ordineMode,vampPrede,mutRole,conRole);
     if(w){setWin(w);setSc('gameOver');}
     else{setVi(null);setSc('day');}
   };
@@ -1267,7 +1269,7 @@ function App(){
     }
     setOrfanoEff(false);setSilenced(null);setAvvRm(null);
     setPlayers(np);
-    const w=checkWin(np,ordineMode,vampPrede);
+    const w=checkWin(np,ordineMode,vampPrede,mutRole,conRole);
     if(w){setWin(w);setSc('gameOver');}
     else{
       setRound(r=>r+1);
@@ -2465,11 +2467,13 @@ function App(){
     const ttl=isSui?'Il Suicida Vince!':isC?'Il Criceto Mannaro Vince!':isL?'I Lupi Vincono!':isO?"L'Ordine Vince!":isV?'Il Vampiro Regna!':'Il Villaggio Vince!';
     const sub=isSui?'Voleva solo essere condannato. Finalmente qualcuno lo ha ascoltato.':isC?'La piccola creatura solitaria ha sopravvissuto a tutto.':isL?`I lupi hanno preso il controllo di ${vName}.`:isO?`Le forze mistiche dell'Ordine hanno prevalso su ${vName}.`:isV?`Il Vampiro ha corrotto abbastanza anime. ${vName} è nelle sue mani.`:`${vName} ha sconfitto i lupi e può dormire in pace!`;
     const winNote=p=>{
-      if(win==='suicida'&&p.role==='suicida'&&!p.alive)return'🏆 Vince';
-      if(win==='lupi'&&(ROLES[p.role].wolfTeam||ROLES[p.role].winsWithWolves)&&p.alive)return'🏆 Vince';
-      if(win==='villici'&&!ROLES[p.role].wolfTeam&&!ROLES[p.role].soloTeam&&!ROLES[p.role].winsWithWolves&&!ROLES[p.role].isOrdine&&p.alive)return'🏆 Vince';
-      if(win==='ordine'&&ROLES[p.role].isOrdine&&p.alive)return'🏆 Vince';
-      if(win==='criceto'&&p.role==='criceto'&&p.alive)return'🏆 Vince';
+      const ek=(p.role==='mutaforma'&&mutRole)?mutRole:(p.role==='condor'&&conRole)?conRole:p.role;
+      const er=ROLES[ek];
+      if(win==='suicida'&&ek==='suicida'&&!p.alive)return'🏆 Vince';
+      if(win==='lupi'&&(er.wolfTeam||er.winsWithWolves)&&p.alive)return'🏆 Vince';
+      if(win==='villici'&&!er.wolfTeam&&!er.soloTeam&&!er.winsWithWolves&&!er.isOrdine&&p.alive)return'🏆 Vince';
+      if(win==='ordine'&&er.isOrdine&&p.alive)return'🏆 Vince';
+      if(win==='criceto'&&ek==='criceto'&&p.alive)return'🏆 Vince';
       if(win==='vampiro'&&p.role==='vampiro'&&p.alive)return'🏆 Vince';
       if(win==='vampiro'&&vampPrede.includes(p.id)&&p.alive)return'🩸 Preda';
       return null;
@@ -2498,15 +2502,16 @@ function App(){
           <button className="dbtn" onClick={()=>setShowScores(true)}>🏆 Scoreboard</button>
         </div>
         {players.map(p=>{
-          const pts=getPoints(p,win);
+          const pts=getPoints(p,win,mutRole,conRole);
           const won=pts>0;
           return(
             <div key={p.id} className={`pts-earned${won?' winner':''}`}>
+              {(()=>{const ek=(p.role==='mutaforma'&&mutRole)?mutRole:(p.role==='condor'&&conRole)?conRole:p.role;const er=ROLES[ek];return(
               <div style={{display:'flex',alignItems:'center',gap:8}}>
-                <span style={{fontSize:'1rem'}}>{ROLES[p.role].emoji}</span>
+                <span style={{fontSize:'1rem'}}>{er.emoji}</span>
                 <span style={{textDecoration:!p.alive?'line-through':'none',opacity:!p.alive?.7:1}}>{p.name}</span>
-                <span style={{fontSize:'.75rem',color:ROLES[p.role].color,fontFamily:'Cinzel,serif'}}>{ROLES[p.role].name}</span>
-              </div>
+                <span style={{fontSize:'.75rem',color:er.color,fontFamily:'Cinzel,serif'}}>{er.name}{(p.role==='mutaforma'||p.role==='condor')&&ek!==p.role&&<span style={{opacity:.6,marginLeft:4}}>({ROLES[p.role].name})</span>}</span>
+              </div>);})()}
               <span style={{fontFamily:'Cinzel Decorative,serif',fontSize:won?'1rem':'.85rem',color:won?'#f1c40f':'#4a3a20',flexShrink:0}}>
                 {won?`+${pts.toFixed(1)}`:'0'}
               </span>
@@ -2516,12 +2521,12 @@ function App(){
 
         <div className="div"/>
         <div className="lbl mb8">Ruoli Rivelati</div>
-        {players.map(p=>{const n=winNote(p);return(
+        {players.map(p=>{const n=winNote(p);const ek2=(p.role==='mutaforma'&&mutRole)?mutRole:(p.role==='condor'&&conRole)?conRole:p.role;return(
           <div key={p.id} className={`fr${!p.alive?' fdead':''}`}>
-            <span>{ROLES[p.role].emoji}</span>
+            <span>{ROLES[ek2].emoji}</span>
             <span className="fn" style={{textDecoration:!p.alive?'line-through':'none'}}>{p.name}{sindacoIdx>=0&&players[sindacoIdx]?.id===p.id?'  🏛️':''}</span>
             {n&&<span style={{fontSize:'.7rem',color:'#f1c40f',marginRight:4}}>{n}</span>}
-            <span className="frn" style={{color:isO&&ROLES[p.role].isOrdine?'#1abc9c':ROLES[p.role].color}}>{ROLES[p.role].name}{isO&&ROLES[p.role].isOrdine?' (Ordine)':''}</span>
+            <span className="frn" style={{color:isO&&ROLES[ek2].isOrdine?'#1abc9c':ROLES[ek2].color}}>{ROLES[ek2].name}{(p.role==='mutaforma'||p.role==='condor')&&ek2!==p.role?<span style={{opacity:.5,fontSize:'.75em',marginLeft:3}}>({ROLES[p.role].name})</span>:''}{isO&&ROLES[ek2].isOrdine?' (Ordine)':''}</span>
           </div>
         );})}
         <div style={{marginTop:24,display:'flex',gap:8}}>
