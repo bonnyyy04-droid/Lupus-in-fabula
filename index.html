@@ -301,7 +301,7 @@ const ROLES = {
   romeo:       {name:'Romeo',                emoji:'🌹',wolfTeam:false,winsWithWolves:false,soloTeam:false,isOrdine:false,seerSees:'villico',survivesWolf:false,color:'#e91e63',bg:'rgba(233,30,99,.13)',   desc:'Sei legato a Giulietta. Se lei muore, muori anche tu. Se lei è protetta, sei protetto anche tu.'},
   giulietta:   {name:'Giulietta',            emoji:'💐',wolfTeam:false,winsWithWolves:false,soloTeam:false,isOrdine:false,seerSees:'villico',survivesWolf:false,color:'#e91e63',bg:'rgba(233,30,99,.13)',   desc:'Sei legata a Romeo. Se lui muore, muori anche tu. Se lui è protetto, sei protetta anche tu.'},
   orfano:      {name:'Orfano',               emoji:'🍵',wolfTeam:false,winsWithWolves:false,soloTeam:false,isOrdine:false,seerSees:'villico',survivesWolf:false,color:'#bdc3c7',bg:'rgba(189,195,199,.10)', desc:'Se vieni ucciso dai lupi, il giorno successivo i voti contro lupi e misantropo valgono doppio.'},
-  contaminato: {name:'Contadino Avvelenato', emoji:'🤒',wolfTeam:false,winsWithWolves:false,soloTeam:false,isOrdine:false,seerSees:'villico',survivesWolf:false,color:'#2ecc71',bg:'rgba(46,204,113,.10)',  desc:'Se vieni ucciso dai lupi di notte, il Lupo Alpha muore immediatamente insieme a te.'},
+  contaminato: {name:'Contadino Avvelenato', emoji:'🤒',wolfTeam:false,winsWithWolves:false,soloTeam:false,isOrdine:false,seerSees:'villico',survivesWolf:false,color:'#2ecc71',bg:'rgba(46,204,113,.10)',  desc:'Se vieni ucciso dai lupi di notte, il Lupo Alpha muore la mattina seguente (annunciato all\'alba del giorno dopo).'},
   piromane:    {name:'Piromane',             emoji:'🔥',wolfTeam:false,winsWithWolves:false,soloTeam:false,isOrdine:false,seerSees:'villico',survivesWolf:false,color:'#e67e22',bg:'rgba(230,126,34,.13)',  desc:'Una sola volta per partita puoi incendiare la casa di un giocatore. Se è un lupo muore lui; se è innocente o neutrale muori tu.'},
   accusatore:  {name:'Accusatore',           emoji:'👉',wolfTeam:false,winsWithWolves:false,soloTeam:false,isOrdine:false,seerSees:'villico',survivesWolf:false,color:'#c0392b',bg:'rgba(192,57,43,.10)',   desc:'Ogni due notti puoi accusare un giocatore: se è un lupo viene rivelato pubblicamente. Se è innocente, muori tu.'},
   funambolo:   {name:'Funambolo',            emoji:'🎪',wolfTeam:false,winsWithWolves:false,soloTeam:false,isOrdine:false,seerSees:'villico',survivesWolf:false,color:'#16a085',bg:'rgba(22,160,133,.13)',  desc:'Ogni notte il Narratore lancia in segreto una moneta. Testa: sei immune a qualsiasi morte. Croce: muori comunque anche se protetto.'},
@@ -698,12 +698,12 @@ function checkWin(ps, ordineMode, vampPrede=[], mutRole=null, conRole=null){
     const others=ordine+regular;
     if(criceto&&((wolves===0)!==(others===0)))return'criceto';
     if(wolves===0){if(ordine>0&&ordine>regular)return'ordine';return'villici';}
-    if(wolves>=others)return'lupi';
+    if(wolves>others)return'lupi';
   }else{
     const others=ps.filter(p=>p.alive&&eR(p)!=='criceto'&&eR(p)!=='suicida'&&!ROLES[eR(p)].wolfTeam&&!ROLES[eR(p)].winsWithWolves).length;
     if(criceto&&((wolves===0)!==(others===0)))return'criceto';
     if(wolves===0)return'villici';
-    if(wolves>=others)return'lupi';
+    if(wolves>others)return'lupi';
   }
   return null;
 }
@@ -724,6 +724,10 @@ function getPoints(player,win,mutRole=null,conRole=null){
   const r=ROLES[effKey];const alive=player.alive;
   if(win==='criceto'&&effKey==='criceto')return 3.5;
   if(win==='suicida'&&effKey==='suicida'&&!alive)return 2.5;
+  // corvo: vince se sopravvive (indipendentemente da chi vince)
+  if(effKey==='corvo')return alive?1.5:0;
+  // misantropo: 1.0 se vince coi lupi, +0.5 se vivo
+  if(effKey==='misantropo'&&win==='lupi')return alive?1.5:1.0;
   if(win==='lupi'&&(r.wolfTeam||r.winsWithWolves))return alive?2.5:2.0;
   if((win==='villici'||win==='ordine')&&!r.wolfTeam&&!r.soloTeam&&!r.winsWithWolves)return alive?1.5:1.0;
   return 0;
@@ -879,6 +883,8 @@ function App(){
   const [mutShowReveal,setMutShowReveal]=useState(false);
   const [conShowReveal,setConShowReveal]=useState(false);
   const [guardSelfUsed,setGuardSelfUsed]=useState(false);
+  const [lupoAlphaActivatedName,setLupoAlphaActivatedName]=useState(null);
+  const [contaminatoTarget,setContaminatoTarget]=useState(null);
   const toggleCat=id=>setOpenCats(p=>({...p,[id]:!p[id]}));
 
   // ── FIRST-TIME GUIDE ──────────────────────────────────────────────────────
@@ -1034,6 +1040,7 @@ function App(){
     setFunamboloCoin(s.funamboloCoin??null);setVampPrede(s.vampPrede||[]);
     setAraldoCands(s.araldoCands||[]);
     setGuardSelfUsed(s.guardSelfUsed||false);
+    setContaminatoTarget(s.contaminatoTarget??null);
   },[]);
 
   // ── SAVE ──
@@ -1042,11 +1049,11 @@ function App(){
     saveGame({sc,names,vName,players,ri,round,ns,dist,gc,wc,vc,vr,mc,ac,cusC,negC,negR,pirC,accC,accR,
       alchAct,alchT,alchTs,mutC,conC,corC,seerKill,cAlone,cFirst,pirUsed,alchUsed,araldoUsed,accLast,
       gesuDeath,cappKilled,alphaTransf,mutRole,conRole,corvoVotes,orfanoEff,silenced,avvRm,de,vi,win,
-      ordineMode,sindacoIdx,showRoles,funamboloCoin,vampPrede,araldoCands,guardSelfUsed});
+      ordineMode,sindacoIdx,showRoles,funamboloCoin,vampPrede,araldoCands,guardSelfUsed,contaminatoTarget});
   },[sc,players,ri,round,ns,gc,wc,vc,vr,mc,ac,cusC,negC,negR,pirC,accC,accR,
     alchAct,alchT,alchTs,mutC,conC,corC,seerKill,cAlone,cFirst,pirUsed,alchUsed,
     araldoUsed,accLast,gesuDeath,cappKilled,alphaTransf,mutRole,conRole,corvoVotes,
-    orfanoEff,silenced,de,vi,win,funamboloCoin,vampPrede,araldoCands,guardSelfUsed]);
+    orfanoEff,silenced,de,vi,win,funamboloCoin,vampPrede,araldoCands,guardSelfUsed,contaminatoTarget]);
 
   const addP=()=>{const n=inp.trim();if(!n||names.length>=20||names.includes(n))return;setNames(p=>[...p,n]);setInp('');};
 
@@ -1064,7 +1071,7 @@ function App(){
     setAlphaTransf(false);setMutRole(null);setConRole(null);
     setCorvoVotes({});setOrfanoEff(false);setSilenced(null);setAvvRm(null);
     setSindacoIdx(useSindaco?null:-1);setSindacoTmp(null);setVampPrede([]);setAraldoCands([]);
-    setGuardSelfUsed(false);
+    setGuardSelfUsed(false);setContaminatoTarget(null);setLupoAlphaActivatedName(null);
     setSc('roleReveal');
   };
 
@@ -1073,11 +1080,18 @@ function App(){
 
   const nextReveal=()=>{if(ri+1<players.length){setRi(r=>r+1);setRv(false);}else startNight(players,false,false);};
 
-  const resetNight=()=>{setGc(null);setWc(null);setVc(null);setVr(null);setMc(null);setAc(null);setCusC(null);setNegC(null);setNegR(null);setPirC(null);setAccC(null);setAccR(null);setAlchAct(null);setAlchT(null);setAlchTs([]);setMutC(null);setConC(null);setCorC(null);setSeerKill(null);setFunamboloCoin(null);setVampC(null);setAraldoCands([]);setSuicidaWonInfo(null);setMimicSel(null);setMimicPhase('select');setMimicData(null);setMutShowReveal(false);setConShowReveal(false);};
+  const resetNight=()=>{setGc(null);setWc(null);setVc(null);setVr(null);setMc(null);setAc(null);setCusC(null);setNegC(null);setNegR(null);setPirC(null);setAccC(null);setAccR(null);setAlchAct(null);setAlchT(null);setAlchTs([]);setMutC(null);setConC(null);setCorC(null);setSeerKill(null);setFunamboloCoin(null);setVampC(null);setAraldoCands([]);setSuicidaWonInfo(null);setMimicSel(null);setMimicPhase('select');setMimicData(null);setMutShowReveal(false);setConShowReveal(false);setLupoAlphaActivatedName(null);};
 
   const startNight=(ps,ca,cf)=>{
-    const fr=ps.map(p=>({...p,protected:false}));
+    let fr=ps.map(p=>({...p,protected:false}));
+    let activatedName=null;
+    if(alphaTransf){
+      const lai=fr.findIndex(p=>p.role==='lupoAlpha'&&p.alive);
+      if(lai!==-1){activatedName=fr[lai].name;fr[lai]={...fr[lai],role:'lupo'};}
+      setAlphaTransf(false);
+    }
     setPlayers(fr);resetNight();setCAlone(ca);setCFirst(cf);
+    if(activatedName)setLupoAlphaActivatedName(activatedName);
     const first=NIGHT_STEPS.find(s=>stepHasPlayer(s,fr))||'lupi';
     setNs(first);setSc('night');
   };
@@ -1149,6 +1163,14 @@ function App(){
     const aT=ov.aT!==undefined?ov.aT:alchT;
     const aTs=ov.aTs!==undefined?ov.aTs:alchTs;
     const guardT=np.findIndex(p=>p.protected);
+    const effRoleOf=(p)=>(p.role==='mutaforma'&&mutRole)?mutRole:(p.role==='condor'&&conRole)?conRole:p.role;
+
+    // contaminato deferred kill from previous night
+    if(contaminatoTarget!==null&&np[contaminatoTarget]?.alive){
+      dying.add(contaminatoTarget);
+      evs.push({t:'info',tx:`☠️ Il veleno del Contaminato ha colpito! Il Lupo Mannaro muore all'alba.`});
+      setContaminatoTarget(null);
+    }
 
     // block set (arciere)
     const blocked=arcT!==null&&arcT!==undefined?new Set([arcT]):new Set();
@@ -1173,7 +1195,7 @@ function App(){
       const funCroce=isFun&&funamboloCoin==='croce';
       if(wolfOnMer){/* silent */}
       else if(isCric){/* silent – criceto survives */}
-      else if(isAlpha){setAlphaTransf(true);/* silent */}
+      else if(isAlpha){setAlphaTransf(true);/* silent – transforms next night */}
       else if(funTesta){/* funambolo immune stanotte */}
       else if(guardT===wolfT&&!funCroce){
         evs.push({t:'protected',tx:'🛡️ I morsi della notte non hanno trovato carne — qualcuno era sotto protezione.'});
@@ -1181,8 +1203,8 @@ function App(){
       }else{
         if(np[wolfT].role==='contaminato'){
           dying.add(wolfT);
-          const laIdx=np.findIndex(p=>p.role==='lupoAlpha'&&p.alive);
-          if(laIdx!==-1)dying.add(laIdx);
+          const laIdx=np.findIndex(p=>p.role==='lupo'&&p.alive);
+          if(laIdx!==-1)setContaminatoTarget(laIdx); // deferred: Lupo Alpha dies next morning
         }else{dying.add(wolfT);}
         if(merOnSameAsWolf&&merIdx!==-1)dying.add(merIdx);
         if(np[wolfT].role==='orfano')setOrfanoEff(true);
@@ -1223,9 +1245,18 @@ function App(){
         if(i===funIdx2&&funamboloCoin==='testa')return;
         np[i]={...np[i],alive:false};
         evs.push({t:'death',tx:`💀 ${np[i].name} è stato trovato morto all'alba.`});
-        // Romeo/Giulietta chain
-        if(np[i].role==='romeo'){const gi=np.findIndex(p=>p.role==='giulietta'&&p.alive);if(gi!==-1){np[gi]={...np[gi],alive:false};evs.push({t:'death',tx:`💀 ${np[gi].name} non regge al dolore — muore anche lei.`});}}
-        if(np[i].role==='giulietta'){const ri2=np.findIndex(p=>p.role==='romeo'&&p.alive);if(ri2!==-1){np[ri2]={...np[ri2],alive:false};evs.push({t:'death',tx:`💀 ${np[ri2].name} non regge al dolore — muore anche lui.`});}}
+        // clear corvo votes if corvo dies
+        if(effRoleOf(np[i])==='corvo')setCorvoVotes({});
+        // gesù morto di notte → segna il round per resurrezione
+        if(np[i].role==='gesu')setGesuDeath(round);
+        // Romeo/Giulietta chain — ALL partners die, using effective role
+        const er=effRoleOf(np[i]);
+        if(er==='romeo'){
+          np.forEach((p,j)=>{if(p.alive&&effRoleOf(p)==='giulietta'){np[j]={...np[j],alive:false};evs.push({t:'death',tx:`💀 ${np[j].name} non regge al dolore — muore anche lei.`});}});
+        }
+        if(er==='giulietta'){
+          np.forEach((p,j)=>{if(p.alive&&effRoleOf(p)==='romeo'){np[j]={...np[j],alive:false};evs.push({t:'death',tx:`💀 ${np[j].name} non regge al dolore — muore anche lui.`});}});
+        }
       }
     });
 
@@ -1241,11 +1272,10 @@ function App(){
     if(!lupoOk&&cucOk&&!cAlone){nca=true;ncf=true;}
     else if(cAlone&&cFirst){nca=true;ncf=false;const ci=np.findIndex(p=>p.role==='cucciolo'&&p.alive);if(ci!==-1)np[ci]={...np[ci],role:'lupo'};}
 
-    // lupoAlpha transform
-    if(alphaTransf){const lai=np.findIndex(p=>p.role==='lupoAlpha'&&p.alive);if(lai!==-1){np[lai]={...np[lai],role:'lupo'};setAlphaTransf(false);}}
-
-    // gesù resurrezione
-    if(gesuDeath!==null&&round-gesuDeath>=2){
+    // gesù resurrezione — 3 mattine dopo la morte
+    // Es: muore Notte 1 (round=1) → gesuDeath=1, resurge quando round-gesuDeath>=3
+    // → Night 4 resolve (round=4): 4-1=3 ✓ → annuncio Mattina 4
+    if(gesuDeath!==null&&round-gesuDeath>=3){
       const gi=np.findIndex(p=>p.role==='gesu'&&!p.alive);
       if(gi!==-1){np[gi]={...np[gi],alive:true};evs.push({t:'revive',tx:`✝️ Miracolo! ${np[gi].name} (Gesù) risorge dalla morte!`});setGesuDeath(null);}
     }
@@ -1261,8 +1291,9 @@ function App(){
     if(vi===null)return;
     let np=players.map((p,i)=>i===vi?{...p,alive:false}:p);
     const vRole=players[vi].role;
+    const vEffRole=(vRole==='mutaforma'&&mutRole)?mutRole:(vRole==='condor'&&conRole)?conRole:vRole;
+    const effRoleOf2=(p)=>(p.role==='mutaforma'&&mutRole)?mutRole:(p.role==='condor'&&conRole)?conRole:p.role;
     if(vRole==='suicida'){
-      // Award suicida points immediately and continue the game
       const sName=players[vi].name;
       if(sName){
         const newSc={...scores};
@@ -1271,13 +1302,15 @@ function App(){
         saveScores(newSc);setScores(newSc);
       }
       setSuicidaWonInfo(sName);
-      // Fall through — game continues normally
     }
-    if(vRole==='romeo'){const gi=np.findIndex(p=>p.role==='giulietta'&&p.alive);if(gi!==-1)np[gi]={...np[gi],alive:false};}
-    if(vRole==='giulietta'){const ri2=np.findIndex(p=>p.role==='romeo'&&p.alive);if(ri2!==-1)np[ri2]={...np[ri2],alive:false};}
+    // corvo dies → clear all accumulated votes
+    if(vEffRole==='corvo')setCorvoVotes({});
+    // Romeo/Giulietta chain — use effective role, ALL partners die
+    if(vEffRole==='romeo'){np=np.map((p,i)=>i!==vi&&p.alive&&effRoleOf2(p)==='giulietta'?{...p,alive:false}:p);}
+    if(vEffRole==='giulietta'){np=np.map((p,i)=>i!==vi&&p.alive&&effRoleOf2(p)==='romeo'?{...p,alive:false}:p);}
     if(vRole==='gesu')setGesuDeath(round);
     // cappuccetto revival
-    if(cappKilled&&ROLES[vRole].wolfTeam){
+    if(cappKilled&&ROLES[vEffRole]?.wolfTeam){
       np=np.map(p=>p.role==='cappuccetto'?{...p,alive:true}:p);
       setCappKilled(false);
     }
@@ -1897,6 +1930,7 @@ function App(){
             <button className="btn btn-gold" onClick={()=>confWolves(true)}>Notte senza vittima →</button></>
           ):(
             <><div className="instr">{cucHere?'Il Cucciolo si è trasformato. Indica la vittima.':'I Lupi si riconoscono e scelgono la vittima in silenzio.'}</div>
+            {lupoAlphaActivatedName&&<div style={{fontSize:'.82rem',color:'#e74c3c',fontWeight:600,marginBottom:10,padding:'8px 12px',background:'rgba(231,76,60,.1)',borderRadius:8,border:'1px solid rgba(231,76,60,.3)'}}>🐺 <strong>{lupoAlphaActivatedName}</strong> si è appena trasformato — è ora un Lupo Alpha. Chiamatelo stanotte nel turno del branco!</div>}
             {(()=>{const mIdx=players.findIndex(p=>p.role==='mutaforma'&&p.alive);const cIdx=players.findIndex(p=>p.role==='condor'&&p.alive);const mutW=mutRole&&ROLES[mutRole]?.wolfTeam;const conW=conRole&&ROLES[conRole]?.wolfTeam;return(<>{mutW&&mIdx!==-1&&<div style={{fontSize:'.78rem',color:'#bdc3c7',fontStyle:'italic',marginBottom:8,padding:'6px 10px',background:'rgba(189,195,199,.08)',borderRadius:6,border:'1px solid rgba(189,195,199,.2)'}}>🔄 {players[mIdx].name} (Mutaforma → {ROLES[mutRole].emoji}{ROLES[mutRole].name}) si sveglia con il branco.</div>}{conW&&cIdx!==-1&&<div style={{fontSize:'.78rem',color:'#d35400',fontStyle:'italic',marginBottom:8,padding:'6px 10px',background:'rgba(211,84,0,.08)',borderRadius:6,border:'1px solid rgba(211,84,0,.2)'}}>🦅 {players[cIdx].name} (Condor → {ROLES[conRole].emoji}{ROLES[conRole].name}) si sveglia con il branco.</div>}</>);})()}
             <div className="nlbl">Chi attaccano i Lupi?</div>
             <PList players={alive.filter(p=>{const ek=(p.role==='mutaforma'&&mutRole)?mutRole:(p.role==='condor'&&conRole)?conRole:p.role;return!ROLES[ek].wolfTeam&&!ROLES[ek].winsWithWolves&&ek!=='cucciolo';})} sel={wc} onSel={setWc}/>
@@ -1984,14 +2018,14 @@ function App(){
     );
 
     if(ns==='accusatore'){
-      const canAct=(round-accLast)>=2||(accLast===-1);
+      const canAct=round>=2&&(accLast===-1||round-accLast>=2);
       return(
         <NW color="#c0392b" emoji="👉" title="L'Accusatore si sveglia">
           {isBlocked('accusatore')?(
             <><div className="instr" style={{borderColor:'rgba(39,174,96,.3)',color:'#70a080'}}>🏹 L'Arciere ha bloccato l'Accusatore. Non può accusare stanotte.</div>
             <button className="btn btn-gold" onClick={skipAcc}>Continua →</button></>
           ):!canAct?(
-            <><div className="instr">L'Accusatore deve aspettare ancora una notte.</div>
+            <><div className="instr">{round<2?'L\'Accusatore agisce dalla seconda notte.':'L\'Accusatore deve aspettare ancora una notte.'}</div>
             <button className="btn btn-gold" onClick={skipAcc}>Continua →</button></>
           ):accR?(
             <><div className="vbox fade">
@@ -2476,6 +2510,11 @@ function App(){
 
         <div className="lbl mb8">Il Villaggio vota</div>
         <p className="muted mb16">Dopo la discussione seleziona chi viene eliminato.</p>
+        {araldoUsed&&araldoCands.length>=2&&players[araldoCands[0]]?.alive&&players[araldoCands[1]]?.alive&&(
+          <div style={{background:'rgba(212,172,13,.1)',border:'1px solid rgba(212,172,13,.35)',borderRadius:10,padding:'8px 14px',marginBottom:10,fontSize:'.82rem',color:'#c8a227'}}>
+            📯 <strong>Voto vincolato dall'Araldo</strong> — si può votare solo tra: <strong>{players[araldoCands[0]].name}</strong> e <strong>{players[araldoCands[1]].name}</strong>.
+          </div>
+        )}
         {players.some(p=>p.role==='avvocato'&&p.alive)&&(
           <div style={{marginBottom:14}}>
             <div className="nlbl">⚖️ Avvocato — toglie 1 voto a</div>
@@ -2483,7 +2522,11 @@ function App(){
             {avvRm!==null&&<p style={{fontSize:'.8rem',color:'#f39c12',fontStyle:'italic',marginBottom:8}}>-1 voto a {players[avvRm].name}</p>}
           </div>
         )}
-        <PList players={alive.filter(p=>silenced===null||p._i!==silenced)} sel={vi} onSel={i=>{setVi(i);setElimConfirm(false);}}/>
+        <PList players={alive.filter(p=>{
+          if(silenced!==null&&p._i===silenced)return false;
+          if(araldoUsed&&araldoCands.length>=2)return araldoCands.includes(p._i)&&(players[araldoCands[0]]?.alive||players[araldoCands[1]]?.alive);
+          return true;
+        })} sel={vi} onSel={i=>{setVi(i);setElimConfirm(false);}}/>
         {!elimConfirm?(
           <button className="btn btn-red mb8" onClick={()=>setElimConfirm(true)} disabled={vi===null}>Elimina dal Voto</button>
         ):(
@@ -2515,6 +2558,7 @@ function App(){
                 <span className="pt-em">{showRoles||!p.alive?r.emoji:'👤'}</span>
                 <span className="pt-name">{p.name}</span>
                 {(showRoles||!p.alive)&&<span className="pt-role" style={{color:r.color}}>{r.name}</span>}
+                {showRoles&&p.role==='lupoAlpha'&&alphaTransf&&<span style={{fontSize:'.52rem',color:'#e74c3c',display:'block',marginTop:2,fontFamily:'Cinzel,serif'}}>🐺 In trasformazione...</span>}
                 {ordineMode&&r.isOrdine&&p.alive&&<span style={{fontSize:'.55rem',fontFamily:'Cinzel,serif',color:'#1abc9c',display:'block',marginTop:2}}>Ordine</span>}
                 {(showRoles||!p.alive)&&p.role==='mutaforma'&&mutRole&&<span style={{fontSize:'.52rem',color:ROLES[mutRole]?.color,display:'block',marginTop:1,fontFamily:'Cinzel,serif'}}>🔄 {ROLES[mutRole]?.emoji}{ROLES[mutRole]?.name}</span>}
                 {(showRoles||!p.alive)&&p.role==='condor'&&conRole&&<span style={{fontSize:'.52rem',color:ROLES[conRole]?.color,display:'block',marginTop:1,fontFamily:'Cinzel,serif'}}>🦅 {ROLES[conRole]?.emoji}{ROLES[conRole]?.name}</span>}
@@ -2549,6 +2593,8 @@ function App(){
       const ek=(p.role==='mutaforma'&&mutRole)?mutRole:(p.role==='condor'&&conRole)?conRole:p.role;
       const er=ROLES[ek];
       if(win==='suicida'&&ek==='suicida'&&!p.alive)return'🏆 Vince';
+      if(ek==='corvo'&&p.alive)return'🏆 Sopravvissuto';
+      if(ek==='misantropo'&&win==='lupi'&&p.alive)return'🏆 Vince (con i lupi)';
       if(win==='lupi'&&(er.wolfTeam||er.winsWithWolves)&&p.alive)return'🏆 Vince';
       if(win==='villici'&&!er.wolfTeam&&!er.soloTeam&&!er.winsWithWolves&&!er.isOrdine&&p.alive)return'🏆 Vince';
       if(win==='ordine'&&er.isOrdine&&p.alive)return'🏆 Vince';
