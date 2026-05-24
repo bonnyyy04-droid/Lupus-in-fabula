@@ -1087,7 +1087,9 @@ function App(){
   const confWolves=(none=false)=>{const t=none?null:wc;advance('lupi',players,{wt:t});};
   const confSeer=()=>{
     if(vc===null)return;
-    const role=players[vc].role;const seen=ROLES[role].seerSees;
+    const rawRole=players[vc].role;
+    const role=(rawRole==='mutaforma'&&mutRole)?mutRole:(rawRole==='condor'&&conRole)?conRole:rawRole;
+    const seen=ROLES[role].seerSees;
     if(role==='criceto')setSeerKill(vc);
     setVr({idx:vc,role,seen});
   };
@@ -1098,7 +1100,9 @@ function App(){
   const endNeg=()=>{advance('negromante',players);};
   const confAcc=()=>{
     if(accC===null)return;
-    const isWolf=ROLES[players[accC].role].wolfTeam;
+    const rawA=players[accC].role;
+    const effA=(rawA==='mutaforma'&&mutRole)?mutRole:(rawA==='condor'&&conRole)?conRole:rawA;
+    const isWolf=ROLES[effA].wolfTeam||ROLES[effA].winsWithWolves;
     setAccR({idx:accC,isWolf});
   };
   const endAcc=()=>{setAccLast(round);advance('accusatore',players,{accRes:accR});};
@@ -1393,14 +1397,17 @@ function App(){
       </div>
       <div className="player-grid">
         {players.map(p=>{
-          const r=ROLES[p.role];
+          const rawRk=p.role;
+          const effRk=(rawRk==='mutaforma'&&mutRole)?mutRole:(rawRk==='condor'&&conRole)?conRole:rawRk;
+          const r=ROLES[effRk];
+          const isMimic=(rawRk==='mutaforma'||rawRk==='condor')&&effRk!==rawRk;
           return(
             <div key={p.id} className={`p-tok ${p.alive?'alive':'dead'}`}>
               {sindacoIdx>=0&&players[sindacoIdx]?.id===p.id&&p.alive&&<span className="pt-sindaco">🏛️</span>}
               {!p.alive&&<span className="pt-dead-x">✕</span>}
               <span className="pt-em">{showRoles||!p.alive?r.emoji:'👤'}</span>
               <span className="pt-name">{p.name}</span>
-              {(showRoles||!p.alive)&&<span className="pt-role" style={{color:r.color}}>{r.name}</span>}
+              {(showRoles||!p.alive)&&<span className="pt-role" style={{color:r.color}}>{r.name}{isMimic&&<span style={{opacity:.45,fontSize:'.8em'}}> ({ROLES[rawRk].emoji})</span>}</span>}
             </div>
           );
         })}
@@ -1863,7 +1870,7 @@ function App(){
             <><div className="instr">{cucHere?'Il Cucciolo si è trasformato. Indica la vittima.':'I Lupi si riconoscono e scelgono la vittima in silenzio.'}</div>
             {(()=>{const mIdx=players.findIndex(p=>p.role==='mutaforma'&&p.alive);const cIdx=players.findIndex(p=>p.role==='condor'&&p.alive);const mutW=mutRole&&ROLES[mutRole]?.wolfTeam;const conW=conRole&&ROLES[conRole]?.wolfTeam;return(<>{mutW&&mIdx!==-1&&<div style={{fontSize:'.78rem',color:'#bdc3c7',fontStyle:'italic',marginBottom:8,padding:'6px 10px',background:'rgba(189,195,199,.08)',borderRadius:6,border:'1px solid rgba(189,195,199,.2)'}}>🔄 {players[mIdx].name} (Mutaforma → {ROLES[mutRole].emoji}{ROLES[mutRole].name}) si sveglia con il branco.</div>}{conW&&cIdx!==-1&&<div style={{fontSize:'.78rem',color:'#d35400',fontStyle:'italic',marginBottom:8,padding:'6px 10px',background:'rgba(211,84,0,.08)',borderRadius:6,border:'1px solid rgba(211,84,0,.2)'}}>🦅 {players[cIdx].name} (Condor → {ROLES[conRole].emoji}{ROLES[conRole].name}) si sveglia con il branco.</div>}</>);})()}
             <div className="nlbl">Chi attaccano i Lupi?</div>
-            <PList players={alive.filter(p=>!ROLES[p.role].wolfTeam&&p.role!=='cucciolo')} sel={wc} onSel={setWc}/>
+            <PList players={alive.filter(p=>{const ek=(p.role==='mutaforma'&&mutRole)?mutRole:(p.role==='condor'&&conRole)?conRole:p.role;return!ROLES[ek].wolfTeam&&!ROLES[ek].winsWithWolves&&ek!=='cucciolo';})} sel={wc} onSel={setWc}/>
             <button className="btn btn-gold mb8" onClick={()=>confWolves(false)} disabled={wc===null}>Conferma Vittima</button>
             <button className="btn btn-outline" onClick={()=>confWolves(true)}>Nessuna vittima</button></>
           )}
@@ -2058,7 +2065,7 @@ function App(){
 
 
     // ── MIMIC ACTION RENDERER (Mutaforma & Condor) ─────────────────────────────
-    const renderMimicAction=(copiedRole,skipFn,advFn,actLabel)=>{
+    const renderMimicAction=(copiedRole,skipFn,advFn,actLabel,actorRole)=>{
       const r=ROLES[copiedRole];
       if(!r)return(<><div className="instr">Ruolo sconosciuto.</div><button className="btn btn-gold" onClick={skipFn}>Continua →</button></>);
       const hdr=<p style={{fontSize:'.76rem',color:r.color,fontStyle:'italic',textAlign:'center',marginBottom:10}}>{actLabel} {r.emoji} {r.name}</p>;
@@ -2086,8 +2093,8 @@ function App(){
         }
         return(<><div className="instr">Scruta l'anima di un giocatore.</div>{hdr}
           <div className="nlbl">Chi scruta?</div>
-          <PList players={alive.filter(p=>p.role!=='mutaforma'&&p.role!=='condor')} sel={mimicSel} onSel={setMimicSel}/>
-          <button className="btn btn-gold" onClick={()=>{if(mimicSel===null)return;const role=players[mimicSel].role;const seen=ROLES[role].seerSees;if(role==='criceto')setSeerKill(mimicSel);setMimicData({idx:mimicSel,role,seen});setMimicPhase('result');}} disabled={mimicSel===null}>Rivela Identità</button></>);
+          <PList players={alive.filter(p=>p.role!==actorRole)} sel={mimicSel} onSel={setMimicSel}/>
+          <button className="btn btn-gold" onClick={()=>{if(mimicSel===null)return;const rawR2=players[mimicSel].role;const effR2=(rawR2==='mutaforma'&&mutRole)?mutRole:(rawR2==='condor'&&conRole)?conRole:rawR2;const seen=ROLES[effR2].seerSees;if(effR2==='criceto')setSeerKill(mimicSel);setMimicData({idx:mimicSel,role:effR2,seen});setMimicPhase('result');}} disabled={mimicSel===null}>Rivela Identità</button></>);
       }
       // Negromante → two-phase
       if(copiedRole==='negromante'){
@@ -2118,15 +2125,15 @@ function App(){
         }
         return(<><div className="instr">Accusa un giocatore — scopre se è Lupo o innocente (con conseguenze).</div>{hdr}
           <div className="nlbl">Chi accusa?</div>
-          <PList players={alive.filter(p=>p.role!=='mutaforma'&&p.role!=='condor')} sel={mimicSel} onSel={setMimicSel}/>
-          <button className="btn btn-gold" onClick={()=>{if(mimicSel===null)return;setMimicData({idx:mimicSel,isWolf:ROLES[players[mimicSel].role].wolfTeam});setMimicPhase('result');}} disabled={mimicSel===null}>Accusa</button></>);
+          <PList players={alive.filter(p=>p.role!==actorRole)} sel={mimicSel} onSel={setMimicSel}/>
+          <button className="btn btn-gold" onClick={()=>{if(mimicSel===null)return;const rawAm=players[mimicSel].role;const effAm=(rawAm==='mutaforma'&&mutRole)?mutRole:(rawAm==='condor'&&conRole)?conRole:rawAm;setMimicData({idx:mimicSel,isWolf:ROLES[effAm].wolfTeam||ROLES[effAm].winsWithWolves});setMimicPhase('result');}} disabled={mimicSel===null}>Accusa</button></>);
       }
       // Guardia → protect
       if(copiedRole==='guardia'){
         if(mimicPhase==='result'&&mimicData)return(<><div className="instr">✅ <strong>{players[mimicData.idx]?.name}</strong> è protetto stanotte.</div>{hdr}<button className="btn btn-gold" onClick={()=>{setMimicPhase('select');setMimicData(null);setMimicSel(null);advFn();}}>Continua →</button></>);
         return(<><div className="instr">Protegge silenziosamente un giocatore.</div>{hdr}
           <div className="nlbl">Chi protegge?</div>
-          <PList players={alive.filter(p=>p.role!=='mutaforma'&&p.role!=='condor')} sel={mimicSel} onSel={setMimicSel}/>
+          <PList players={alive.filter(p=>p.role!==actorRole)} sel={mimicSel} onSel={setMimicSel}/>
           <button className="btn btn-gold" onClick={()=>{if(mimicSel===null)return;setPlayers(ps=>ps.map((p,i)=>({...p,protected:i===mimicSel?true:p.protected})));setMimicData({idx:mimicSel});setMimicPhase('result');}} disabled={mimicSel===null}>Conferma Protezione</button></>);
       }
       // Custode → silence
@@ -2134,7 +2141,7 @@ function App(){
         if(mimicPhase==='result'&&mimicData)return(<><div className="instr">🤫 <strong>{players[mimicData.idx]?.name}</strong> sarà silenziato domani.</div>{hdr}<button className="btn btn-gold" onClick={()=>{setMimicPhase('select');setMimicData(null);setMimicSel(null);advFn();}}>Continua →</button></>);
         return(<><div className="instr">Silenzia un giocatore: non potrà parlare né votare domani.</div>{hdr}
           <div className="nlbl">Chi silenzia?</div>
-          <PList players={alive.filter(p=>p.role!=='mutaforma'&&p.role!=='condor')} sel={mimicSel} onSel={setMimicSel}/>
+          <PList players={alive.filter(p=>p.role!==actorRole)} sel={mimicSel} onSel={setMimicSel}/>
           <button className="btn btn-gold" onClick={()=>{if(mimicSel===null)return;setSilenced(mimicSel);setMimicData({idx:mimicSel});setMimicPhase('result');}} disabled={mimicSel===null}>Silenzia</button></>);
       }
       // Corvo → add hidden vote
@@ -2142,13 +2149,13 @@ function App(){
         if(mimicPhase==='result'&&mimicData)return(<><div className="instr">🪶 Voto nascosto aggiunto contro <strong>{players[mimicData.idx]?.name}</strong>.</div>{hdr}<button className="btn btn-gold" onClick={()=>{setMimicPhase('select');setMimicData(null);setMimicSel(null);advFn();}}>Continua →</button></>);
         return(<><div className="instr">Aggiunge un voto nascosto contro un giocatore.</div>{hdr}
           <div className="nlbl">Chi colpisce?</div>
-          <PList players={alive.filter(p=>p.role!=='mutaforma'&&p.role!=='condor')} sel={mimicSel} onSel={setMimicSel}/>
+          <PList players={alive.filter(p=>p.role!==actorRole)} sel={mimicSel} onSel={setMimicSel}/>
           <button className="btn btn-gold" onClick={()=>{if(mimicSel===null)return;setCorvoVotes(cv=>({...cv,[mimicSel]:(cv[mimicSel]||0)+1}));setMimicData({idx:mimicSel});setMimicPhase('result');}} disabled={mimicSel===null}>Aggiungi Voto</button></>);
       }
       // Vampiro → bite
       if(copiedRole==='vampiro'){
         if(mimicPhase==='result'&&mimicData)return(<><div className="instr">🧛 <strong>{players[mimicData.idx]?.name}</strong> è stata morsa — è una nuova Preda.</div>{hdr}<button className="btn btn-gold" onClick={()=>{setMimicPhase('select');setMimicData(null);setMimicSel(null);advFn();}}>Continua →</button></>);
-        const bitable=alive.filter(p=>p.role!=='mutaforma'&&p.role!=='condor'&&p.role!=='vampiro'&&!vampPrede.includes(p._i));
+        const bitable=alive.filter(p=>p.role!==actorRole&&p.role!=='vampiro'&&!vampPrede.includes(p._i));
         return(<><div className="instr">Morde una vittima che diventa sua Preda segreta.</div>{hdr}
           <div className="nlbl">Chi morde?</div>
           <PList players={bitable} sel={mimicSel} onSel={setMimicSel}/>
@@ -2160,14 +2167,14 @@ function App(){
         if(mimicPhase==='result'&&mimicData)return(<><div className="instr">🏹 <strong>{players[mimicData.idx]?.name}</strong> è bloccato stanotte (il Narratore gestisce gli effetti).</div>{hdr}<button className="btn btn-gold" onClick={()=>{setMimicPhase('select');setMimicData(null);setMimicSel(null);advFn();}}>Continua →</button></>);
         return(<><div className="instr">Blocca i poteri di un giocatore stanotte (il Narratore gestisce gli effetti).</div>{hdr}
           <div className="nlbl">Chi blocca?</div>
-          <PList players={alive.filter(p=>p.role!=='mutaforma'&&p.role!=='condor')} sel={mimicSel} onSel={setMimicSel}/>
+          <PList players={alive.filter(p=>p.role!==actorRole)} sel={mimicSel} onSel={setMimicSel}/>
           <button className="btn btn-gold" onClick={()=>{if(mimicSel===null)return;setMimicData({idx:mimicSel});setMimicPhase('result');}} disabled={mimicSel===null}>Conferma</button></>);
       }
       // Meretrice → narrator note
       if(copiedRole==='meretrice'){
         return(<><div className="instr">Visita qualcuno stanotte — il Narratore gestisce gli effetti.</div>{hdr}
           <div className="nlbl">Chi visita?</div>
-          <PList players={alive.filter(p=>p.role!=='mutaforma'&&p.role!=='condor')} sel={mimicSel} onSel={setMimicSel}/>
+          <PList players={alive.filter(p=>p.role!==actorRole)} sel={mimicSel} onSel={setMimicSel}/>
           <button className="btn btn-gold mb8" onClick={()=>{setMimicSel(null);advFn();}} disabled={mimicSel===null}>Azione compiuta →</button>
           <button className="btn btn-outline" onClick={skipFn}>Passa senza agire</button></>);
       }
@@ -2181,7 +2188,7 @@ function App(){
       if(copiedRole==='piromane'){
         return(<><div className="instr">Può incendiare una casa (una volta per partita) — il Narratore gestisce.</div>{hdr}
           <div className="nlbl">Chi incendia (opzionale)?</div>
-          <PList players={alive.filter(p=>p.role!=='mutaforma'&&p.role!=='condor')} sel={mimicSel} onSel={setMimicSel}/>
+          <PList players={alive.filter(p=>p.role!==actorRole)} sel={mimicSel} onSel={setMimicSel}/>
           <button className="btn btn-gold mb8" onClick={()=>advFn()}>Azione compiuta →</button>
           <button className="btn btn-outline" onClick={skipFn}>Passa senza agire</button></>);
       }
@@ -2212,7 +2219,7 @@ function App(){
               <p style={{fontSize:'.76rem',color:'#7a6a50',fontStyle:'italic',textAlign:'center',marginBottom:10}}>🔄 In metamorfosi: {ROLES[mutRole].emoji} {ROLES[mutRole].name}</p>
               <button className="btn btn-gold" onClick={skipMut}>Continua →</button></>
             ):(
-              renderMimicAction(mutRole,skipMut,()=>advance('mutaforma',players),'🔄 In metamorfosi:')
+              renderMimicAction(mutRole,skipMut,()=>advance('mutaforma',players),'🔄 In metamorfosi:','mutaforma')
             )
           ):(
             <><div className="instr">Prima trasformazione — il Mutaforma sceglie chi assumere per sempre.</div>
@@ -2241,7 +2248,7 @@ function App(){
               <p style={{fontSize:'.76rem',color:'#7a6a50',fontStyle:'italic',textAlign:'center',marginBottom:10}}>🦅 Assorbito: {ROLES[conRole].emoji} {ROLES[conRole].name}</p>
               <button className="btn btn-gold" onClick={skipCon}>Continua →</button></>
             ):(
-              renderMimicAction(conRole,skipCon,()=>advance('condor',players),'🦅 Assorbito:')
+              renderMimicAction(conRole,skipCon,()=>advance('condor',players),'🦅 Assorbito:','condor')
             )
           ):dead.length===0?(
             <><div className="instr">Nessun morto da cui assorbire ancora — il Condor attende.</div>
