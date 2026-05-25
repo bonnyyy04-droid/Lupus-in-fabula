@@ -287,7 +287,7 @@ const {useState,useEffect,useRef} = React;
 
 // ─── ROLES ────────────────────────────────────────────────────────────────────
 const ROLES = {
-  lupo:        {name:'Lupo Alpha',          emoji:'🐺',wolfTeam:true, winsWithWolves:false,soloTeam:false,seerSees:'lupo',   survivesWolf:false,color:'#e74c3c',bg:'rgba(231,76,60,.13)',   desc:'Di notte si sveglia con il branco per scegliere una vittima da eliminare.'},
+  lupo:        {name:'Lupo Grande',          emoji:'🐺',wolfTeam:true, winsWithWolves:false,soloTeam:false,seerSees:'lupo',   survivesWolf:false,color:'#e74c3c',bg:'rgba(231,76,60,.13)',   desc:'Di notte si sveglia con il branco per scegliere una vittima da eliminare.'},
   cucciolo:    {name:'Lupo Cucciolo',       emoji:'🐶',wolfTeam:true, winsWithWolves:false,soloTeam:false,seerSees:'villico',survivesWolf:false,color:'#e67e22',bg:'rgba(230,126,34,.13)',  desc:'Fai parte dei lupi ma il Veggente ti vede come innocente. Se sei l\'unico lupo, la prima notte non puoi uccidere.'},
   villico:     {name:'Villico',              emoji:'🧑‍🌾',wolfTeam:false,winsWithWolves:false,soloTeam:false,seerSees:'villico',survivesWolf:false,color:'#e67e22',bg:'rgba(230,126,34,.10)', desc:'Nessun potere speciale. Il tuo voto è fondamentale per smascherare i lupi!'},
   veggente:    {name:'Veggente',             emoji:'🔮',wolfTeam:false,winsWithWolves:false,soloTeam:false,isOrdine:true, seerSees:'villico',survivesWolf:false,color:'#9b59b6',bg:'rgba(155,89,182,.13)',  desc:'Di notte puoi scoprire il ruolo segreto di un altro giocatore.'},
@@ -301,7 +301,7 @@ const ROLES = {
   romeo:       {name:'Romeo',                emoji:'🌹',wolfTeam:false,winsWithWolves:false,soloTeam:false,isOrdine:false,seerSees:'villico',survivesWolf:false,color:'#e91e63',bg:'rgba(233,30,99,.13)',   desc:'Sei legato a Giulietta. Se lei muore, muori anche tu. Se lei è protetta, sei protetto anche tu.'},
   giulietta:   {name:'Giulietta',            emoji:'💐',wolfTeam:false,winsWithWolves:false,soloTeam:false,isOrdine:false,seerSees:'villico',survivesWolf:false,color:'#e91e63',bg:'rgba(233,30,99,.13)',   desc:'Sei legata a Romeo. Se lui muore, muori anche tu. Se lui è protetto, sei protetta anche tu.'},
   orfano:      {name:'Orfano',               emoji:'🍵',wolfTeam:false,winsWithWolves:false,soloTeam:false,isOrdine:false,seerSees:'villico',survivesWolf:false,color:'#bdc3c7',bg:'rgba(189,195,199,.10)', desc:'Se vieni ucciso dai lupi, il giorno successivo i voti contro lupi e misantropo valgono doppio.'},
-  contaminato: {name:'Contadino Avvelenato', emoji:'🤒',wolfTeam:false,winsWithWolves:false,soloTeam:false,isOrdine:false,seerSees:'villico',survivesWolf:false,color:'#2ecc71',bg:'rgba(46,204,113,.10)',  desc:'Se vieni ucciso dai lupi di notte, il Lupo Alpha muore la mattina seguente (annunciato all\'alba del giorno dopo).'},
+  contaminato: {name:'Contadino Avvelenato', emoji:'🤒',wolfTeam:false,winsWithWolves:false,soloTeam:false,isOrdine:false,seerSees:'villico',survivesWolf:false,color:'#2ecc71',bg:'rgba(46,204,113,.10)',  desc:'Se vieni ucciso dai lupi di notte, il Lupo Grande muore la mattina seguente (annunciato all\'alba del giorno dopo).'},
   piromane:    {name:'Piromane',             emoji:'🔥',wolfTeam:false,winsWithWolves:false,soloTeam:false,isOrdine:false,seerSees:'villico',survivesWolf:false,color:'#e67e22',bg:'rgba(230,126,34,.13)',  desc:'Una sola volta per partita puoi incendiare la casa di un giocatore. Se è un lupo muore lui; se è innocente o neutrale muori tu.'},
   accusatore:  {name:'Accusatore',           emoji:'👉',wolfTeam:false,winsWithWolves:false,soloTeam:false,isOrdine:false,seerSees:'villico',survivesWolf:false,color:'#c0392b',bg:'rgba(192,57,43,.10)',   desc:'Ogni due notti puoi accusare un giocatore: se è un lupo viene rivelato pubblicamente. Se è innocente, muori tu.'},
   funambolo:   {name:'Funambolo',            emoji:'🎪',wolfTeam:false,winsWithWolves:false,soloTeam:false,isOrdine:false,seerSees:'villico',survivesWolf:false,color:'#16a085',bg:'rgba(22,160,133,.13)',  desc:'Ogni notte il Narratore lancia in segreto una moneta. Testa: sei immune a qualsiasi morte. Croce: muori comunque anche se protetto.'},
@@ -311,7 +311,7 @@ const ROLES = {
   criceto:     {name:'Criceto Mannaro',      emoji:'🐹',wolfTeam:false,winsWithWolves:false,soloTeam:true, seerSees:'villico',survivesWolf:true, color:'#f39c12',bg:'rgba(243,156,18,.13)',  desc:'Fazione solitaria. Sopravvivi agli attacchi dei lupi. Muori se il Veggente ti scruta o se vieni votato. Vinci da solo se sopravvivi con una sola fazione rimasta.'},
   misantropo:  {name:'Misantropo',           emoji:'😒',wolfTeam:false,winsWithWolves:true, soloTeam:false,seerSees:'villico',survivesWolf:false,color:'#7f8c8d',bg:'rgba(127,140,141,.13)', desc:'Sembri un normale cittadino senza poteri. Vinci solo se vincono i lupi.'},
   incompreso:  {name:'Incompreso',           emoji:'🥀',wolfTeam:false,winsWithWolves:false,soloTeam:false,seerSees:'lupo',   survivesWolf:false,color:'#8e44ad',bg:'rgba(142,68,173,.13)',  desc:'Sei innocente e vinci col villaggio. Ma il Veggente ti vede come un lupo.'},
-  lupoAlpha:   {name:'Lupo Mannaro',        emoji:'🐾',wolfTeam:false,winsWithWolves:false,soloTeam:false,seerSees:'villico',survivesWolf:true, color:'#8e44ad',bg:'rgba(142,68,173,.13)',  desc:'Appari come contadino. Se i lupi ti attaccano non muori: la notte successiva diventi un Lupo Alpha.'},
+  lupoAlpha:   {name:'Lupo Mannaro',        emoji:'🐾',wolfTeam:false,winsWithWolves:false,soloTeam:false,seerSees:'villico',survivesWolf:true, color:'#8e44ad',bg:'rgba(142,68,173,.13)',  desc:'Appari come contadino. Se i lupi ti attaccano non muori: la notte successiva diventi un Lupo Grande.'},
   suicida:     {name:'Suicida',              emoji:'🪦',wolfTeam:false,winsWithWolves:false,soloTeam:true, seerSees:'villico',survivesWolf:false,color:'#636e72',bg:'rgba(99,110,114,.10)',  desc:'Nessun potere. Vinci solo se vieni eliminato tramite votazione di giorno.'},
   mutaforma:   {name:'Mutaforma',            emoji:'👤',wolfTeam:false,winsWithWolves:false,soloTeam:true, seerSees:'villico',survivesWolf:false,color:'#bdc3c7',bg:'rgba(189,195,199,.10)', desc:'Dalla seconda notte copi i poteri di un giocatore vivo. Vinci con la fazione del ruolo copiato.'},
   condor:      {name:'Condor',               emoji:'🦅',wolfTeam:false,winsWithWolves:false,soloTeam:true, seerSees:'villico',survivesWolf:false,color:'#d35400',bg:'rgba(211,84,0,.13)',    desc:'Dalla seconda notte copi i poteri di un giocatore morto. Vinci con la fazione del ruolo copiato.'},
@@ -384,15 +384,15 @@ const BOOK = [
   {key:'alchimista',cat:'villaggio',emoji:'⚗️',name:'L\'Alchimista',color:'#1abc9c',faction:'Villaggio',fc:'#2ecc71',
    desc:'Nel cuore della notte, le sue ampolle ribollono.',
    ability:'Una sola volta: Pozione Rossa (resuscita 1 di 2 morti a caso) o Pozione Nera (avvelena un vivo).',win:'I contadini'},
-  {key:'lupo',cat:'lupi',emoji:'🐺',name:'Il Lupo Mannaro',color:'#e74c3c',faction:'Lupi',fc:'#e74c3c',
+  {key:'lupo',cat:'lupi',emoji:'🐺',name:'Il Lupo Grande',color:'#e74c3c',faction:'Lupi',fc:'#e74c3c',
    desc:'Di giorno cammina tra gli uomini. Di notte corre, morde, uccide.',
    ability:'Ogni notte insieme agli altri lupi sceglie un abitante da uccidere.',win:'I lupi'},
   {key:'cucciolo',cat:'lupi',emoji:'🐶',name:'Il Lupo Cucciolo',color:'#e67e22',faction:'Lupi',fc:'#e74c3c',
    desc:'Ha ancora i denti da latte ma sotto la pelliccia si nasconde un predatore.',
    ability:'Visto come contadino dalla Veggente. Se è l\'unico lupo, la prima notte da solo non può uccidere.',win:'I lupi'},
-  {key:'lupoAlpha',cat:'lupi',emoji:'🐾',name:'Il Lupo Alpha',color:'#8e44ad',faction:'Villaggio → Lupi',fc:'#e74c3c',
+  {key:'lupoAlpha',cat:'lupi',emoji:'🐾',name:'Il Lupo Mannaro',color:'#8e44ad',faction:'Villaggio → Lupi',fc:'#e74c3c',
    desc:'Vive da uomo, ma porta dentro un veleno dormiente.',
-   ability:'Se attaccato dai lupi non muore e si trasforma in Lupo nella notte successiva.',win:'I contadini (prima) / I lupi (dopo)'},
+   ability:'Se attaccato dai lupi non muore e si trasforma in Lupo Grande nella notte successiva.',win:'I contadini (prima) / I lupi (dopo)'},
   {key:'criceto',cat:'neutri',emoji:'🐹',name:'Il Criceto Mannaro',color:'#f39c12',faction:'Solitario',fc:'#f39c12',
    desc:'È piccolo. Mentre gli altri si sbranano, lui rosicchia nell\'ombra.',
    ability:'Sopravvive agli attacchi dei lupi. Muore se scrutato dalla Veggente. Vince se sopravvive con una sola fazione.',win:'Solo'},
@@ -467,7 +467,7 @@ const TIPS=[
   {title:'Bilanciamento Lupi 🐺',text:'6-8 giocatori: 1 Lupo. 9-11 giocatori: 2 Lupi. 12-15 giocatori: 3 Lupi. Aggiungi Cuccioli per varietà.'},
   {title:'Quando inserire un Solista 👤',text:'Di solita 1 solo per partita. Attenzione: Criceto e Vampiro insieme sono difficili da gestire.'},
   {title:"Inserire l'Ordine 🔮",text:"Il Veggente è sempre utile. Un buon Ordine ha 3-4 membri su 10-12 giocatori. Condor e Alchimista aggiungono varietà."},
-  {title:'Ruoli Funzionali 🎖️',text:'Il Sindaco ha voto doppio — eletto il primo giorno. Il Lupo Alpha decide la vittima finale e non può essere un Cucciolo.'},
+  {title:'Ruoli Funzionali 🎖️',text:'Il Sindaco ha voto doppio — eletto il primo giorno. Il Lupo Grande decide la vittima finale e non può essere un Cucciolo.'},
 ];
 
 function LibroMagico({onClose,initialCat='tutti'}){
@@ -785,7 +785,7 @@ const STEP_HINTS={
   custode:   {rules:["Silenzia un giocatore per tutto il giorno seguente","Non agisce la prima notte","Il bersaglio non pu\u00f2 parlare n\u00e9 votare"]},
   funambolo: {rules:["Il Narratore lancia la moneta in segreto","Testa = immune a qualsiasi morte stanotte","Croce = muore comunque anche se protetto"]},
   lupi:      {rules:["I Lupi concordano silenziosamente la vittima","Il Lupo Maggiore ha l\u2019ultima parola","Non possono attaccare un altro Lupo"]},
-  veggente:  {rules:["Scopre se il giocatore scelto \u00e8 buono o cattivo","Il Vampiro appare come Lupo","Il Lupo Alpha appare come innocente"]},
+  veggente:  {rules:["Scopre se il giocatore scelto è buono o cattivo","Il Vampiro appare come Lupo","Il Lupo Mannaro appare come innocente"]},
   meretrice: {rules:["Visita un giocatore: quella notte \u00e8 fuori casa","Se visita il Lupo Cucciolo, muore","Se i Lupi attaccano la Meretrice mentre \u00e8 fuori, non trovano nessuno"]},
   negromante:{rules:["Indica un morto per attivare un\u2019azione speciale la notte successiva","Il giocatore rianimato agisce come zombie","Vince con l\u2019Ordine"]},
   accusatore:{rules:["Aggiunge voti bonus contro un giocatore nella votazione diurna","Non pu\u00f2 accusare se stesso","L\u2019effetto si accumula notte dopo notte"]},
@@ -884,7 +884,6 @@ function App(){
   const [conShowReveal,setConShowReveal]=useState(false);
   const [guardSelfUsed,setGuardSelfUsed]=useState(false);
   const [lupoAlphaActivatedName,setLupoAlphaActivatedName]=useState(null);
-  const [contaminatoTarget,setContaminatoTarget]=useState(null);
   const toggleCat=id=>setOpenCats(p=>({...p,[id]:!p[id]}));
 
   // ── FIRST-TIME GUIDE ──────────────────────────────────────────────────────
@@ -1040,7 +1039,6 @@ function App(){
     setFunamboloCoin(s.funamboloCoin??null);setVampPrede(s.vampPrede||[]);
     setAraldoCands(s.araldoCands||[]);
     setGuardSelfUsed(s.guardSelfUsed||false);
-    setContaminatoTarget(s.contaminatoTarget??null);
   },[]);
 
   // ── SAVE ──
@@ -1049,11 +1047,11 @@ function App(){
     saveGame({sc,names,vName,players,ri,round,ns,dist,gc,wc,vc,vr,mc,ac,cusC,negC,negR,pirC,accC,accR,
       alchAct,alchT,alchTs,mutC,conC,corC,seerKill,cAlone,cFirst,pirUsed,alchUsed,araldoUsed,accLast,
       gesuDeath,cappKilled,alphaTransf,mutRole,conRole,corvoVotes,orfanoEff,silenced,avvRm,de,vi,win,
-      ordineMode,sindacoIdx,showRoles,funamboloCoin,vampPrede,araldoCands,guardSelfUsed,contaminatoTarget});
+      ordineMode,sindacoIdx,showRoles,funamboloCoin,vampPrede,araldoCands,guardSelfUsed});
   },[sc,players,ri,round,ns,gc,wc,vc,vr,mc,ac,cusC,negC,negR,pirC,accC,accR,
     alchAct,alchT,alchTs,mutC,conC,corC,seerKill,cAlone,cFirst,pirUsed,alchUsed,
     araldoUsed,accLast,gesuDeath,cappKilled,alphaTransf,mutRole,conRole,corvoVotes,
-    orfanoEff,silenced,de,vi,win,funamboloCoin,vampPrede,araldoCands,guardSelfUsed,contaminatoTarget]);
+    orfanoEff,silenced,de,vi,win,funamboloCoin,vampPrede,araldoCands,guardSelfUsed]);
 
   const addP=()=>{const n=inp.trim();if(!n||names.length>=20||names.includes(n))return;setNames(p=>[...p,n]);setInp('');};
 
@@ -1071,7 +1069,7 @@ function App(){
     setAlphaTransf(false);setMutRole(null);setConRole(null);
     setCorvoVotes({});setOrfanoEff(false);setSilenced(null);setAvvRm(null);
     setSindacoIdx(useSindaco?null:-1);setSindacoTmp(null);setVampPrede([]);setAraldoCands([]);
-    setGuardSelfUsed(false);setContaminatoTarget(null);setLupoAlphaActivatedName(null);
+    setGuardSelfUsed(false);setLupoAlphaActivatedName(null);
     setSc('roleReveal');
   };
 
@@ -1165,13 +1163,6 @@ function App(){
     const guardT=np.findIndex(p=>p.protected);
     const effRoleOf=(p)=>(p.role==='mutaforma'&&mutRole)?mutRole:(p.role==='condor'&&conRole)?conRole:p.role;
 
-    // contaminato deferred kill from previous night
-    if(contaminatoTarget!==null&&np[contaminatoTarget]?.alive){
-      dying.add(contaminatoTarget);
-      evs.push({t:'info',tx:`☠️ Il veleno del Contaminato ha colpito! Il Lupo Mannaro muore all'alba.`});
-      setContaminatoTarget(null);
-    }
-
     // block set (arciere)
     const blocked=arcT!==null&&arcT!==undefined?new Set([arcT]):new Set();
 
@@ -1203,8 +1194,11 @@ function App(){
       }else{
         if(np[wolfT].role==='contaminato'){
           dying.add(wolfT);
-          const laIdx=np.findIndex(p=>p.role==='lupo'&&p.alive);
-          if(laIdx!==-1)setContaminatoTarget(laIdx); // deferred: Lupo Alpha dies next morning
+          // Un Lupo Grande a caso muore la stessa mattina del Contaminato
+          const lupiVivi=np.map((p,i)=>i).filter(i=>np[i].role==='lupo'&&np[i].alive);
+          if(lupiVivi.length>0){
+            dying.add(lupiVivi[Math.floor(Math.random()*lupiVivi.length)]);
+          }
         }else{dying.add(wolfT);}
         if(merOnSameAsWolf&&merIdx!==-1)dying.add(merIdx);
         if(np[wolfT].role==='orfano')setOrfanoEff(true);
@@ -1914,7 +1908,7 @@ function App(){
       const lupoOk=players.some(p=>p.role==='lupo'&&p.alive);
       const cucHere=!lupoOk&&players.some(p=>p.role==='cucciolo'&&p.alive);
       const cucBlock=cucHere&&cFirst;
-      // Arciere logic: lupoAlpha blocked = no attack; lupo (Lupo Alpha) blocked = no attack; cucciolo-solo blocked = no attack
+      // Arciere logic: lupoAlpha (Lupo Mannaro) blocked = no attack; lupo (Lupo Grande) blocked = no attack; cucciolo-solo blocked = no attack
       const alphaIdx=players.findIndex(p=>p.role==='lupoAlpha'&&p.alive);
       const arcBlockedAlpha=ac!==null&&ac===alphaIdx&&alphaIdx!==-1;
       const arcBlockedLupo=ac!==null&&players[ac]?.role==='lupo';
@@ -1923,14 +1917,14 @@ function App(){
       return(
         <NW color="#e74c3c" emoji="🐺" title={cucHere?'Il Lupo Cucciolo si sveglia':'I Lupi si svegliano'}>
           {wolvesBlocked?(
-            <><div className="instr" style={{borderColor:'rgba(39,174,96,.3)',color:'#70a080'}}>🏹 L'Arciere ha bloccato {arcBlockedAlpha?'il Lupo Mannaro':arcBlockedLupo?'il Lupo Alpha':'il Cucciolo'}. Nessun attacco questa notte.</div>
+            <><div className="instr" style={{borderColor:'rgba(39,174,96,.3)',color:'#70a080'}}>🏹 L'Arciere ha bloccato {arcBlockedAlpha?'il Lupo Mannaro':arcBlockedLupo?'il Lupo Grande':'il Cucciolo'}. Nessun attacco questa notte.</div>
             <button className="btn btn-gold" onClick={()=>confWolves(true)}>Conferma — nessuna vittima →</button></>
           ):cucBlock?(
             <><div className="instr">🐶 Il Cucciolo ha perso il suo branco. Questa notte non riesce ad agire — dalla prossima potrà uccidere.</div>
             <button className="btn btn-gold" onClick={()=>confWolves(true)}>Notte senza vittima →</button></>
           ):(
             <><div className="instr">{cucHere?'Il Cucciolo si è trasformato. Indica la vittima.':'I Lupi si riconoscono e scelgono la vittima in silenzio.'}</div>
-            {lupoAlphaActivatedName&&<div style={{fontSize:'.82rem',color:'#e74c3c',fontWeight:600,marginBottom:10,padding:'8px 12px',background:'rgba(231,76,60,.1)',borderRadius:8,border:'1px solid rgba(231,76,60,.3)'}}>🐺 <strong>{lupoAlphaActivatedName}</strong> si è appena trasformato — è ora un Lupo Alpha. Chiamatelo stanotte nel turno del branco!</div>}
+            {lupoAlphaActivatedName&&<div style={{fontSize:'.82rem',color:'#e74c3c',fontWeight:600,marginBottom:10,padding:'8px 12px',background:'rgba(231,76,60,.1)',borderRadius:8,border:'1px solid rgba(231,76,60,.3)'}}>🐺 <strong>{lupoAlphaActivatedName}</strong> il Lupo Mannaro si è trasformato stanotte — è ora un Lupo Grande. Chiamatelo nel turno del branco!</div>}
             {(()=>{const mIdx=players.findIndex(p=>p.role==='mutaforma'&&p.alive);const cIdx=players.findIndex(p=>p.role==='condor'&&p.alive);const mutW=mutRole&&ROLES[mutRole]?.wolfTeam;const conW=conRole&&ROLES[conRole]?.wolfTeam;return(<>{mutW&&mIdx!==-1&&<div style={{fontSize:'.78rem',color:'#bdc3c7',fontStyle:'italic',marginBottom:8,padding:'6px 10px',background:'rgba(189,195,199,.08)',borderRadius:6,border:'1px solid rgba(189,195,199,.2)'}}>🔄 {players[mIdx].name} (Mutaforma → {ROLES[mutRole].emoji}{ROLES[mutRole].name}) si sveglia con il branco.</div>}{conW&&cIdx!==-1&&<div style={{fontSize:'.78rem',color:'#d35400',fontStyle:'italic',marginBottom:8,padding:'6px 10px',background:'rgba(211,84,0,.08)',borderRadius:6,border:'1px solid rgba(211,84,0,.2)'}}>🦅 {players[cIdx].name} (Condor → {ROLES[conRole].emoji}{ROLES[conRole].name}) si sveglia con il branco.</div>}</>);})()}
             <div className="nlbl">Chi attaccano i Lupi?</div>
             <PList players={alive.filter(p=>{const ek=(p.role==='mutaforma'&&mutRole)?mutRole:(p.role==='condor'&&conRole)?conRole:p.role;return!ROLES[ek].wolfTeam&&!ROLES[ek].winsWithWolves&&ek!=='cucciolo';})} sel={wc} onSel={setWc}/>
@@ -1955,11 +1949,11 @@ function App(){
               const isLupo=vr.seen==='lupo';
               return(
                 <><div style={{fontSize:'2.5rem',marginBottom:8}}>{isLupo?'🐺':'🧑‍🌾'}</div>
-                <div style={{color:isLupo?'#e74c3c':'#2ecc71',fontFamily:'Cinzel,serif',fontWeight:600}}>{isLupo?(vr.role==='lupo'?'Lupo Alpha':'Lupo Mannaro'):'Innocente'}</div>
-                {vr.role==='lupo'&&<div style={{fontSize:'.74rem',marginTop:6,color:'#6a5a40',fontStyle:'italic'}}>(È il Lupo Alpha del branco)</div>}
+                <div style={{color:isLupo?'#e74c3c':'#2ecc71',fontFamily:'Cinzel,serif',fontWeight:600}}>{isLupo?'Lupo':'Innocente'}</div>
+                {isLupo&&<div style={{fontSize:'.74rem',marginTop:6,color:'#8a4040',fontStyle:'italic'}}>{ROLES[vr.role]?.name||'Lupo'}</div>}
+                {vr.role==='lupoAlpha'&&<div style={{fontSize:'.74rem',marginTop:6,color:'#6a5a40',fontStyle:'italic'}}>(In realtà è il Lupo Mannaro — ancora innocente)</div>}
                 {vr.role==='cucciolo'&&<div style={{fontSize:'.74rem',marginTop:6,color:'#6a5a40',fontStyle:'italic'}}>(In realtà è il Lupo Cucciolo)</div>}
                 {vr.role==='incompreso'&&<div style={{fontSize:'.74rem',marginTop:6,color:'#6a5a40',fontStyle:'italic'}}>(In realtà è l'Incompreso — è innocente)</div>}
-                {vr.role==='lupoAlpha'&&<div style={{fontSize:'.74rem',marginTop:6,color:'#6a5a40',fontStyle:'italic'}}>(In realtà è il Lupo Mannaro — ancora innocente)</div>}
                 {vr.role==='criceto'&&<div style={{fontSize:'.74rem',marginTop:8,color:'#c0392b',fontStyle:'italic',borderTop:'1px solid rgba(192,57,43,.25)',paddingTop:8}}>⚠️ Narratore: è il Criceto — morirà all'alba.</div>}
                 </>
               );
@@ -2150,8 +2144,8 @@ function App(){
           return(<><div className="vbox fade"><div className="vlbl">Solo per il Narratore</div>
             <div style={{marginBottom:8,fontSize:'.95rem'}}><strong style={{color:'#c8a05a'}}>{players[mimicData.idx]?.name}</strong> appare come...</div>
             <div style={{fontSize:'2.5rem',marginBottom:8}}>{seen==='lupo'?'🐺':'🧑‍🌾'}</div>
-            <div style={{color:seen==='lupo'?'#e74c3c':'#2ecc71',fontFamily:'Cinzel,serif',fontWeight:600}}>{seen==='lupo'?(mimicData.role==='lupo'?'Lupo Alpha':'Lupo Mannaro'):'Innocente'}</div>
-            {mimicData.role==='lupo'&&<div style={{fontSize:'.74rem',marginTop:6,color:'#6a5a40',fontStyle:'italic'}}>(È il Lupo Alpha del branco)</div>}
+            <div style={{color:seen==='lupo'?'#e74c3c':'#2ecc71',fontFamily:'Cinzel,serif',fontWeight:600}}>{seen==='lupo'?'Lupo':'Innocente'}</div>
+            {seen==='lupo'&&<div style={{fontSize:'.74rem',marginTop:6,color:'#8a4040',fontStyle:'italic'}}>{ROLES[mimicData.role]?.name||'Lupo'}</div>}
             {mimicData.role==='criceto'&&<div style={{fontSize:'.74rem',marginTop:8,color:'#c0392b',fontStyle:'italic',borderTop:'1px solid rgba(192,57,43,.25)',paddingTop:8}}>⚠️ Narratore: è il Criceto — morirà all'alba.</div>}
           </div>{hdr}
           <button className="btn btn-gold" onClick={()=>{setMimicPhase('select');setMimicData(null);setMimicSel(null);advFn();}}>Fine turno →</button></>);
