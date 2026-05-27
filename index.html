@@ -11,6 +11,20 @@
   crossorigin onerror="window._loadErr=true"></script>
 <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.24.7/babel.min.js"
   crossorigin onerror="window._loadErr=true"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyAuXMF0rQcb__6D0xW9YUg9GNRN_65ZR-8",
+  authDomain:"lupus-in-fabula-d97b0.firebaseapp.com",
+  databaseURL:"https://lupus-in-fabula-d97b0-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:"lupus-in-fabula-d97b0",
+  storageBucket:"lupus-in-fabula-d97b0.firebasestorage.app",
+  messagingSenderId:"693826386316",
+  appId:"1:693826386316:web:239257665f82e726ac7ea9"
+});
+</script>
 <script>
 // Fallback message if CDN scripts don't load within 9s
 setTimeout(function(){
@@ -714,6 +728,40 @@ const saveGame=s=>{try{localStorage.setItem(SK,JSON.stringify(s));}catch(e){}};
 const loadGame=()=>{try{const s=localStorage.getItem(SK);return s?JSON.parse(s):null;}catch(e){return null;}};
 const clearGame=()=>{try{localStorage.removeItem(SK);}catch(e){}};
 
+// ── MULTIPLAYER HELPERS ────────────────────────────────────────────────────────
+const PLAYER_KEY='lupus_pid_v1';
+const getMyId=()=>{try{let id=localStorage.getItem(PLAYER_KEY);if(!id){id=Math.random().toString(36).slice(2,10);localStorage.setItem(PLAYER_KEY,id);}return id;}catch(e){return Math.random().toString(36).slice(2,10);}};
+const genCode=()=>{const ch='ABCDEFGHJKLMNPQRSTUVWXYZ';return Array.from({length:4},()=>ch[Math.floor(Math.random()*ch.length)]).join('');};
+const getDb=()=>window.firebase.database();
+const fbSet=async(path,val)=>getDb().ref(path).set(val);
+const fbGet=async(path)=>{const s=await getDb().ref(path).once('value');return s.val();};
+const fbCreateRoom=async(code,hostId,mode)=>{
+  await fbSet(`rooms/${code}`,{mode,hostId,status:'lobby',
+    createdAt:window.firebase.database.ServerValue.TIMESTAMP,players:{}});
+};
+const fbJoinRoom=async(code,playerId,playerName)=>{
+  const room=await fbGet(`rooms/${code}`);
+  if(!room)throw new Error('Stanza non trovata.');
+  if(room.status==='gameOver')throw new Error('Partita già terminata.');
+  await fbSet(`rooms/${code}/players/${playerId}`,{name:playerName,connected:true});
+  return room;
+};
+const fbStartGame=async(code)=>fbSet(`rooms/${code}/status`,'playing');
+const fbLeaveRoom=(code,playerId)=>{
+  if(!code||!playerId)return;
+  try{getDb().ref(`rooms/${code}/players/${playerId}`).remove();}catch(e){}
+};
+const fbWriteRoles=async(code,players,playerMap)=>{
+  if(!code||!players.length)return;
+  const updates={};
+  players.forEach(p=>{
+    const fbId=playerMap[p.name];
+    if(fbId)updates[`rooms/${code}/playerRoles/${fbId}`]={role:p.role,name:p.name};
+  });
+  try{await getDb().ref().update(updates);}catch(e){console.warn('fbWriteRoles:',e);}
+};
+const fbUpdatePhase=(code,phase)=>{if(code)try{fbSet(`rooms/${code}/phase`,phase);}catch(e){};};
+
 // ── SCOREBOARD ─────────────────────────────────────────────────────────────
 const SSK='lupus_scores_v1';
 const saveScores=s=>{try{localStorage.setItem(SSK,JSON.stringify(s));}catch(e){}};
@@ -731,6 +779,18 @@ function getPoints(player,win,mutRole=null,conRole=null){
   if(win==='lupi'&&(r.wolfTeam||r.winsWithWolves))return alive?2.5:2.0;
   if((win==='villici'||win==='ordine')&&!r.wolfTeam&&!r.soloTeam&&!r.winsWithWolves)return alive?1.5:1.0;
   return 0;
+}
+
+// ─── QR DISPLAY ───────────────────────────────────────────────────────────────
+function QRDisplay({text,size=160}){
+  const ref=useRef(null);
+  useEffect(()=>{
+    if(!ref.current||!window.QRCode)return;
+    ref.current.innerHTML='';
+    try{new window.QRCode(ref.current,{text,width:size,height:size,colorDark:'#c9a227',colorLight:'#04080f'});}
+    catch(e){if(ref.current)ref.current.textContent=text;}
+  },[text,size]);
+  return <div ref={ref} style={{display:'flex',justifyContent:'center'}}/>;
 }
 
 // ─── COMPONENTS ───────────────────────────────────────────────────────────────
@@ -886,6 +946,19 @@ function App(){
   const [guardSelfUsed,setGuardSelfUsed]=useState(false);
   const [lupoAlphaActivatedName,setLupoAlphaActivatedName]=useState(null);
   const toggleCat=id=>setOpenCats(p=>({...p,[id]:!p[id]}));
+
+  // ── MULTIPLAYER STATE ──────────────────────────────────────────────────────
+  const [gameMode,setGameMode]=useState(null);       // null|'narrator'|'multiplayer'
+  const [roomCode,setRoomCode]=useState('');
+  const [roomRole,setRoomRole]=useState(null);       // 'host'|'player'
+  const [lobbyPlayers,setLobbyPlayers]=useState([]); // [{id,name,connected}]
+  const [joinInput,setJoinInput]=useState('');       // 4-letter code input
+  const [playerName,setPlayerName]=useState('');     // name when joining
+  const [joinError,setJoinError]=useState('');
+  const [joinLoading,setJoinLoading]=useState(false);
+  const myIdRef=useRef(getMyId());
+  const [lobbyPlayerMap,setLobbyPlayerMap]=useState({}); // {playerName → firebaseId}
+  const [myRole,setMyRole]=useState(null);               // {role,name} per il telefono del giocatore
 
   // ── FIRST-TIME GUIDE ──────────────────────────────────────────────────────
   const GUIDE_KEY='lupus_guide_v1';
@@ -1055,6 +1128,44 @@ function App(){
     araldoUsed,accLast,gesuDeath,cappKilled,alphaTransf,mutRole,conRole,corvoVotes,
     orfanoEff,silenced,de,vi,win,funamboloCoin,vampPrede,araldoCands,guardSelfUsed]);
 
+  // ── AUTO-JOIN FROM URL ─────────────────────────────────────────────────────
+  useEffect(()=>{
+    const p=new URLSearchParams(window.location.search);
+    const c=(p.get('join')||'').toUpperCase().replace(/[^A-Z]/g,'').slice(0,4);
+    if(c.length===4){setJoinInput(c);setSc('roomJoin');}
+    if(c)window.history.replaceState({},'',window.location.pathname);
+  },[]);
+
+  // ── LOBBY: giocatori in tempo reale ───────────────────────────────────────
+  useEffect(()=>{
+    if(!roomCode)return;
+    const ref=getDb().ref(`rooms/${roomCode}/players`);
+    const handler=snap=>{
+      const val=snap.val()||{};
+      setLobbyPlayers(Object.entries(val).map(([id,p])=>({id,...p})));
+    };
+    ref.on('value',handler);
+    return()=>ref.off('value',handler);
+  },[roomCode]);
+
+  // ── LOBBY: player aspetta avvio partita ───────────────────────────────────
+  useEffect(()=>{
+    if(!roomCode||roomRole!=='player')return;
+    const ref=getDb().ref(`rooms/${roomCode}/status`);
+    const handler=snap=>{if(snap.val()==='playing')setSc('playerWait');};
+    ref.on('value',handler);
+    return()=>ref.off('value',handler);
+  },[roomCode,roomRole]);
+
+  // ── PLAYER: ascolta il proprio ruolo assegnato ────────────────────────────
+  useEffect(()=>{
+    if(!roomCode||roomRole!=='player')return;
+    const ref=getDb().ref(`rooms/${roomCode}/playerRoles/${myIdRef.current}`);
+    const handler=snap=>{if(snap.val())setMyRole(snap.val());};
+    ref.on('value',handler);
+    return()=>ref.off('value',handler);
+  },[roomCode,roomRole]);
+
   const addP=()=>{const n=inp.trim();if(!n||names.length>=20||names.includes(n))return;setNames(p=>[...p,n]);setInp('');};
 
   const goRolePick=()=>{setVName(vInp.trim()||'il Villaggio');setDist(getSuggestedDist(names.length));setSc('rolePick');};
@@ -1072,10 +1183,18 @@ function App(){
     setCorvoVotes({});setOrfanoEff(false);setSilenced(null);setAvvRm(null);
     setSindacoIdx(useSindaco?null:-1);setSindacoTmp(null);setVampPrede([]);setAraldoCands([]);
     setGuardSelfUsed(false);setLupoAlphaActivatedName(null);
+    if(gameMode==='multiplayer'&&roomCode){fbWriteRoles(roomCode,ps,lobbyPlayerMap);}
     setSc('roleReveal');
   };
 
-  const newGame=()=>{clearGame();setNames([]);setPlayers([]);setWin(null);setVName('');setVInp('');setOrdineMode(false);setSindacoIdx(null);setSindacoTmp(null);setVampPrede([]);setAraldoCands([]);scoresSavedRef.current=false;setSc('home');};
+  const newGame=()=>{
+    if(roomCode){fbLeaveRoom(roomCode,myIdRef.current);}
+    setRoomCode('');setRoomRole(null);setLobbyPlayers([]);setGameMode(null);
+    setJoinInput('');setPlayerName('');setJoinError('');setJoinLoading(false);
+    clearGame();setNames([]);setPlayers([]);setWin(null);setVName('');setVInp('');
+    setOrdineMode(false);setSindacoIdx(null);setSindacoTmp(null);
+    setVampPrede([]);setAraldoCands([]);scoresSavedRef.current=false;setSc('home');
+  };
   const replayGame=()=>{clearGame();setPlayers([]);setWin(null);setSindacoIdx(null);setSindacoTmp(null);setOrdineMode(false);scoresSavedRef.current=false;setSc('rolePick');};
 
   const nextReveal=()=>{if(ri+1<players.length){setRi(r=>r+1);setRv(false);}else startNight(players,false,false);};
@@ -1582,7 +1701,7 @@ function App(){
             )}
             <button className="btn btn-gold"
               style={{fontSize:'1rem',padding:'14px',fontWeight:700,background:'linear-gradient(135deg,rgba(160,110,10,.92),rgba(210,160,30,.92))',border:'1px solid rgba(255,200,60,.45)',color:'#fff',letterSpacing:'.05em'}}
-              onClick={()=>setSc('setup')}>⚔️ Nuova Partita</button>
+              onClick={()=>setSc('modePick')}>⚔️ Nuova Partita</button>
             <div style={{display:'flex',gap:8}}>
               <button className="btn btn-magic" style={{flex:1,padding:'11px 6px',fontSize:'.82rem'}} onClick={()=>{setLibroTab('tutti');setLibro(true);}}>📖 Libro Magico</button>
               <button className="btn btn-outline" style={{flex:1,padding:'11px 6px',fontSize:'.82rem'}} onClick={()=>setShowScores(true)}>🏆 Scoreboard</button>
@@ -1594,6 +1713,219 @@ function App(){
           </div>
         </div>
       </div>
+    );
+  }
+
+  // ── MODE PICK ──────────────────────────────────────────────────────────────
+  if(sc==='modePick'){
+    const S={card:{display:'flex',alignItems:'center',gap:14,borderRadius:14,padding:'18px 20px',marginBottom:12,cursor:'pointer',transition:'border-color .2s'}};
+    return(
+      <div className="app night"><MuteBtn/><div className="astro moon"/>
+      <div className="screen fade" style={{maxWidth:460}}>
+        <button onClick={()=>setSc('home')} style={{background:'none',border:'1px solid rgba(200,160,90,.25)',borderRadius:8,padding:'5px 12px',color:'#7a6a50',fontFamily:'Cinzel,serif',fontSize:'.7rem',cursor:'pointer',letterSpacing:'.08em',marginBottom:22,alignSelf:'flex-start'}}>← Home</button>
+        <h1 className="title" style={{marginBottom:6}}>Modalità di Gioco</h1>
+        <p style={{color:'#6a5a40',fontSize:'.8rem',fontStyle:'italic',marginBottom:28,textAlign:'center'}}>Come vuoi giocare questa partita?</p>
+
+        <div style={{...S.card,background:'rgba(201,162,39,.06)',border:'1px solid rgba(201,162,39,.2)'}}
+          onClick={()=>{setGameMode('narrator');setSc('setup');}}
+          onMouseEnter={e=>e.currentTarget.style.borderColor='rgba(201,162,39,.5)'}
+          onMouseLeave={e=>e.currentTarget.style.borderColor='rgba(201,162,39,.2)'}>
+          <span style={{fontSize:'2.2rem',flexShrink:0}}>🎭</span>
+          <div>
+            <div style={{fontFamily:'Cinzel,serif',fontSize:'.95rem',color:'#c9a227',fontWeight:700,marginBottom:3}}>Modalità Narratore</div>
+            <div style={{fontSize:'.78rem',color:'#6a5a40',lineHeight:1.5}}>Un Narratore gestisce la partita dal suo dispositivo. Modalità classica.</div>
+          </div>
+        </div>
+
+        <div style={{...S.card,background:'rgba(41,128,185,.06)',border:'1px solid rgba(41,128,185,.22)',opacity:joinLoading?.6:1,cursor:joinLoading?'not-allowed':'pointer'}}
+          onClick={async()=>{
+            if(joinLoading)return;
+            setJoinError('');setJoinLoading(true);
+            try{
+              const code=genCode();
+              await fbCreateRoom(code,myIdRef.current,'multiplayer');
+              setRoomCode(code);setRoomRole('host');setGameMode('multiplayer');
+              setSc('lobby');
+            }catch(e){setJoinError('Errore di connessione. Verifica internet.');}
+            setJoinLoading(false);
+          }}
+          onMouseEnter={e=>!joinLoading&&(e.currentTarget.style.borderColor='rgba(41,128,185,.5)')}
+          onMouseLeave={e=>e.currentTarget.style.borderColor='rgba(41,128,185,.22)'}>
+          <span style={{fontSize:'2.2rem',flexShrink:0}}>👥</span>
+          <div>
+            <div style={{fontFamily:'Cinzel,serif',fontSize:'.95rem',color:'#3498db',fontWeight:700,marginBottom:3}}>Crea Stanza Multiplayer</div>
+            <div style={{fontSize:'.78rem',color:'#5a7a9a',lineHeight:1.5}}>Genera un codice — i giocatori si connettono dal loro telefono.</div>
+          </div>
+        </div>
+
+        <div style={{...S.card,background:'rgba(39,174,96,.05)',border:'1px solid rgba(39,174,96,.2)',cursor:'default',flexDirection:'column',alignItems:'stretch'}}>
+          <div style={{display:'flex',alignItems:'center',gap:14,marginBottom:14}}>
+            <span style={{fontSize:'2.2rem',flexShrink:0}}>🔑</span>
+            <div>
+              <div style={{fontFamily:'Cinzel,serif',fontSize:'.95rem',color:'#27ae60',fontWeight:700,marginBottom:3}}>Unisciti a una Stanza</div>
+              <div style={{fontSize:'.78rem',color:'#4a7060',lineHeight:1.5}}>Inserisci il codice ricevuto dall'host.</div>
+            </div>
+          </div>
+          <div style={{display:'flex',gap:8}}>
+            <input type="text" placeholder="Codice (es. ABCD)"
+              value={joinInput}
+              onChange={e=>setJoinInput(e.target.value.toUpperCase().replace(/[^A-Z]/g,'').slice(0,4))}
+              onKeyDown={e=>e.key==='Enter'&&joinInput.length===4&&setSc('roomJoin')}
+              style={{flex:1,textTransform:'uppercase',letterSpacing:'.25em',fontFamily:'Cinzel,serif',fontSize:'1.1rem',textAlign:'center',fontWeight:700}}
+              maxLength={4}/>
+            <button className="btn btn-gold" style={{padding:'10px 18px'}}
+              disabled={joinInput.length!==4}
+              onClick={()=>setSc('roomJoin')}>→</button>
+          </div>
+        </div>
+
+        {joinError&&<p style={{color:'#e74c3c',fontSize:'.8rem',marginTop:10,textAlign:'center',fontStyle:'italic'}}>{joinError}</p>}
+        {joinLoading&&<p style={{color:'#5a8a7a',fontSize:'.8rem',marginTop:6,textAlign:'center',fontStyle:'italic'}}>Connessione a Firebase...</p>}
+      </div></div>
+    );
+  }
+
+  // ── ROOM JOIN ──────────────────────────────────────────────────────────────
+  if(sc==='roomJoin'){
+    const doJoin=async()=>{
+      if(!playerName.trim()||joinLoading)return;
+      setJoinError('');setJoinLoading(true);
+      try{
+        await fbJoinRoom(joinInput,myIdRef.current,playerName.trim());
+        setRoomCode(joinInput);setRoomRole('player');setGameMode('multiplayer');
+        setSc('lobby');
+      }catch(err){setJoinError(err.message||'Errore durante la connessione.');}
+      setJoinLoading(false);
+    };
+    return(
+      <div className="app night"><MuteBtn/><div className="astro moon"/>
+      <div className="screen fade" style={{maxWidth:420}}>
+        <button onClick={()=>{setJoinError('');setSc('modePick');}} style={{background:'none',border:'1px solid rgba(200,160,90,.25)',borderRadius:8,padding:'5px 12px',color:'#7a6a50',fontFamily:'Cinzel,serif',fontSize:'.7rem',cursor:'pointer',letterSpacing:'.08em',marginBottom:22,alignSelf:'flex-start'}}>← Indietro</button>
+        <h1 className="title" style={{marginBottom:8}}>Unisciti alla Stanza</h1>
+        <div style={{fontFamily:'Cinzel,serif',fontSize:'2.8rem',letterSpacing:'.4em',color:'#c9a227',textAlign:'center',margin:'14px 0',textShadow:'0 0 24px rgba(201,162,39,.4)',fontWeight:900}}>{joinInput}</div>
+        <p style={{color:'#6a5a40',fontSize:'.82rem',fontStyle:'italic',marginBottom:18,textAlign:'center'}}>Come ti chiami in questa partita?</p>
+        <input type="text" placeholder="Il tuo nome..." value={playerName}
+          onChange={e=>setPlayerName(e.target.value.slice(0,20))}
+          onKeyDown={e=>e.key==='Enter'&&doJoin()}
+          style={{marginBottom:12,fontSize:'1rem',textAlign:'center'}} autoFocus/>
+        {joinError&&<p style={{color:'#e74c3c',fontSize:'.8rem',marginBottom:10,textAlign:'center',fontStyle:'italic'}}>{joinError}</p>}
+        <button className="btn btn-gold" style={{width:'100%',padding:14,fontSize:'.95rem'}}
+          disabled={!playerName.trim()||joinLoading} onClick={doJoin}>
+          {joinLoading?'Connessione...':'Entra nella Stanza 🚪'}
+        </button>
+      </div></div>
+    );
+  }
+
+  // ── LOBBY ──────────────────────────────────────────────────────────────────
+  if(sc==='lobby'){
+    const isHost=roomRole==='host';
+    const joinUrl=`${window.location.href.split('?')[0]}?join=${roomCode}`;
+    return(
+      <div className="app night"><MuteBtn/><div className="astro moon"/>
+      <div className="screen fade" style={{maxWidth:460}}>
+        <button onClick={()=>{fbLeaveRoom(roomCode,myIdRef.current);setRoomCode('');setRoomRole(null);setLobbyPlayers([]);setSc('modePick');}}
+          style={{background:'none',border:'1px solid rgba(200,160,90,.25)',borderRadius:8,padding:'5px 12px',color:'#7a6a50',fontFamily:'Cinzel,serif',fontSize:'.7rem',cursor:'pointer',letterSpacing:'.08em',marginBottom:22,alignSelf:'flex-start'}}>
+          {isHost?'← Annulla':'← Esci'}
+        </button>
+
+        <h1 className="title" style={{marginBottom:4}}>{isHost?'Stanza Creata':'Sala d\'Attesa'}</h1>
+
+        <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4,margin:'16px 0'}}>
+          <p style={{color:'#6a5a40',fontSize:'.72rem',letterSpacing:'.12em',fontFamily:'Cinzel,serif',textTransform:'uppercase'}}>Codice Stanza</p>
+          <div title="Clicca per copiare" onClick={()=>navigator.clipboard?.writeText(roomCode)}
+            style={{fontFamily:'Cinzel,serif',fontSize:'2.8rem',fontWeight:900,letterSpacing:'.45em',color:'#c9a227',textShadow:'0 0 28px rgba(201,162,39,.5)',cursor:'pointer'}}>
+            {roomCode}
+          </div>
+          <p style={{color:'#3a2a10',fontSize:'.68rem',fontStyle:'italic'}}>Clicca per copiare</p>
+        </div>
+
+        {isHost&&(
+          <div style={{background:'rgba(0,0,0,.25)',border:'1px solid rgba(201,162,39,.12)',borderRadius:14,padding:14,marginBottom:18,display:'flex',flexDirection:'column',alignItems:'center',gap:10}}>
+            <QRDisplay text={joinUrl} size={150}/>
+            <p style={{color:'#4a3a20',fontSize:'.7rem',fontStyle:'italic',textAlign:'center'}}>I giocatori scansionano il QR o inseriscono il codice nell'app</p>
+          </div>
+        )}
+
+        <div style={{background:'rgba(255,255,255,.03)',border:'1px solid rgba(201,162,39,.1)',borderRadius:12,padding:'14px 16px',marginBottom:18}}>
+          <p style={{fontFamily:'Cinzel,serif',fontSize:'.72rem',color:'#7a6040',letterSpacing:'.12em',marginBottom:10}}>GIOCATORI CONNESSI ({lobbyPlayers.length})</p>
+          {lobbyPlayers.length===0
+            ?<p style={{color:'#3a2a10',fontSize:'.82rem',fontStyle:'italic',textAlign:'center',padding:'8px 0'}}>In attesa di giocatori...</p>
+            :lobbyPlayers.map(p=>(
+              <div key={p.id} style={{display:'flex',alignItems:'center',gap:10,padding:'8px 0',borderBottom:'1px solid rgba(201,162,39,.06)'}}>
+                <span style={{color:'#27ae60',fontSize:'.7rem'}}>●</span>
+                <span style={{fontFamily:'Cinzel,serif',fontSize:'.88rem',color:'#d4b866',flex:1}}>{p.name}</span>
+                {p.id===myIdRef.current&&<span style={{fontSize:'.65rem',color:'#4a7060',fontStyle:'italic'}}>(tu)</span>}
+              </div>
+            ))
+          }
+        </div>
+
+        {isHost
+          ?<div>
+            <button className="btn btn-gold" style={{width:'100%',padding:14,fontSize:'.95rem'}}
+              disabled={lobbyPlayers.length===0}
+              onClick={async()=>{
+                await fbStartGame(roomCode);
+                const map={};
+                lobbyPlayers.forEach(p=>{map[p.name]=p.id;});
+                setLobbyPlayerMap(map);
+                setNames(lobbyPlayers.map(p=>p.name));
+                setSc('setup');
+              }}>
+              ⚔️ Avvia Partita {lobbyPlayers.length>0&&`(${lobbyPlayers.length} gioc.)`}
+            </button>
+            {lobbyPlayers.length===0&&<p style={{color:'#3a2a10',fontSize:'.74rem',fontStyle:'italic',textAlign:'center',marginTop:8}}>Attendi almeno 1 giocatore</p>}
+          </div>
+          :<div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'8px 0'}}>
+            <div style={{width:8,height:8,borderRadius:'50%',background:'#27ae60',boxShadow:'0 0 8px #27ae60'}}/>
+            <span style={{color:'#4a9a70',fontSize:'.85rem',fontStyle:'italic'}}>Connesso — in attesa che il Narratore avvii...</span>
+          </div>
+        }
+      </div></div>
+    );
+  }
+
+  // ── PLAYER WAIT / ROLE REVEAL ──────────────────────────────────────────────
+  if(sc==='playerWait'){
+    const R=myRole?ROLES[myRole.role]:null;
+    return(
+      <div className="app night"><MuteBtn/><div className="astro moon"/>
+      <div className="screen fade" style={{maxWidth:400}}>
+        {!myRole?(
+          <div style={{textAlign:'center'}}>
+            <div style={{fontSize:'2.5rem',marginBottom:16}}>⏳</div>
+            <h1 className="title" style={{marginBottom:10,fontSize:'1.4rem'}}>Partita Avviata</h1>
+            <p style={{color:'#6a5a40',fontSize:'.88rem',fontStyle:'italic',lineHeight:1.8,marginBottom:24}}>
+              Il Narratore sta distribuendo i ruoli...<br/>Il tuo ruolo apparirà qui a breve.
+            </p>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+              <div style={{width:8,height:8,borderRadius:'50%',background:'#c9a227',boxShadow:'0 0 10px #c9a227'}}/>
+              <span style={{color:'#7a6040',fontSize:'.8rem',fontStyle:'italic'}}>In attesa...</span>
+            </div>
+          </div>
+        ):(
+          <div style={{textAlign:'center'}}>
+            <p style={{color:'#6a5a40',fontSize:'.7rem',letterSpacing:'.18em',fontFamily:'Cinzel,serif',textTransform:'uppercase',marginBottom:18}}>Il tuo ruolo è</p>
+            <div style={{background:R?.bg||'rgba(201,162,39,.08)',border:`1px solid ${(R?.color||'#c9a227')}55`,borderRadius:18,padding:'28px 22px',marginBottom:18}}>
+              <div style={{fontSize:'3.5rem',marginBottom:12,filter:'drop-shadow(0 0 12px currentColor)'}}>{R?.emoji||'❓'}</div>
+              <h2 style={{fontFamily:'Cinzel Decorative,serif',fontSize:'1.35rem',color:R?.color||'#c9a227',marginBottom:10,lineHeight:1.2}}>{R?.name||myRole.role}</h2>
+              <p style={{fontSize:'.85rem',color:'#8a7a60',lineHeight:1.75,fontStyle:'italic',margin:0}}>{R?.desc||''}</p>
+            </div>
+            <div style={{background:'rgba(255,255,255,.03)',border:'1px solid rgba(201,162,39,.1)',borderRadius:10,padding:'10px 16px',marginBottom:16}}>
+              <p style={{color:'#7a6040',fontSize:'.68rem',fontFamily:'Cinzel,serif',letterSpacing:'.1em',marginBottom:4}}>FAZIONE</p>
+              <p style={{color:R?.color||'#c9a227',fontFamily:'Cinzel,serif',fontSize:'.88rem',fontWeight:700,margin:0}}>
+                {R?.wolfTeam?'🐺 Lupi':R?.soloTeam?'👤 Solista':'🏘️ Villaggio'}
+              </p>
+            </div>
+            <p style={{color:'#3a2a10',fontSize:'.73rem',fontStyle:'italic',marginBottom:18}}>🤫 Non mostrare questo schermo agli altri</p>
+          </div>
+        )}
+        <button className="btn btn-outline" style={{fontSize:'.78rem',width:'100%'}}
+          onClick={()=>{fbLeaveRoom(roomCode,myIdRef.current);newGame();}}>
+          Esci dalla stanza
+        </button>
+      </div></div>
     );
   }
 
