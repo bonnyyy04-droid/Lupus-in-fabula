@@ -763,6 +763,10 @@ const fbWriteRoles=async(code,players,playerMap)=>{
 const fbUpdatePhase=(code,phase)=>{if(code)try{fbSet(`rooms/${code}/phase`,phase);}catch(e){};};
 const fbSyncStep=(code,step,alive)=>{if(!code)return;getDb().ref().update({[`rooms/${code}/currentStep`]:step||null,[`rooms/${code}/alivePlayers`]:alive?.length?alive:null});};
 const fbClearStep=code=>{if(code)try{getDb().ref(`rooms/${code}/currentStep`).remove();}catch(e){}};
+const fbOpenVote=(code,alivePlayers)=>{if(!code)return;getDb().ref(`rooms/${code}/voting`).set({open:true,votes:null,alivePlayers});};
+const fbCloseVote=code=>{if(code)getDb().ref(`rooms/${code}/voting/open`).set(false);};
+const fbSubmitVote=(code,fbId,targetIdx)=>{if(!code||!fbId)return;return getDb().ref(`rooms/${code}/voting/votes/${fbId}`).set(targetIdx);};
+const fbSyncGameOver=(code,recap)=>{if(code)try{fbSet(`rooms/${code}/gameOver`,recap);}catch(e){}};
 const isMyTurn=(role,step)=>{if(!role||!step)return false;if(step==='lupi')return !!ROLES[role]?.wolfTeam;return role===step;};
 const ACTION_LABELS={arciere:'Chi vuoi bloccare stanotte?',guardia:'Chi vuoi proteggere?',custode:'Chi vuoi silenziare domani?',lupi:'Chi attaccate questa notte?',veggente:'Chi vuoi scrutare?',meretrice:'Chi vuoi visitare?',negromante:'Chi vuoi evocare?',accusatore:'Chi vuoi accusare?',piromane:'Chi vuoi bruciare? (usa con cura!)',mutaforma:'Chi vuoi copiare?',condor:'Chi vuoi assorbire?',corvo:'Chi vuoi segnare?',vampiro:'Chi vuoi mordere?',araldo:'Chi metti al primo posto?'};
 
@@ -970,6 +974,16 @@ function App(){
   const [mpActionSent,setMpActionSent]=useState(false);  // azione già inviata questo turno
   const [mpIsAlive,setMpIsAlive]=useState(true);         // questo giocatore è vivo
   const [mpSelTarget,setMpSelTarget]=useState(null);     // target selezionato nella lista
+  // ── VOTO DIGITALE — HOST ───────────────────────────────────────────────────
+  const [voteOpen,setVoteOpen]=useState(false);
+  const [liveVotes,setLiveVotes]=useState({});            // {targetIdx: count}
+  const [pendingDigitalElim,setPendingDigitalElim]=useState(false);
+  // ── VOTO DIGITALE — PLAYER ────────────────────────────────────────────────
+  const [mpVoteOpen,setMpVoteOpen]=useState(false);
+  const [mpVoteTarget,setMpVoteTarget]=useState(null);    // selezionato (non ancora inviato)
+  const [mpVotedTarget,setMpVotedTarget]=useState(null);  // voto confermato
+  const [mpIsSilenced,setMpIsSilenced]=useState(false);
+  const [mpGameOver,setMpGameOver]=useState(null);       // recap finale ricevuto da Firebase
 
   // ── FIRST-TIME GUIDE ──────────────────────────────────────────────────────
   const GUIDE_KEY='lupus_guide_v1';
@@ -1186,10 +1200,12 @@ function App(){
         [`rooms/${roomCode}/dawnEvents`]:null,
       });
     } else if(sc==='day'){
+      const alive=players.map((p,i)=>({name:p.name,idx:i})).filter(p=>players[p.idx]?.alive);
       getDb().ref().update({
         [`rooms/${roomCode}/phase`]:'day',
         [`rooms/${roomCode}/currentStep`]:null,
         [`rooms/${roomCode}/nightActions`]:null,
+        [`rooms/${roomCode}/alivePlayers`]:alive,
       });
     } else if(sc==='gameOver'){
       fbSet(`rooms/${roomCode}/phase`,'gameOver');
@@ -1231,6 +1247,75 @@ function App(){
     players.forEach(p=>{const fbId=lobbyPlayerMap[p.name];if(fbId)updates[`rooms/${roomCode}/playerAlive/${fbId}`]=p.alive;});
     getDb().ref().update(updates);
   },[players,roomCode,gameMode,lobbyPlayerMap]);
+
+  // ── HOST: ascolta voti digitali in tempo reale ────────────────────────────
+  useEffect(()=>{
+    if(!roomCode||gameMode!=='multiplayer')return;
+    const ref=getDb().ref(`rooms/${roomCode}/voting/votes`);
+    const h=snap=>{
+      const data=snap.val()||{};
+      const counts={};
+      Object.values(data).forEach(idx=>{if(idx!=null)counts[idx]=(counts[idx]||0)+1;});
+      setLiveVotes(counts);
+    };
+    ref.on('value',h);
+    return()=>ref.off('value',h);
+  },[roomCode,gameMode]);
+
+  // ── HOST: ascolta apertura/chiusura votazione ─────────────────────────────
+  useEffect(()=>{
+    if(!roomCode||gameMode!=='multiplayer')return;
+    const ref=getDb().ref(`rooms/${roomCode}/voting/open`);
+    const h=snap=>{setVoteOpen(!!snap.val());if(!snap.val())setLiveVotes({});};
+    ref.on('value',h);
+    return()=>ref.off('value',h);
+  },[roomCode,gameMode]);
+
+  // ── HOST: sincronizza giocatore silenziato ────────────────────────────────
+  useEffect(()=>{
+    if(!roomCode||gameMode!=='multiplayer')return;
+    const name=silenced!==null&&players[silenced]?players[silenced].name:null;
+    fbSet(`rooms/${roomCode}/silencedPlayer`,name);
+  },[silenced,roomCode,gameMode]);
+
+  // ── HOST: applica eliminazione da voto digitale ───────────────────────────
+  useEffect(()=>{
+    if(!pendingDigitalElim||vi===null)return;
+    elimVote();
+    setPendingDigitalElim(false);
+    if(roomCode)getDb().ref(`rooms/${roomCode}/voting`).remove();
+  },[pendingDigitalElim,vi]);
+
+  // ── HOST: sincronizza recap finale ───────────────────────────────────────
+  useEffect(()=>{
+    if(!roomCode||gameMode!=='multiplayer'||!win||!players.length)return;
+    const LABELS={villici:'🏘️ Il Villaggio ha vinto!',lupi:'🐺 I Lupi hanno vinto!',ordine:"📚 L'Ordine ha vinto!"};
+    const COLORS={villici:'#27ae60',lupi:'#c0392b',ordine:'#8e44ad'};
+    const recap={
+      winner:win,
+      winnerLabel:LABELS[win]||`👤 ${win} ha vinto!`,
+      winnerColor:COLORS[win]||'#c9a227',
+      round,
+      players:players.map(p=>({
+        name:p.name,role:p.role,
+        roleName:ROLES[p.role]?.name||p.role,
+        emoji:ROLES[p.role]?.emoji||'❓',
+        color:ROLES[p.role]?.color||'#c9a227',
+        alive:p.alive,
+        won:getPoints(p,win,mutRole,conRole)>0,
+      })),
+    };
+    fbSyncGameOver(roomCode,recap);
+  },[win,roomCode,gameMode]);
+
+  // ── PLAYER: ascolta recap finale ─────────────────────────────────────────
+  useEffect(()=>{
+    if(!roomCode||roomRole!=='player')return;
+    const ref=getDb().ref(`rooms/${roomCode}/gameOver`);
+    const h=snap=>{if(snap.val())setMpGameOver(snap.val());};
+    ref.on('value',h);
+    return()=>ref.off('value',h);
+  },[roomCode,roomRole]);
 
   // ── PLAYER: ascolta fase di gioco ─────────────────────────────────────────
   useEffect(()=>{
@@ -1276,6 +1361,28 @@ function App(){
     ref.on('value',h);
     return()=>ref.off('value',h);
   },[roomCode,roomRole]);
+
+  // ── PLAYER: ascolta apertura votazione ───────────────────────────────────
+  useEffect(()=>{
+    if(!roomCode||roomRole!=='player')return;
+    const ref=getDb().ref(`rooms/${roomCode}/voting/open`);
+    const h=snap=>{
+      const open=!!snap.val();
+      setMpVoteOpen(open);
+      if(!open){setMpVoteTarget(null);setMpVotedTarget(null);}
+    };
+    ref.on('value',h);
+    return()=>ref.off('value',h);
+  },[roomCode,roomRole]);
+
+  // ── PLAYER: ascolta se è silenziato ──────────────────────────────────────
+  useEffect(()=>{
+    if(!roomCode||roomRole!=='player'||!myRole)return;
+    const ref=getDb().ref(`rooms/${roomCode}/silencedPlayer`);
+    const h=snap=>{setMpIsSilenced(snap.val()===myRole.name);};
+    ref.on('value',h);
+    return()=>ref.off('value',h);
+  },[roomCode,roomRole,myRole]);
 
   const addP=()=>{const n=inp.trim();if(!n||names.length>=20||names.includes(n))return;setNames(p=>[...p,n]);setInp('');};
 
@@ -2086,12 +2193,92 @@ function App(){
           </div>
         )}
 
-        {/* Game over */}
-        {isOver&&(
-          <div style={{background:'rgba(80,30,100,.2)',border:'1px solid rgba(142,68,173,.3)',borderRadius:12,padding:'14px 16px',marginBottom:16,textAlign:'center'}}>
-            <p style={{color:'#be90e8',fontFamily:'Cinzel,serif',fontSize:'.88rem',marginBottom:4}}>La partita è finita!</p>
-            <p style={{color:'#7a5a9a',fontSize:'.78rem',fontStyle:'italic',margin:0}}>Attendi il resoconto finale dal Narratore.</p>
+        {/* Day vote UI */}
+        {isDay&&mpIsAlive&&!mpIsSilenced&&mpVoteOpen&&(
+          <div style={{background:'rgba(41,128,185,.08)',border:'1px solid rgba(41,128,185,.3)',borderRadius:14,padding:'14px 16px',marginBottom:16}}>
+            <p style={{fontFamily:'Cinzel,serif',fontSize:'.72rem',color:'#3498db',letterSpacing:'.12em',marginBottom:12}}>🗳️ VOTAZIONE IN CORSO</p>
+            {mpVotedTarget===null?(
+              <>
+                <p style={{fontSize:'.83rem',color:'#7aa8d0',marginBottom:12}}>Chi vuoi eliminare?</p>
+                <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:12,maxHeight:200,overflowY:'auto'}}>
+                  {mpAlive.filter(p=>p.name!==myRole?.name).map(p=>(
+                    <div key={p.idx} onClick={()=>setMpVoteTarget(p.idx)}
+                      style={{padding:'10px 14px',borderRadius:10,border:`1px solid ${mpVoteTarget===p.idx?'rgba(52,152,219,.7)':'rgba(52,152,219,.15)'}`,background:mpVoteTarget===p.idx?'rgba(52,152,219,.12)':'rgba(255,255,255,.03)',cursor:'pointer',transition:'all .15s',fontFamily:'Cinzel,serif',fontSize:'.88rem',color:mpVoteTarget===p.idx?'#5dade2':'#7a8a9a',display:'flex',alignItems:'center',gap:8}}>
+                      <span>{mpVoteTarget===p.idx?'●':'○'}</span>{p.name}
+                    </div>
+                  ))}
+                </div>
+                <button className="btn btn-gold" style={{width:'100%',padding:12}}
+                  disabled={mpVoteTarget===null}
+                  onClick={async()=>{
+                    await fbSubmitVote(roomCode,myIdRef.current,mpVoteTarget);
+                    setMpVotedTarget(mpVoteTarget);
+                  }}>
+                  Conferma Voto
+                </button>
+              </>
+            ):(
+              <div style={{textAlign:'center',padding:'8px 0'}}>
+                <p style={{color:'#27ae60',fontSize:'.85rem',marginBottom:4}}>✓ Voto inviato</p>
+                <p style={{color:'#4a7060',fontSize:'.78rem',fontStyle:'italic'}}>Hai votato per <strong style={{color:'#c9a227'}}>{mpAlive.find(p=>p.idx===mpVotedTarget)?.name||'...'}</strong></p>
+              </div>
+            )}
           </div>
+        )}
+
+        {/* Silenced - can't vote */}
+        {isDay&&mpIsAlive&&mpIsSilenced&&mpVoteOpen&&(
+          <div style={{background:'rgba(80,80,80,.15)',border:'1px solid rgba(120,120,120,.2)',borderRadius:12,padding:'12px 16px',marginBottom:16,textAlign:'center'}}>
+            <span style={{color:'#6a6a6a',fontSize:'.82rem',fontStyle:'italic'}}>🤐 Sei silenziato — non puoi votare oggi</span>
+          </div>
+        )}
+
+        {/* Day - vote not open yet */}
+        {isDay&&mpIsAlive&&!mpVoteOpen&&(
+          <div style={{background:'rgba(201,162,39,.04)',border:'1px solid rgba(201,162,39,.1)',borderRadius:12,padding:'10px 16px',marginBottom:16,textAlign:'center'}}>
+            <span style={{color:'#6a5a30',fontSize:'.8rem',fontStyle:'italic'}}>💬 Fase discussione — la votazione non è ancora aperta</span>
+          </div>
+        )}
+
+        {/* Game over recap */}
+        {(isOver||mpGameOver)&&(
+          mpGameOver?(
+            <div>
+              <div style={{background:`${mpGameOver.winnerColor}22`,border:`1px solid ${mpGameOver.winnerColor}55`,borderRadius:14,padding:'18px',textAlign:'center',marginBottom:14}}>
+                <div style={{fontSize:'2.2rem',marginBottom:8}}>🏁</div>
+                <p style={{fontFamily:'Cinzel Decorative,serif',fontSize:'.95rem',color:mpGameOver.winnerColor,fontWeight:700,marginBottom:4,lineHeight:1.3}}>{mpGameOver.winnerLabel}</p>
+                <p style={{color:'#5a4a30',fontSize:'.72rem',fontStyle:'italic',margin:0}}>Round {mpGameOver.round}</p>
+              </div>
+              {myRole&&(()=>{
+                const me=mpGameOver.players?.find(p=>p.name===myRole.name);
+                if(!me)return null;
+                return(
+                  <div style={{background:me.won?'rgba(39,174,96,.1)':'rgba(192,57,43,.08)',border:`1px solid ${me.won?'rgba(39,174,96,.3)':'rgba(192,57,43,.25)'}`,borderRadius:12,padding:'12px',textAlign:'center',marginBottom:14}}>
+                    <span style={{fontSize:'1.6rem'}}>{me.won?'🏆':'💔'}</span>
+                    <p style={{fontFamily:'Cinzel,serif',color:me.won?'#27ae60':'#c0392b',fontWeight:700,fontSize:'.9rem',marginTop:4,marginBottom:0}}>{me.won?'Hai vinto!':'Hai perso'}</p>
+                  </div>
+                );
+              })()}
+              <div style={{background:'rgba(255,255,255,.03)',border:'1px solid rgba(201,162,39,.1)',borderRadius:12,padding:'12px 14px',marginBottom:14}}>
+                <p style={{fontFamily:'Cinzel,serif',fontSize:'.66rem',color:'#7a6040',letterSpacing:'.12em',marginBottom:10}}>RUOLI RIVELATI</p>
+                {(mpGameOver.players||[]).map((p,i)=>(
+                  <div key={i} style={{display:'flex',alignItems:'center',gap:8,padding:'7px 0',borderBottom:i<mpGameOver.players.length-1?'1px solid rgba(201,162,39,.06)':'none',opacity:p.alive?1:.5}}>
+                    <span style={{fontSize:'1rem'}}>{p.emoji}</span>
+                    <span style={{fontFamily:'Cinzel,serif',fontSize:'.82rem',color:p.alive?'#c9a227':'#5a4a30',flex:1}}>{p.name}</span>
+                    <span style={{fontSize:'.7rem',color:p.color}}>{p.roleName}</span>
+                    {!p.alive&&<span style={{fontSize:'.75rem'}}>💀</span>}
+                    {p.won&&<span style={{fontSize:'.75rem'}}>🏆</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ):(
+            <div style={{background:'rgba(80,30,100,.2)',border:'1px solid rgba(142,68,173,.3)',borderRadius:12,padding:'14px 16px',marginBottom:14,textAlign:'center'}}>
+              <div style={{fontSize:'1.8rem',marginBottom:8}}>🏁</div>
+              <p style={{color:'#be90e8',fontFamily:'Cinzel,serif',fontSize:'.88rem',marginBottom:4}}>La partita è finita!</p>
+              <p style={{color:'#7a5a9a',fontSize:'.75rem',fontStyle:'italic',margin:0}}>Attendendo il resoconto...</p>
+            </div>
+          )
         )}
 
         {/* Role card - compact if phase is known */}
@@ -3059,6 +3246,63 @@ function App(){
           <div className="ev ev-info" style={{marginBottom:14}}>🏛️ Sindaco: <strong>{players[sindacoIdx].name}</strong> — il suo voto vale doppio</div>
         )}
 
+        {/* ── VOTO DIGITALE MULTIPLAYER ── */}
+        {gameMode==='multiplayer'&&(()=>{
+          const winner=Object.entries(liveVotes).sort((a,b)=>b[1]-a[1])[0];
+          const winnerIdx=winner?parseInt(winner[0]):null;
+          const winnerName=winnerIdx!=null?players[winnerIdx]?.name:null;
+          const totalVotes=Object.values(liveVotes).reduce((s,n)=>s+n,0);
+          return(
+            <div style={{background:'rgba(41,128,185,.06)',border:'1px solid rgba(41,128,185,.22)',borderRadius:14,padding:'14px 16px',marginBottom:16}}>
+              <p style={{fontFamily:'Cinzel,serif',fontSize:'.7rem',color:'#3498db',letterSpacing:'.12em',marginBottom:10}}>📱 VOTAZIONE DIGITALE</p>
+              {!voteOpen?(
+                <button className="btn btn-gold" style={{width:'100%',padding:12}}
+                  onClick={()=>{
+                    const alive=players.map((p,i)=>({name:p.name,idx:i})).filter(p=>players[p.idx]?.alive);
+                    fbOpenVote(roomCode,alive);
+                  }}>
+                  🗳️ Apri Votazione sui Telefoni
+                </button>
+              ):(
+                <div>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+                    <span style={{color:'#4a9a70',fontSize:'.8rem',fontStyle:'italic'}}>● Votazione aperta — {totalVotes} voto/i ricevuto/i</span>
+                  </div>
+                  {players.map((p,idx)=>{
+                    if(!p.alive)return null;
+                    const count=liveVotes[idx]||0;
+                    if(count===0)return null;
+                    const isLeading=idx===winnerIdx;
+                    return(
+                      <div key={idx} style={{display:'flex',alignItems:'center',gap:10,padding:'7px 10px',borderRadius:8,marginBottom:5,background:isLeading?'rgba(201,162,39,.1)':'rgba(255,255,255,.02)',border:`1px solid ${isLeading?'rgba(201,162,39,.3)':'rgba(255,255,255,.05)'}`}}>
+                        <span style={{fontFamily:'Cinzel,serif',fontSize:'.88rem',color:isLeading?'#c9a227':'#8a7060',flex:1}}>{p.name}</span>
+                        <span style={{fontSize:'.85rem'}}>{Array(count).fill('🗳️').join('')}</span>
+                        <span style={{fontFamily:'Cinzel,serif',fontWeight:700,color:isLeading?'#c9a227':'#6a5a40',fontSize:'.9rem'}}>{count}</span>
+                      </div>
+                    );
+                  })}
+                  {totalVotes===0&&<p style={{color:'#3a4a5a',fontSize:'.8rem',fontStyle:'italic',textAlign:'center',padding:'8px 0'}}>In attesa dei voti...</p>}
+                  <div style={{display:'flex',gap:8,marginTop:12}}>
+                    {winnerName&&(
+                      <button className="btn btn-red" style={{flex:2,padding:10,fontSize:'.85rem'}}
+                        onClick={()=>{
+                          fbCloseVote(roomCode);
+                          setVi(winnerIdx);
+                          setPendingDigitalElim(true);
+                        }}>
+                        Elimina {winnerName} ({winner[1]} voti)
+                      </button>
+                    )}
+                    <button className="btn btn-outline" style={{flex:1,padding:10,fontSize:'.82rem'}}
+                      onClick={()=>{fbCloseVote(roomCode);}}>
+                      Chiudi
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })()}
         <div className="lbl mb8">Il Villaggio vota</div>
         <p className="muted mb16">Dopo la discussione seleziona chi viene eliminato.</p>
         {araldoUsed&&araldoCands.length>=2&&players[araldoCands[0]]?.alive&&players[araldoCands[1]]?.alive&&(
