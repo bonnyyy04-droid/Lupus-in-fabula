@@ -959,6 +959,8 @@ function App(){
   const myIdRef=useRef(getMyId());
   const [lobbyPlayerMap,setLobbyPlayerMap]=useState({}); // {playerName → firebaseId}
   const [myRole,setMyRole]=useState(null);               // {role,name} per il telefono del giocatore
+  const [mpPhase,setMpPhase]=useState(null);             // fase corrente ricevuta da Firebase (player)
+  const [mpDawn,setMpDawn]=useState([]);                 // eventi alba ricevuti da Firebase (player)
 
   // ── FIRST-TIME GUIDE ──────────────────────────────────────────────────────
   const GUIDE_KEY='lupus_guide_v1';
@@ -1164,6 +1166,45 @@ function App(){
     const handler=snap=>{if(snap.val())setMyRole(snap.val());};
     ref.on('value',handler);
     return()=>ref.off('value',handler);
+  },[roomCode,roomRole]);
+
+  // ── HOST: sincronizza fase di gioco su Firebase ───────────────────────────
+  useEffect(()=>{
+    if(!roomCode||gameMode!=='multiplayer')return;
+    if(sc==='night'){
+      getDb().ref().update({
+        [`rooms/${roomCode}/phase`]:'night',
+        [`rooms/${roomCode}/dawnEvents`]:null,
+      });
+    } else if(sc==='day'){
+      fbSet(`rooms/${roomCode}/phase`,'day');
+    } else if(sc==='gameOver'){
+      fbSet(`rooms/${roomCode}/phase`,'gameOver');
+    }
+  },[sc,roomCode,gameMode]);
+
+  // ── HOST: sincronizza eventi alba su Firebase ─────────────────────────────
+  useEffect(()=>{
+    if(!roomCode||gameMode!=='multiplayer'||!de||de.length===0)return;
+    fbSet(`rooms/${roomCode}/dawnEvents`,de);
+  },[de,roomCode,gameMode]);
+
+  // ── PLAYER: ascolta fase di gioco ─────────────────────────────────────────
+  useEffect(()=>{
+    if(!roomCode||roomRole!=='player')return;
+    const ref=getDb().ref(`rooms/${roomCode}/phase`);
+    const h=snap=>{setMpPhase(snap.val());};
+    ref.on('value',h);
+    return()=>ref.off('value',h);
+  },[roomCode,roomRole]);
+
+  // ── PLAYER: ascolta eventi alba ───────────────────────────────────────────
+  useEffect(()=>{
+    if(!roomCode||roomRole!=='player')return;
+    const ref=getDb().ref(`rooms/${roomCode}/dawnEvents`);
+    const h=snap=>{setMpDawn(snap.val()||[]);};
+    ref.on('value',h);
+    return()=>ref.off('value',h);
   },[roomCode,roomRole]);
 
   const addP=()=>{const n=inp.trim();if(!n||names.length>=20||names.includes(n))return;setNames(p=>[...p,n]);setInp('');};
@@ -1886,42 +1927,79 @@ function App(){
     );
   }
 
-  // ── PLAYER WAIT / ROLE REVEAL ──────────────────────────────────────────────
+  // ── PLAYER WAIT / COMPANION ────────────────────────────────────────────────
   if(sc==='playerWait'){
     const R=myRole?ROLES[myRole.role]:null;
+    const isNight=mpPhase==='night';
+    const isDay=mpPhase==='day';
+    const isOver=mpPhase==='gameOver';
+    const phaseColor=isNight?'#3d6fa8':isDay?'#c9a227':isOver?'#8e44ad':'#4a3a20';
+    const phaseBg=isNight?'rgba(30,50,90,.4)':isDay?'rgba(100,75,20,.3)':isOver?'rgba(80,30,100,.3)':'rgba(0,0,0,.2)';
+
     return(
       <div className="app night"><MuteBtn/><div className="astro moon"/>
-      <div className="screen fade" style={{maxWidth:400}}>
-        {!myRole?(
-          <div style={{textAlign:'center'}}>
-            <div style={{fontSize:'2.5rem',marginBottom:16}}>⏳</div>
-            <h1 className="title" style={{marginBottom:10,fontSize:'1.4rem'}}>Partita Avviata</h1>
-            <p style={{color:'#6a5a40',fontSize:'.88rem',fontStyle:'italic',lineHeight:1.8,marginBottom:24}}>
-              Il Narratore sta distribuendo i ruoli...<br/>Il tuo ruolo apparirà qui a breve.
-            </p>
-            <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
-              <div style={{width:8,height:8,borderRadius:'50%',background:'#c9a227',boxShadow:'0 0 10px #c9a227'}}/>
-              <span style={{color:'#7a6040',fontSize:'.8rem',fontStyle:'italic'}}>In attesa...</span>
-            </div>
-          </div>
-        ):(
-          <div style={{textAlign:'center'}}>
-            <p style={{color:'#6a5a40',fontSize:'.7rem',letterSpacing:'.18em',fontFamily:'Cinzel,serif',textTransform:'uppercase',marginBottom:18}}>Il tuo ruolo è</p>
-            <div style={{background:R?.bg||'rgba(201,162,39,.08)',border:`1px solid ${(R?.color||'#c9a227')}55`,borderRadius:18,padding:'28px 22px',marginBottom:18}}>
-              <div style={{fontSize:'3.5rem',marginBottom:12,filter:'drop-shadow(0 0 12px currentColor)'}}>{R?.emoji||'❓'}</div>
-              <h2 style={{fontFamily:'Cinzel Decorative,serif',fontSize:'1.35rem',color:R?.color||'#c9a227',marginBottom:10,lineHeight:1.2}}>{R?.name||myRole.role}</h2>
-              <p style={{fontSize:'.85rem',color:'#8a7a60',lineHeight:1.75,fontStyle:'italic',margin:0}}>{R?.desc||''}</p>
-            </div>
-            <div style={{background:'rgba(255,255,255,.03)',border:'1px solid rgba(201,162,39,.1)',borderRadius:10,padding:'10px 16px',marginBottom:16}}>
-              <p style={{color:'#7a6040',fontSize:'.68rem',fontFamily:'Cinzel,serif',letterSpacing:'.1em',marginBottom:4}}>FAZIONE</p>
-              <p style={{color:R?.color||'#c9a227',fontFamily:'Cinzel,serif',fontSize:'.88rem',fontWeight:700,margin:0}}>
-                {R?.wolfTeam?'🐺 Lupi':R?.soloTeam?'👤 Solista':'🏘️ Villaggio'}
-              </p>
-            </div>
-            <p style={{color:'#3a2a10',fontSize:'.73rem',fontStyle:'italic',marginBottom:18}}>🤫 Non mostrare questo schermo agli altri</p>
+      <div className="screen fade" style={{maxWidth:400,paddingTop:8}}>
+
+        {/* Phase banner */}
+        {mpPhase&&(
+          <div style={{background:phaseBg,border:`1px solid ${phaseColor}44`,borderRadius:12,padding:'12px 16px',marginBottom:16,textAlign:'center'}}>
+            <span style={{fontSize:'1.4rem'}}>{isNight?'🌙':isDay?'☀️':isOver?'🏁':'⏳'}</span>
+            <span style={{fontFamily:'Cinzel,serif',fontSize:'.88rem',color:phaseColor,fontWeight:700,marginLeft:8}}>
+              {isNight?'È Notte':isDay?'È Giorno':isOver?'Partita Terminata':'In attesa...'}
+            </span>
           </div>
         )}
-        <button className="btn btn-outline" style={{fontSize:'.78rem',width:'100%'}}
+
+        {/* Dawn events */}
+        {isDay&&mpDawn.length>0&&(
+          <div style={{background:'rgba(0,0,0,.25)',border:'1px solid rgba(201,162,39,.15)',borderRadius:12,padding:'12px 16px',marginBottom:16}}>
+            <p style={{fontFamily:'Cinzel,serif',fontSize:'.68rem',color:'#7a6040',letterSpacing:'.12em',marginBottom:10}}>ANNUNCI DELL'ALBA</p>
+            {mpDawn.map((ev,i)=>(
+              <div key={i} style={{display:'flex',alignItems:'flex-start',gap:8,padding:'5px 0',borderBottom:i<mpDawn.length-1?'1px solid rgba(201,162,39,.07)':'none'}}>
+                <span style={{fontSize:'.9rem',flexShrink:0}}>{ev.t==='death'?'💀':ev.t==='revive'?'✝️':'📢'}</span>
+                <span style={{fontSize:'.82rem',color:'#c4a882',lineHeight:1.6}}>{ev.tx}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Game over */}
+        {isOver&&(
+          <div style={{background:'rgba(80,30,100,.2)',border:'1px solid rgba(142,68,173,.3)',borderRadius:12,padding:'14px 16px',marginBottom:16,textAlign:'center'}}>
+            <p style={{color:'#be90e8',fontFamily:'Cinzel,serif',fontSize:'.88rem',marginBottom:4}}>La partita è finita!</p>
+            <p style={{color:'#7a5a9a',fontSize:'.78rem',fontStyle:'italic',margin:0}}>Attendi il resoconto finale dal Narratore.</p>
+          </div>
+        )}
+
+        {/* Role card - compact if phase is known */}
+        {!myRole?(
+          <div style={{textAlign:'center',padding:'20px 0'}}>
+            <div style={{fontSize:'2rem',marginBottom:12}}>⏳</div>
+            <p style={{color:'#6a5a40',fontSize:'.85rem',fontStyle:'italic',lineHeight:1.8}}>
+              Il Narratore sta distribuendo i ruoli...<br/>Il tuo ruolo apparirà qui a breve.
+            </p>
+          </div>
+        ):(
+          <div style={{background:R?.bg||'rgba(201,162,39,.06)',border:`1px solid ${(R?.color||'#c9a227')}44`,borderRadius:16,padding:mpPhase?'16px 18px':'24px 20px',marginBottom:16}}>
+            <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:mpPhase?6:12}}>
+              <span style={{fontSize:mpPhase?'2rem':'3rem'}}>{R?.emoji||'❓'}</span>
+              <div>
+                <p style={{color:'#7a6040',fontSize:'.65rem',fontFamily:'Cinzel,serif',letterSpacing:'.12em',marginBottom:3}}>IL TUO RUOLO</p>
+                <h3 style={{fontFamily:'Cinzel Decorative,serif',fontSize:mpPhase?'1rem':'1.3rem',color:R?.color||'#c9a227',margin:0,lineHeight:1.2}}>{R?.name||myRole.role}</h3>
+              </div>
+              <div style={{marginLeft:'auto',textAlign:'right'}}>
+                <span style={{fontSize:'.7rem',color:R?.color||'#c9a227',fontFamily:'Cinzel,serif',fontWeight:700}}>
+                  {R?.wolfTeam?'🐺':R?.soloTeam?'👤':'🏘️'}
+                </span>
+              </div>
+            </div>
+            {!mpPhase&&<p style={{fontSize:'.82rem',color:'#8a7a60',lineHeight:1.7,fontStyle:'italic',margin:0}}>{R?.desc||''}</p>}
+          </div>
+        )}
+
+        <p style={{color:'#3a2a10',fontSize:'.7rem',fontStyle:'italic',textAlign:'center',marginBottom:14}}>🤫 Non mostrare questo schermo agli altri</p>
+
+        <button className="btn btn-outline" style={{fontSize:'.75rem',width:'100%'}}
           onClick={()=>{fbLeaveRoom(roomCode,myIdRef.current);newGame();}}>
           Esci dalla stanza
         </button>
@@ -1957,8 +2035,8 @@ function App(){
           <button className="btn btn-outline btn-sm" onClick={addP} disabled={!inp.trim()||names.length>=20}>+</button>
         </div>
         {names.length>0&&<div className="chips">{names.map((n,i)=><span key={i} className="chip">{n}<button onClick={()=>setNames(p=>p.filter((_,j)=>j!==i))}>✕</button></span>)}</div>}
-        {names.length>0&&names.length<6&&<p className="warn">⚠️ Minimo 6 giocatori ({6-names.length} mancanti)</p>}
-        <button className="btn btn-gold mb8" style={{marginTop:12}} onClick={goRolePick} disabled={names.length<6}>Configura Ruoli →</button>
+        {names.length>0&&names.length<2&&<p className="warn">⚠️ Minimo 2 giocatori ({2-names.length} mancanti)</p>}
+        <button className="btn btn-gold mb8" style={{marginTop:12}} onClick={goRolePick} disabled={names.length<2}>Configura Ruoli →</button>
       </div></div>
     );
   }
