@@ -984,6 +984,8 @@ function App(){
   const [mpVotedTarget,setMpVotedTarget]=useState(null);  // voto confermato
   const [mpIsSilenced,setMpIsSilenced]=useState(false);
   const [mpGameOver,setMpGameOver]=useState(null);       // recap finale ricevuto da Firebase
+  const [mpNotif,setMpNotif]=useState(null);             // notifica speciale (es. trasformazione lupo)
+  const [mpNightLog,setMpNightLog]=useState({});         // storico notturno {round: {events:[]}}
 
   // ── FIRST-TIME GUIDE ──────────────────────────────────────────────────────
   const GUIDE_KEY='lupus_guide_v1';
@@ -1173,11 +1175,21 @@ function App(){
     return()=>ref.off('value',handler);
   },[roomCode]);
 
-  // ── LOBBY: player aspetta avvio partita ───────────────────────────────────
+  // ── LOBBY: player aspetta avvio/riavvio partita ───────────────────────────
   useEffect(()=>{
     if(!roomCode||roomRole!=='player')return;
     const ref=getDb().ref(`rooms/${roomCode}/status`);
-    const handler=snap=>{if(snap.val()==='playing')setSc('playerWait');};
+    const handler=snap=>{
+      const s=snap.val();
+      if(s==='playing')setSc('playerWait');
+      if(s==='replay'){
+        setMyRole(null);setMpGameOver(null);setMpPhase(null);setMpDawn([]);
+        setMpCurStep(null);setMpAlive([]);setMpActionSent(false);setMpIsAlive(true);
+        setMpVoteOpen(false);setMpVoteTarget(null);setMpVotedTarget(null);
+        setMpIsSilenced(false);setMpNotif(null);setMpNightLog({});
+        setSc('playerWait');
+      }
+    };
     ref.on('value',handler);
     return()=>ref.off('value',handler);
   },[roomCode,roomRole]);
@@ -1215,8 +1227,11 @@ function App(){
   // ── HOST: sincronizza eventi alba su Firebase ─────────────────────────────
   useEffect(()=>{
     if(!roomCode||gameMode!=='multiplayer'||!de||de.length===0)return;
-    fbSet(`rooms/${roomCode}/dawnEvents`,de);
-  },[de,roomCode,gameMode]);
+    getDb().ref().update({
+      [`rooms/${roomCode}/dawnEvents`]:de,
+      [`rooms/${roomCode}/nightLog/${round}`]:{round,events:de},
+    });
+  },[de,roomCode,gameMode,round]);
 
   // ── HOST: sincronizza step corrente della notte ───────────────────────────
   useEffect(()=>{
@@ -1317,6 +1332,35 @@ function App(){
     return()=>ref.off('value',h);
   },[roomCode,roomRole]);
 
+  // ── PLAYER: ascolta notifiche speciali (trasformazione ecc.) ─────────────
+  useEffect(()=>{
+    if(!roomCode||roomRole!=='player')return;
+    const ref=getDb().ref(`rooms/${roomCode}/playerNotif/${myIdRef.current}`);
+    const h=snap=>{if(snap.val())setMpNotif(snap.val());};
+    ref.on('value',h);
+    return()=>ref.off('value',h);
+  },[roomCode,roomRole]);
+
+  // ── PLAYER: ascolta storico notturno ─────────────────────────────────────
+  useEffect(()=>{
+    if(!roomCode||roomRole!=='player')return;
+    const ref=getDb().ref(`rooms/${roomCode}/nightLog`);
+    const h=snap=>{setMpNightLog(snap.val()||{});};
+    ref.on('value',h);
+    return()=>ref.off('value',h);
+  },[roomCode,roomRole]);
+
+  // ── HOST: notifica trasformazione Lupo Mannaro ────────────────────────────
+  useEffect(()=>{
+    if(!roomCode||gameMode!=='multiplayer'||!lupoAlphaActivatedName)return;
+    const fbId=lobbyPlayerMap[lupoAlphaActivatedName];
+    if(!fbId)return;
+    getDb().ref().update({
+      [`rooms/${roomCode}/playerRoles/${fbId}`]:{role:'lupo',name:lupoAlphaActivatedName},
+      [`rooms/${roomCode}/playerNotif/${fbId}`]:{type:'transform',night:round},
+    });
+  },[lupoAlphaActivatedName,roomCode,gameMode]);
+
   // ── PLAYER: ascolta fase di gioco ─────────────────────────────────────────
   useEffect(()=>{
     if(!roomCode||roomRole!=='player')return;
@@ -1413,7 +1457,17 @@ function App(){
     setOrdineMode(false);setSindacoIdx(null);setSindacoTmp(null);
     setVampPrede([]);setAraldoCands([]);scoresSavedRef.current=false;setSc('home');
   };
-  const replayGame=()=>{clearGame();setPlayers([]);setWin(null);setSindacoIdx(null);setSindacoTmp(null);setOrdineMode(false);scoresSavedRef.current=false;setSc('rolePick');};
+  const replayGame=()=>{
+    if(roomCode&&gameMode==='multiplayer'){
+      getDb().ref(`rooms/${roomCode}`).update({
+        status:'replay',
+        gameOver:null,playerRoles:null,nightActions:null,nightLog:null,
+        voting:null,dawnEvents:null,currentStep:null,
+        alivePlayers:null,playerAlive:null,silencedPlayer:null,playerNotif:null,phase:null,
+      });
+    }
+    clearGame();setPlayers([]);setWin(null);setSindacoIdx(null);setSindacoTmp(null);setOrdineMode(false);scoresSavedRef.current=false;setSc('rolePick');
+  };
 
   const nextReveal=()=>{if(ri+1<players.length){setRi(r=>r+1);setRv(false);}else startNight(players,false,false);};
 
@@ -2113,8 +2167,37 @@ function App(){
     const phaseColor=isNight?'#3d6fa8':isDay?'#c9a227':isOver?'#8e44ad':'#4a3a20';
     const phaseBg=isNight?'rgba(30,50,90,.4)':isDay?'rgba(100,75,20,.3)':isOver?'rgba(80,30,100,.3)':'rgba(0,0,0,.2)';
 
+    // Storico notti per il log
+    const nightLogEntries=Object.values(mpNightLog).sort((a,b)=>(a.round||0)-(b.round||0));
+    const [logOpen,setLogOpen]=useState(false);
+
     return(
       <div className="app night"><MuteBtn/><div className="astro moon"/>
+
+      {/* Overlay trasformazione Lupo Mannaro */}
+      {mpNotif?.type==='transform'&&(
+        <div style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(80,0,0,.92)',zIndex:200,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:28,textAlign:'center'}}>
+          <div style={{fontSize:'4rem',marginBottom:16}}>🐺</div>
+          <h2 style={{fontFamily:'Cinzel Decorative,serif',color:'#e74c3c',fontSize:'1.3rem',marginBottom:12,lineHeight:1.3}}>La luna piena ti trasforma!</h2>
+          <p style={{color:'#c9a227',fontSize:'.88rem',lineHeight:1.9,marginBottom:28}}>
+            Sei diventato un <strong>Lupo Grande</strong>.<br/>
+            Da questa notte agirai con i tuoi simili.<br/>
+            <span style={{color:'#8a4040',fontStyle:'italic'}}>Non rivelare la trasformazione.</span>
+          </p>
+          <div style={{background:'rgba(201,162,39,.1)',border:'1px solid rgba(201,162,39,.3)',borderRadius:12,padding:'12px 20px',marginBottom:24}}>
+            <p style={{color:'#c9a227',fontFamily:'Cinzel,serif',fontSize:'.8rem',letterSpacing:'.1em'}}>IL TUO NUOVO RUOLO</p>
+            <p style={{fontSize:'1.8rem',margin:'6px 0'}}>🐺</p>
+            <p style={{color:'#e74c3c',fontFamily:'Cinzel Decorative,serif',fontSize:'1rem',fontWeight:700}}>Lupo Grande</p>
+          </div>
+          <button className="btn btn-red" style={{padding:'12px 28px',fontSize:'.9rem'}}
+            onClick={()=>{
+              setMpNotif(null);
+              if(roomCode)getDb().ref(`rooms/${roomCode}/playerNotif/${myIdRef.current}`).remove();
+            }}>
+            🐺 Ho capito
+          </button>
+        </div>
+      )}
       <div className="screen fade" style={{maxWidth:400,paddingTop:8}}>
 
         {/* Phase banner */}
@@ -2271,6 +2354,37 @@ function App(){
                   </div>
                 ))}
               </div>
+
+              {/* Night log collapsible */}
+              {nightLogEntries.length>0&&(
+                <div style={{background:'rgba(255,255,255,.02)',border:'1px solid rgba(201,162,39,.08)',borderRadius:12,marginBottom:14,overflow:'hidden'}}>
+                  <button onClick={()=>setLogOpen(v=>!v)}
+                    style={{display:'flex',alignItems:'center',justifyContent:'space-between',width:'100%',padding:'12px 14px',background:'none',border:'none',cursor:'pointer',WebkitTapHighlightColor:'transparent'}}>
+                    <span style={{fontFamily:'Cinzel,serif',fontSize:'.66rem',color:'#7a6040',letterSpacing:'.12em'}}>📜 COSA È SUCCESSO DI NOTTE</span>
+                    <span style={{color:'#5a4a30',fontSize:'.75rem',transform:logOpen?'rotate(180deg)':'none',transition:'transform .2s'}}>▼</span>
+                  </button>
+                  {logOpen&&(
+                    <div style={{padding:'0 14px 14px'}}>
+                      {nightLogEntries.map((entry,ni)=>(
+                        <div key={ni} style={{marginBottom:ni<nightLogEntries.length-1?12:0}}>
+                          <p style={{fontFamily:'Cinzel,serif',fontSize:'.68rem',color:'#8a6840',letterSpacing:'.1em',marginBottom:6}}>
+                            🌙 NOTTE {entry.round}
+                          </p>
+                          {(entry.events||[]).map((ev,ei)=>(
+                            <div key={ei} style={{display:'flex',gap:8,padding:'4px 0',borderBottom:'1px solid rgba(201,162,39,.05)'}}>
+                              <span style={{fontSize:'.85rem',flexShrink:0}}>{ev.t==='death'?'💀':ev.t==='revive'?'✝️':'📢'}</span>
+                              <span style={{fontSize:'.78rem',color:'#9a8060',lineHeight:1.5}}>{ev.tx}</span>
+                            </div>
+                          ))}
+                          {(entry.events||[]).length===0&&(
+                            <p style={{color:'#4a3a20',fontSize:'.75rem',fontStyle:'italic'}}>Notte tranquilla — nessuna vittima.</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ):(
             <div style={{background:'rgba(80,30,100,.2)',border:'1px solid rgba(142,68,173,.3)',borderRadius:12,padding:'14px 16px',marginBottom:14,textAlign:'center'}}>
