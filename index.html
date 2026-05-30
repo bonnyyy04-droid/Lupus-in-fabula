@@ -314,20 +314,22 @@ input[type=text]::placeholder{color:#2e2214}
 
 /* ── SETUP: NOME VILLAGGIO ── */
 .vill-section{margin-bottom:26px}
-.vill-eyebrow{font-family:'Cinzel',serif;font-size:.57rem;letter-spacing:.32em;text-transform:uppercase;color:#352510;text-align:center;margin-bottom:14px}
-.vill-preview-box{min-height:76px;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,rgba(201,162,39,.06) 0%,rgba(201,162,39,.02) 100%);border:1px solid rgba(201,162,39,.18);border-radius:14px 14px 0 0;padding:18px 20px;border-bottom:none;position:relative;overflow:hidden}
-.vill-preview-box::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(to right,transparent,rgba(201,162,39,.35),transparent)}
-.vill-preview-box::after{content:'';position:absolute;bottom:0;left:8%;right:8%;height:1px;background:linear-gradient(to right,transparent,rgba(201,162,39,.22),transparent)}
+.vill-eyebrow{font-family:'Cinzel',serif;font-size:.57rem;letter-spacing:.32em;text-transform:uppercase;color:#6a4820;text-align:center;margin-bottom:10px}
 @keyframes villNameIn{from{opacity:0;transform:scale(.94) translateY(4px)}to{opacity:1;transform:scale(1) translateY(0)}}
-.vill-name-live{font-family:'Cinzel Decorative',serif;font-size:clamp(1.25rem,5.5vw,1.75rem);color:#c9a227;text-shadow:0 0 25px rgba(201,162,39,.5),0 0 55px rgba(201,162,39,.18),0 2px 8px rgba(0,0,0,.8);line-height:1.25;text-align:center;word-break:break-word;animation:villNameIn .22s ease both}
-.vill-placeholder{font-family:'EB Garamond',serif;font-size:.92rem;color:#2a1c0c;font-style:italic;text-align:center;letter-spacing:.04em}
-.vill-ornament{display:flex;align-items:center;gap:10px;padding:8px 0}
-.vill-orn-line{flex:1;height:1px;background:linear-gradient(to right,transparent,rgba(201,162,39,.28))}
-.vill-orn-line+.vill-orn-symbol+.vill-orn-line{background:linear-gradient(to left,transparent,rgba(201,162,39,.28))}
-.vill-orn-symbol{color:#4a3820;font-size:.82rem;flex-shrink:0;opacity:.7}
-.vill-input{display:block;width:100%;background:rgba(201,162,39,.04);border:1px solid rgba(201,162,39,.2);border-top:none;border-radius:0 0 12px 12px;padding:12px 16px;color:var(--text);font-family:'EB Garamond',serif;font-size:1.05rem;text-align:center;letter-spacing:.06em;outline:none;-webkit-appearance:none;transition:background .2s,border-color .2s;box-sizing:border-box}
-.vill-input:focus{background:rgba(201,162,39,.08);border-color:rgba(201,162,39,.48)}
-.vill-input::placeholder{color:#2a1c0a;font-style:italic;letter-spacing:.02em}
+.vill-frame{position:relative;background:linear-gradient(160deg,rgba(201,162,39,.07) 0%,rgba(0,0,0,.18) 60%,rgba(201,162,39,.05) 100%);border:1.5px solid rgba(201,162,39,.32);border-radius:14px;padding:18px 20px 16px;text-align:center;box-shadow:inset 0 0 40px rgba(0,0,0,.35),0 2px 18px rgba(0,0,0,.4);overflow:hidden}
+.vill-frame::before{content:'';position:absolute;inset:4px;border:1px solid rgba(201,162,39,.12);border-radius:11px;pointer-events:none}
+.vill-corner{position:absolute;font-size:.85rem;color:rgba(201,162,39,.55);line-height:1;pointer-events:none}
+.vill-corner-tl{top:6px;left:8px;transform:rotate(0deg)}
+.vill-corner-tr{top:6px;right:8px;transform:scaleX(-1)}
+.vill-corner-bl{bottom:6px;left:8px;transform:scaleY(-1)}
+.vill-corner-br{bottom:6px;right:8px;transform:scale(-1,-1)}
+.vill-rule-top,.vill-rule-bot{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.vill-rule-bot{margin-bottom:0;margin-top:10px}
+.vill-rule-line{flex:1;height:1px;background:linear-gradient(to right,transparent,rgba(201,162,39,.4),transparent)}
+.vill-rule-gem{font-size:.65rem;color:rgba(201,162,39,.7);flex-shrink:0}
+.vill-title-input{display:block;width:100%;background:transparent;border:none;border-bottom:1px solid rgba(201,162,39,.28);padding:6px 4px 8px;color:#c9a227;font-family:'Cinzel Decorative',serif;font-size:clamp(1.1rem,5vw,1.5rem);text-align:center;letter-spacing:.06em;outline:none;-webkit-appearance:none;caret-color:#c9a227;box-sizing:border-box;text-shadow:0 0 18px rgba(201,162,39,.35)}
+.vill-title-input:focus{border-bottom-color:rgba(201,162,39,.7);background:rgba(201,162,39,.04)}
+.vill-title-input::placeholder{color:rgba(201,162,39,.22);font-style:italic;font-family:'EB Garamond',serif;font-size:1rem;letter-spacing:.03em}
 
 /* ── SETUP: GIOCATORI ── */
 .players-section{background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px 16px 14px;margin-bottom:18px}
@@ -1762,6 +1764,22 @@ function App(){
 
   const goRolePick=()=>{setVName(vInp.trim()||'il Villaggio');setDist(getSuggestedDist(names.length));setSc('rolePick');};
 
+  const resetNight=()=>{setGc(null);setWc(null);setVc(null);setVr(null);setMc(null);setAc(null);setCusC(null);setNegC(null);setNegR(null);setPirC(null);setAccC(null);setAccR(null);setAlchAct(null);setAlchT(null);setAlchTs([]);setMutC(null);setConC(null);setCorC(null);setSeerKill(null);setFunamboloCoin(null);setVampC(null);setAraldoCands([]);setSuicidaWonInfo(null);setMimicSel(null);setMimicPhase('select');setMimicData(null);setMutShowReveal(false);setConShowReveal(false);setLupoAlphaActivatedName(null);};
+
+  const startNight=(ps,ca,cf)=>{
+    let fr=ps.map(p=>({...p,protected:false}));
+    let activatedName=null;
+    if(alphaTransf){
+      const lai=fr.findIndex(p=>p.role==='lupoAlpha'&&p.alive);
+      if(lai!==-1){activatedName=fr[lai].name;fr[lai]={...fr[lai],role:'lupo'};}
+      setAlphaTransf(false);
+    }
+    setPlayers(fr);resetNight();setCAlone(ca);setCFirst(cf);
+    if(activatedName)setLupoAlphaActivatedName(activatedName);
+    const first=NIGHT_STEPS.find(s=>stepHasPlayer(s,fr))||'lupi';
+    setNs(first);setSc('night');
+  };
+
   const confirmRoles=()=>{
     const _n=names.length;
     const _nonV=ROLE_ORDER.filter(k=>k!=='villico').reduce((s,k)=>s+(dist[k]||0),0);
@@ -1776,8 +1794,12 @@ function App(){
     setSindacoIdx(useSindaco?null:-1);setSindacoTmp(null);setVampPrede([]);setAraldoCands([]);
     setGuardSelfUsed(false);setLupoAlphaActivatedName(null);
     setGameLog([]);
-    if(gameMode==='multiplayer'&&roomCode){fbWriteRoles(roomCode,ps,lobbyPlayerMap);}
-    setSc('roleReveal');
+    if(gameMode==='multiplayer'&&roomCode){
+      fbWriteRoles(roomCode,ps,lobbyPlayerMap);
+      startNight(ps,false,false);
+    } else {
+      setSc('roleReveal');
+    }
   };
 
   const newGame=()=>{
@@ -1801,22 +1823,6 @@ function App(){
   };
 
   const nextReveal=()=>{if(ri+1<players.length){setRi(r=>r+1);setRv(false);}else startNight(players,false,false);};
-
-  const resetNight=()=>{setGc(null);setWc(null);setVc(null);setVr(null);setMc(null);setAc(null);setCusC(null);setNegC(null);setNegR(null);setPirC(null);setAccC(null);setAccR(null);setAlchAct(null);setAlchT(null);setAlchTs([]);setMutC(null);setConC(null);setCorC(null);setSeerKill(null);setFunamboloCoin(null);setVampC(null);setAraldoCands([]);setSuicidaWonInfo(null);setMimicSel(null);setMimicPhase('select');setMimicData(null);setMutShowReveal(false);setConShowReveal(false);setLupoAlphaActivatedName(null);};
-
-  const startNight=(ps,ca,cf)=>{
-    let fr=ps.map(p=>({...p,protected:false}));
-    let activatedName=null;
-    if(alphaTransf){
-      const lai=fr.findIndex(p=>p.role==='lupoAlpha'&&p.alive);
-      if(lai!==-1){activatedName=fr[lai].name;fr[lai]={...fr[lai],role:'lupo'};}
-      setAlphaTransf(false);
-    }
-    setPlayers(fr);resetNight();setCAlone(ca);setCFirst(cf);
-    if(activatedName)setLupoAlphaActivatedName(activatedName);
-    const first=NIGHT_STEPS.find(s=>stepHasPlayer(s,fr))||'lupi';
-    setNs(first);setSc('night');
-  };
 
   const advance=(doneStep,ps,ov={})=>{
     const rem=NIGHT_STEPS.slice(NIGHT_STEPS.indexOf(doneStep)+1);
@@ -2857,32 +2863,32 @@ function App(){
 
         {/* ── NOME VILLAGGIO ── */}
         <div className="vill-section">
-          <div className="vill-eyebrow">— Il Villaggio di —</div>
-
-          {/* Live preview */}
-          <div className="vill-preview-box">
-            {vInp
-              ? <div className="vill-name-live" key={vInp}>{vInp}</div>
-              : <div className="vill-placeholder">Il tuo villaggio ti aspetta...</div>
-            }
+          <div className="vill-frame">
+            {/* Corner ornaments */}
+            <span className="vill-corner vill-corner-tl">❧</span>
+            <span className="vill-corner vill-corner-tr">❧</span>
+            <span className="vill-corner vill-corner-bl">❧</span>
+            <span className="vill-corner vill-corner-br">❧</span>
+            {/* Top rule */}
+            <div className="vill-rule-top">
+              <div className="vill-rule-line"/><span className="vill-rule-gem">✦</span><div className="vill-rule-line"/>
+            </div>
+            {/* Label */}
+            <div className="vill-eyebrow">— Il Villaggio di —</div>
+            {/* Single input that IS the title */}
+            <input
+              type="text"
+              className="vill-title-input"
+              placeholder="Roccaverde..."
+              value={vInp}
+              onChange={e=>setVInp(e.target.value)}
+              maxLength={30}
+            />
+            {/* Bottom rule */}
+            <div className="vill-rule-bot">
+              <div className="vill-rule-line"/><span className="vill-rule-gem">✦</span><div className="vill-rule-line"/>
+            </div>
           </div>
-
-          {/* Decorative separator */}
-          <div className="vill-ornament">
-            <div className="vill-orn-line"/>
-            <span className="vill-orn-symbol">⚔</span>
-            <div className="vill-orn-line"/>
-          </div>
-
-          {/* Input fonde con il preview */}
-          <input
-            type="text"
-            className="vill-input"
-            placeholder="Es. Roccaverde, Val dei Lupi..."
-            value={vInp}
-            onChange={e=>setVInp(e.target.value)}
-            maxLength={30}
-          />
         </div>
 
         {/* ── GIOCATORI ── */}
@@ -4152,7 +4158,18 @@ function App(){
         </div>
 
         {/* ── LOG NOTTURNO: TABELLA MATRICE ── */}
-        {gameLog.length>0&&(()=>{
+        {gameLog.length>0&&(
+          <div style={{marginTop:8}}>
+            <button onClick={()=>setLogOpen(v=>!v)}
+              style={{display:'flex',alignItems:'center',justifyContent:'space-between',width:'100%',
+                padding:'12px 14px',background:'rgba(201,162,39,.04)',border:'1px solid rgba(201,162,39,.15)',
+                borderRadius:logOpen?'12px 12px 0 0':'12px',cursor:'pointer',WebkitTapHighlightColor:'transparent',
+                fontFamily:'Cinzel,serif',fontSize:'.72rem',color:'#8a7040',letterSpacing:'.12em',
+                transition:'border-radius .15s'}}>
+              <span>📊 Log delle Notti</span>
+              <span style={{fontSize:'.85rem',transform:logOpen?'rotate(180deg)':'none',transition:'transform .22s'}}>▼</span>
+            </button>
+            {logOpen&&(()=>{
           // Mappa emoji azione per tipo
           const actionIcon={wolf:'🐺',seer:'👁️',guard:'🛡️',mer:'💃',arc:'🏹',custode:'🔒',neg:'☠️',pir:'🔥',acc:'⚖️',mut:'🔄',con:'🦅',cor:'🪶',vamp:'🧛',alch:'⚗️'};
           // Calcola per ogni giocatore il round/cause della sua morte
@@ -4170,10 +4187,8 @@ function App(){
           // Emoji causa morte
           const causeEmoji=c=>c==='wolf'?'🐺💀':c==='seer'?'👁️💀':c==='vote'?'🗳️💀':c==='mer'?'💃💀':'💀';
           return(
-            <>
-              <div className="div"/>
-              <div className="lbl mb8">📊 Log delle Notti</div>
-              <div className="nlog-wrap">
+            <div style={{border:'1px solid rgba(201,162,39,.15)',borderTop:'none',borderRadius:'0 0 12px 12px',padding:'0 0 10px',background:'rgba(0,0,0,.12)'}}>
+              <div className="nlog-wrap" style={{paddingTop:10}}>
                 <table className="nlog-table">
                   <thead>
                     <tr>
@@ -4256,9 +4271,11 @@ function App(){
                   <span key={lb} style={{fontSize:'.6rem',color:'#4a3820',fontFamily:'Cinzel,serif'}}>{em} {lb}</span>
                 ))}
               </div>
-            </>
+            </div>
           );
-        })()}
+        })())}
+          </div>
+        )}
       </div></div>
     );
   }
