@@ -493,6 +493,142 @@ const RANDOM_EVENTS=[
   {id:5,icon:'✨',name:"Dono dell'Ordine",when:'Notte',color:'#9b59b6',desc:"Una figura dell'Ordine a caso riceve una visione gratuita. Se è il Veggente, non ha effetto."},
   {id:6,icon:'💬',name:'Cadavere Parla',when:'Giorno',color:'#27ae60',desc:'Un morto può lasciare un messaggio di massimo 3 parole (non nomi) letto dal Cantastorie all\'alba.'},
 ];
+// ─── MODALITÀ SPECIALI ────────────────────────────────────────────────────────
+const MODALITA_SPECIALI = [
+  {
+    id:'contadini_lupi_ordine',
+    icon:'🔮',
+    name:'Contadini · Lupi · Ordine',
+    color:'#1abc9c',
+    short:'L\'equilibrio si rompe: nasce l\'Ordine.',
+    desc:'Una fazione misteriosa dai poteri arcani, non fedele ai Contadini ma nemica dei Lupi. Regole di vittoria autonome. Min. 3 membri dell\'Ordine consigliati.',
+    fazioni:['Contadini','Lupi','Ordine'],
+    nota:'Nessun solista',
+    autoRoles:{ordineMode:true},
+    // Ruoli da attivare: almeno 1 Ordine + ruoli standard
+    preset:(n,dist)=>{
+      const d={...dist};
+      // Attiva Ordine Mode e assicura almeno 3 ruoli Ordine
+      const ordineRoles=['veggente','negromante','alchimista'];
+      ordineRoles.forEach(k=>{ if((d[k]||0)<1) d[k]=1; });
+      return d;
+    },
+    filter:['villico','lupo','cucciolo','veggente','guardia','meretrice','arciere','avvocato','negromante','alchimista','custode','araldo','condor'],
+  },
+  {
+    id:'lupi_ordine',
+    icon:'🌙',
+    name:'Lupi · Ordine',
+    color:'#e74c3c',
+    short:'La sfida è tra Lupi e chi preserva l\'equilibrio.',
+    desc:'I Contadini non sono più protagonisti. Una partita per esperti, incentrata su poteri e bluff. Nessun Contadino, nessun solista.',
+    fazioni:['Lupi','Ordine'],
+    nota:'Nessun Contadino · Nessun solista',
+    autoRoles:{ordineMode:true},
+    preset:(n,dist)=>{
+      const d={...dist};
+      // Solo Ordine e Lupi — azzera tutto il resto
+      const allowed=['lupo','cucciolo','veggente','negromante','alchimista','custode','araldo','condor','mutaforma'];
+      Object.keys(d).forEach(k=>{ if(!allowed.includes(k)) d[k]=0; });
+      if((d.veggente||0)<1) d.veggente=1;
+      if((d.negromante||0)<1) d.negromante=1;
+      return d;
+    },
+    filter:['lupo','cucciolo','veggente','negromante','alchimista','custode','araldo','condor','mutaforma'],
+  },
+  {
+    id:'completa',
+    icon:'👑',
+    name:'Completa · Tutte le fazioni',
+    color:'#f39c12',
+    short:'Regna il caos: ogni fazione è presente.',
+    desc:'Contadini, Lupi, Ordine e 1 Solista. La modalità definitiva. Richiede un Narratore esperto. Consigliata con molti giocatori.',
+    fazioni:['Contadini','Lupi','Ordine','1 Solista'],
+    nota:'Partite lunghe · Consigliata 10+ giocatori',
+    autoRoles:{ordineMode:true},
+    preset:(n,dist)=>{
+      const d={...dist};
+      if((d.veggente||0)<1) d.veggente=1;
+      if((d.negromante||0)<1) d.negromante=1;
+      if((d.alchimista||0)<1) d.alchimista=1;
+      return d;
+    },
+    filter:null, // tutti i ruoli disponibili
+  },
+  {
+    id:'tutti_vampiro',
+    icon:'🧛',
+    name:'Tutti contro il Vampiro',
+    color:'#6c3483',
+    short:'Un antico male si è risvegliato.',
+    desc:'Nessun branco, nessun solista. Solo il Vampiro. Il villaggio deve collaborare per eliminarlo prima che sia troppo tardi. Consigliato 8+ giocatori.',
+    fazioni:['Contadini','Ordine (opz.)','1 Vampiro'],
+    nota:'Nessun Lupo · Nessun altro solista · 8+ giocatori',
+    autoRoles:{ordineMode:false},
+    preset:(n,dist)=>{
+      const d={...dist};
+      // Azzera lupi e altri solisti, attiva vampiro
+      ['lupo','cucciolo','suicida','criceto','piromane','corvo','misantropo','mutaforma','condor'].forEach(k=>d[k]=0);
+      d.vampiro=1;
+      if((d.veggente||0)<1) d.veggente=1;
+      if((d.guardia||0)<1) d.guardia=1;
+      return d;
+    },
+    filter:['villico','veggente','guardia','meretrice','arciere','avvocato','negromante','alchimista','custode','araldo','vampiro'],
+  },
+  {
+    id:'orfano_vendicatore',
+    icon:'🍵',
+    name:'L\'Orfano Vendicatore',
+    color:'#bdc3c7',
+    short:'Un contadino giura vendetta sui Lupi.',
+    desc:'Se riesce a far giustiziare tutti i Lupi mentre è ancora vivo, vince da solo — non con i Contadini. Una sfida personale.',
+    fazioni:['Contadini','Lupi','1 Orfano (solista)'],
+    nota:'L\'Orfano non vince con i Contadini',
+    autoRoles:{ordineMode:false},
+    preset:(n,dist)=>{
+      const d={...dist};
+      d.orfano=1;
+      return d;
+    },
+    filter:['villico','lupo','cucciolo','veggente','guardia','meretrice','arciere','avvocato','orfano'],
+  },
+  {
+    id:'notte_fuoco',
+    icon:'🔥',
+    name:'La Notte del Fuoco',
+    color:'#e67e22',
+    short:'Un pazzo incendiario si aggira per il villaggio.',
+    desc:'Il Piromane è l\'unico vero solista. Ogni notte può incendiare una casa. Il caos dilaga. Consigliato 10+ giocatori.',
+    fazioni:['Contadini','Lupi','1 Piromane (solista)'],
+    nota:'Il Piromane vince se resta l\'unico in vita · 10+ giocatori',
+    autoRoles:{ordineMode:false},
+    preset:(n,dist)=>{
+      const d={...dist};
+      d.piromane=1;
+      return d;
+    },
+    filter:['villico','lupo','cucciolo','veggente','guardia','meretrice','arciere','avvocato','piromane'],
+  },
+  {
+    id:'processo_silenzioso',
+    icon:'🤫',
+    name:'Il Processo Silenzioso',
+    color:'#95a5a6',
+    short:'Nessuno può parlare di giorno. Solo gesti e sguardi.',
+    desc:'Il Custode del Silenzio veglia. Perfetto per aumentare la tensione o frenare un giocatore troppo dominante. Si applica a qualsiasi configurazione.',
+    fazioni:['Qualsiasi configurazione'],
+    nota:'Effetto: il Custode silenzia 1 giocatore per l\'intero giorno',
+    autoRoles:{ordineMode:false},
+    preset:(n,dist)=>{
+      const d={...dist};
+      d.custode=Math.max(1,d.custode||0);
+      return d;
+    },
+    filter:null, // tutti i ruoli
+  },
+];
+
 const TIPS=[
   {title:'Crea atmosfera 🌙',text:'Usa un tono grave durante la notte. Sussurra: "È notte nel villaggio. Tutti chiudano gli occhi…". Il silenzio è il tuo alleato.'},
   {title:'Non farti scoprire 🎭',text:'Quando chiami un ruolo, muoviti con gesti leggeri. Se i Lupi sentono che chiami una sola persona, capiscono troppo.'},
@@ -999,6 +1135,8 @@ function App(){
   const [conShowReveal,setConShowReveal]=useState(false);
   const [guardSelfUsed,setGuardSelfUsed]=useState(false);
   const [lupoAlphaActivatedName,setLupoAlphaActivatedName]=useState(null);
+  const [modalitaSpeciale,setModalitaSpeciale]=useState(null); // id della modalità speciale selezionata
+  const [modalitaOpen,setModalitaOpen]=useState(false); // accordion aperto
   const toggleCat=id=>setOpenCats(p=>({...p,[id]:!p[id]}));
 
   // ── MULTIPLAYER STATE ──────────────────────────────────────────────────────
@@ -1505,7 +1643,7 @@ function App(){
     setJoinInput('');setPlayerName('');setJoinError('');setJoinLoading(false);
     clearGame();setNames([]);setPlayers([]);setWin(null);setVName('');setVInp('');
     setOrdineMode(false);setSindacoIdx(null);setSindacoTmp(null);
-    setVampPrede([]);setAraldoCands([]);scoresSavedRef.current=false;setGameLog([]);setSc('home');
+    setVampPrede([]);setAraldoCands([]);scoresSavedRef.current=false;setGameLog([]);setModalitaSpeciale(null);setModalitaOpen(false);setSc('home');
   };
   const replayGame=()=>{
     if(roomCode&&gameMode==='multiplayer'){
@@ -1516,7 +1654,7 @@ function App(){
         alivePlayers:null,playerAlive:null,silencedPlayer:null,playerNotif:null,phase:null,
       });
     }
-    clearGame();setPlayers([]);setWin(null);setSindacoIdx(null);setSindacoTmp(null);setOrdineMode(false);scoresSavedRef.current=false;setGameLog([]);setSc('rolePick');
+    clearGame();setPlayers([]);setWin(null);setSindacoIdx(null);setSindacoTmp(null);setOrdineMode(false);scoresSavedRef.current=false;setGameLog([]);setModalitaSpeciale(null);setModalitaOpen(false);setSc('rolePick');
   };
 
   const nextReveal=()=>{if(ri+1<players.length){setRi(r=>r+1);setRv(false);}else startNight(players,false,false);};
@@ -2713,6 +2851,91 @@ function App(){
             </div>
           )}
         </div>
+
+        {/* ── MODALITÀ SPECIALI ── */}
+        {(()=>{
+          const selMod=modalitaSpeciale?MODALITA_SPECIALI.find(m=>m.id===modalitaSpeciale):null;
+          return(
+            <div style={{background:'rgba(155,89,182,.07)',border:'1px solid rgba(155,89,182,.22)',borderRadius:12,padding:'14px 16px',marginBottom:14}}>
+              {/* Header accordion */}
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',cursor:'pointer'}} onClick={()=>setModalitaOpen(o=>!o)}>
+                <div>
+                  <span style={{fontFamily:'Cinzel,serif',fontSize:'.78rem',color:'#9b59b6',letterSpacing:'.08em'}}>🎭 Modalità Speciale</span>
+                  {selMod&&<p style={{fontSize:'.74rem',color:'#7a5a90',marginTop:3,fontStyle:'italic'}}>{selMod.icon} {selMod.name}</p>}
+                  {!selMod&&<p style={{fontSize:'.74rem',color:'#5a4060',marginTop:3,fontStyle:'italic'}}>Nessuna — partita libera</p>}
+                </div>
+                <div style={{display:'flex',alignItems:'center',gap:8}}>
+                  {selMod&&(
+                    <button onClick={e=>{e.stopPropagation();setModalitaSpeciale(null);setOrdineMode(false);setDist(getSuggestedDist(names.length));}}
+                      style={{fontFamily:'Cinzel,serif',fontSize:'.6rem',letterSpacing:'.08em',border:'1px solid rgba(155,89,182,.4)',borderRadius:8,padding:'5px 10px',background:'rgba(155,89,182,.12)',color:'#9b59b6',cursor:'pointer'}}>
+                      ✕ Reset
+                    </button>
+                  )}
+                  <span style={{color:'#7a5a90',fontSize:'.9rem',transform:modalitaOpen?'rotate(180deg)':'none',transition:'transform .2s'}}>▼</span>
+                </div>
+              </div>
+
+              {/* Dropdown lista modalità */}
+              {modalitaOpen&&(
+                <div style={{marginTop:14,display:'flex',flexDirection:'column',gap:8}}>
+                  {/* Opzione "nessuna" */}
+                  <div onClick={()=>{setModalitaSpeciale(null);setOrdineMode(false);setDist(getSuggestedDist(names.length));setModalitaOpen(false);}}
+                    style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',borderRadius:10,border:`1px solid ${!modalitaSpeciale?'rgba(201,162,39,.5)':'rgba(255,255,255,.08)'}`,background:!modalitaSpeciale?'rgba(201,162,39,.1)':'rgba(255,255,255,.02)',cursor:'pointer',transition:'all .15s'}}>
+                    <span style={{fontSize:'1.3rem'}}>🎲</span>
+                    <div style={{flex:1}}>
+                      <div style={{fontFamily:'Cinzel,serif',fontSize:'.8rem',color:!modalitaSpeciale?'#c9a227':'#7a6840',fontWeight:!modalitaSpeciale?700:400}}>Partita Libera</div>
+                      <div style={{fontSize:'.72rem',color:'#4a3a20',fontStyle:'italic',marginTop:2}}>Configura i ruoli manualmente</div>
+                    </div>
+                    {!modalitaSpeciale&&<span style={{color:'#c9a227',fontSize:'.9rem'}}>✓</span>}
+                  </div>
+
+                  {MODALITA_SPECIALI.map(m=>{
+                    const isSel=modalitaSpeciale===m.id;
+                    return(
+                      <div key={m.id}
+                        onClick={()=>{
+                          setModalitaSpeciale(m.id);
+                          // Applica preset ruoli
+                          const newDist=m.preset(names.length,getSuggestedDist(names.length));
+                          setDist(newDist);
+                          // Applica ordineMode
+                          setOrdineMode(m.autoRoles.ordineMode);
+                          setModalitaOpen(false);
+                        }}
+                        style={{display:'flex',alignItems:'flex-start',gap:10,padding:'12px 12px',borderRadius:10,border:`1px solid ${isSel?m.color+'88':'rgba(255,255,255,.08)'}`,background:isSel?m.color+'18':'rgba(255,255,255,.02)',cursor:'pointer',transition:'all .15s'}}>
+                        <span style={{fontSize:'1.5rem',flexShrink:0,marginTop:2}}>{m.icon}</span>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{fontFamily:'Cinzel,serif',fontSize:'.8rem',color:isSel?m.color:'#a08060',fontWeight:isSel?700:400,marginBottom:2}}>{m.name}</div>
+                          <div style={{fontSize:'.72rem',color:'#5a4a30',fontStyle:'italic',lineHeight:1.5,marginBottom:4}}>{m.short}</div>
+                          <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
+                            {m.fazioni.map(f=>(
+                              <span key={f} style={{fontFamily:'Cinzel,serif',fontSize:'.58rem',padding:'2px 7px',borderRadius:8,background:`${m.color}18`,border:`1px solid ${m.color}44`,color:m.color,letterSpacing:'.06em'}}>{f}</span>
+                            ))}
+                          </div>
+                          {m.nota&&<div style={{fontSize:'.65rem',color:'#4a3a20',marginTop:4,fontStyle:'italic'}}>⚠ {m.nota}</div>}
+                        </div>
+                        {isSel&&<span style={{color:m.color,fontSize:'.9rem',flexShrink:0}}>✓</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Se modalità selezionata: mostra descrizione e badge fazioni */}
+              {!modalitaOpen&&selMod&&(
+                <div style={{marginTop:10,padding:'10px 12px',background:'rgba(155,89,182,.05)',borderRadius:8,border:'1px solid rgba(155,89,182,.15)'}}>
+                  <p style={{fontSize:'.8rem',color:'#8a6aaa',fontStyle:'italic',lineHeight:1.6,marginBottom:8}}>{selMod.desc}</p>
+                  <div style={{display:'flex',flexWrap:'wrap',gap:5,marginBottom:selMod.nota?6:0}}>
+                    {selMod.fazioni.map(f=>(
+                      <span key={f} style={{fontFamily:'Cinzel,serif',fontSize:'.6rem',padding:'3px 9px',borderRadius:10,background:`${selMod.color}18`,border:`1px solid ${selMod.color}44`,color:selMod.color,letterSpacing:'.08em'}}>{f}</span>
+                    ))}
+                  </div>
+                  {selMod.nota&&<p style={{fontSize:'.68rem',color:'#5a4060',fontStyle:'italic'}}>⚠ {selMod.nota}</p>}
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         <button className="btn btn-gold mb8" onClick={confirmRoles} disabled={!valid}>Inizia Partita</button>
         <button className="btn btn-outline mb8" onClick={()=>setSc('setup')}>← Modifica Giocatori</button>
