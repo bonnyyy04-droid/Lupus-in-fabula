@@ -496,21 +496,48 @@ const RANDOM_EVENTS=[
 // ─── MODALITÀ SPECIALI ────────────────────────────────────────────────────────
 const MODALITA_SPECIALI = [
   {
+    id:'classica',
+    icon:'⚔️',
+    name:'Classica',
+    color:'#e67e22',
+    short:'La più semplice: Lupi contro Contadini.',
+    desc:'La forma originale del gioco. Due sole fazioni: i Lupi, che cacciano nell\'ombra, e i Contadini, che cercano di smascherarli. Nessun potere speciale, solo intuito, bluff e fiducia. Ideale per partite veloci o per chi si avvicina al gioco per la prima volta.',
+    fazioni:['Contadini','Lupi'],
+    nota:'Nessun ruolo speciale · Nessun solista',
+    guida:[
+      {emoji:'👥',titolo:'Quanti giocatori?',testo:'Perfetta da 6 a 10 giocatori. Con 6-8 usa 1 solo Lupo, con 9-10 considera 2 Lupi.'},
+      {emoji:'🧑‍🌾',titolo:'Ruoli consigliati',testo:'Solo Lupi Grandi e Villici. Puoi aggiungere 1 Veggente per rendere il gioco meno casuale.'},
+      {emoji:'🎯',titolo:'Come vince il Villaggio?',testo:'Eliminando tutti i Lupi tramite le votazioni diurne. I Lupi vincono quando uguagliano o superano i Contadini rimasti.'},
+    ],
+    autoRoles:{ordineMode:false},
+    preset:(n,dist)=>{
+      const d={};Object.keys(dist).forEach(k=>d[k]=0);
+      d.lupo=n<=8?1:2;
+      return d;
+    },
+    filter:['villico','lupo','cucciolo'],
+  },
+  {
     id:'contadini_lupi_ordine',
     icon:'🔮',
     name:'Contadini · Lupi · Ordine',
     color:'#1abc9c',
     short:'L\'equilibrio si rompe: nasce l\'Ordine.',
-    desc:'Una fazione misteriosa dai poteri arcani, non fedele ai Contadini ma nemica dei Lupi. Regole di vittoria autonome. Min. 3 membri dell\'Ordine consigliati.',
+    desc:'Una fazione misteriosa, formata da individui dai poteri arcani o oscuri, non è fedele ai Contadini ma lotta contro i Lupi per ragioni proprie. L\'Ordine ha regole di vittoria autonome: vince solo se tutti i Lupi sono morti e i suoi membri in vita superano i Contadini. Devono essere presenti almeno 3 membri dell\'Ordine per questa variante.',
     fazioni:['Contadini','Lupi','Ordine'],
-    nota:'Nessun solista',
+    nota:'Nessun solista · Min. 3 membri Ordine consigliati',
+    guida:[
+      {emoji:'🔮',titolo:'Chi è l\'Ordine?',testo:'Negromante, Alchimista, Custode del Silenzio, Araldo, Veggente. Non sono alleati dei Contadini: hanno un obiettivo separato.'},
+      {emoji:'⚖️',titolo:'Come vince l\'Ordine?',testo:'Tutti i Lupi devono essere eliminati E i membri dell\'Ordine in vita devono superare i Contadini ancora vivi.'},
+      {emoji:'👥',titolo:'Numero giocatori',testo:'Funziona bene da 10 giocatori in su. Con meno giocatori l\'Ordine rischia di essere troppo potente o troppo debole.'},
+      {emoji:'💡',titolo:'Consiglio per il Narratore',testo:'Non rivelare quanti membri ha l\'Ordine. Il villaggio non sa distinguere un membro dell\'Ordine da un semplice Contadino: questo crea tensione!'},
+    ],
     autoRoles:{ordineMode:true},
-    // Ruoli da attivare: almeno 1 Ordine + ruoli standard
     preset:(n,dist)=>{
       const d={...dist};
-      // Attiva Ordine Mode e assicura almeno 3 ruoli Ordine
-      const ordineRoles=['veggente','negromante','alchimista'];
-      ordineRoles.forEach(k=>{ if((d[k]||0)<1) d[k]=1; });
+      if((d.veggente||0)<1)d.veggente=1;
+      if((d.negromante||0)<1)d.negromante=1;
+      if((d.alchimista||0)<1)d.alchimista=1;
       return d;
     },
     filter:['villico','lupo','cucciolo','veggente','guardia','meretrice','arciere','avvocato','negromante','alchimista','custode','araldo','condor'],
@@ -520,18 +547,21 @@ const MODALITA_SPECIALI = [
     icon:'🌙',
     name:'Lupi · Ordine',
     color:'#e74c3c',
-    short:'La sfida è tra Lupi e chi preserva l\'equilibrio.',
-    desc:'I Contadini non sono più protagonisti. Una partita per esperti, incentrata su poteri e bluff. Nessun Contadino, nessun solista.',
+    short:'La sfida è tra Lupi e l\'Ordine. I Contadini non esistono.',
+    desc:'I Contadini non sono più protagonisti. La sfida è tra il branco dei Lupi e chi cerca di preservare l\'equilibrio del mondo attraverso poteri antichi e segreti. Una partita adatta a pochi giocatori esperti, incentrata su poteri e bluff. Nessun Contadino. Nessun solista.',
     fazioni:['Lupi','Ordine'],
-    nota:'Nessun Contadino · Nessun solista',
+    nota:'Nessun Contadino · Nessun solista · Solo esperti',
+    guida:[
+      {emoji:'🌙',titolo:'Atmosfera',testo:'Una partita intensa e rapida. Ogni giocatore ha un potere: il bluff è tutto. Il Narratore deve essere molto preciso nella gestione dei turni notturni.'},
+      {emoji:'🔮',titolo:'Composizione consigliata',testo:'Usa Veggente, Negromante, Alchimista, Custode del Silenzio, Araldo. Almeno 3 ruoli Ordine per bilanciare i Lupi.'},
+      {emoji:'👥',titolo:'Numero giocatori',testo:'Ideale con 6-8 giocatori. Con più persone considera ruoli Ordine aggiuntivi come Condor o Mutaforma.'},
+      {emoji:'⚠️',titolo:'Attenzione',testo:'Senza Villici di supporto, ogni morte pesa molto. La Veggente è fondamentale: i Lupi la elimineranno per prima.'},
+    ],
     autoRoles:{ordineMode:true},
     preset:(n,dist)=>{
-      const d={...dist};
-      // Solo Ordine e Lupi — azzera tutto il resto
-      const allowed=['lupo','cucciolo','veggente','negromante','alchimista','custode','araldo','condor','mutaforma'];
-      Object.keys(d).forEach(k=>{ if(!allowed.includes(k)) d[k]=0; });
-      if((d.veggente||0)<1) d.veggente=1;
-      if((d.negromante||0)<1) d.negromante=1;
+      const d={};Object.keys(dist).forEach(k=>d[k]=0);
+      d.lupo=Math.max(1,Math.floor(n/3));
+      d.veggente=1;d.negromante=1;d.alchimista=1;
       return d;
     },
     filter:['lupo','cucciolo','veggente','negromante','alchimista','custode','araldo','condor','mutaforma'],
@@ -542,36 +572,47 @@ const MODALITA_SPECIALI = [
     name:'Completa · Tutte le fazioni',
     color:'#f39c12',
     short:'Regna il caos: ogni fazione è presente.',
-    desc:'Contadini, Lupi, Ordine e 1 Solista. La modalità definitiva. Richiede un Narratore esperto. Consigliata con molti giocatori.',
+    desc:'La modalità definitiva, dove ogni fazione è presente. Regna il caos: i Lupi cacciano, l\'Ordine trama, i Contadini cercano la verità, e un singolo Solista segue solo la propria agenda. Richiede equilibrio e un Narratore esperto. Consigliato un solo Solista per partita e almeno 3 membri dell\'Ordine. Partite più lunghe e complesse.',
     fazioni:['Contadini','Lupi','Ordine','1 Solista'],
-    nota:'Partite lunghe · Consigliata 10+ giocatori',
+    nota:'Min. 3 Ordine · 1 solo solista · 12+ giocatori consigliati',
+    guida:[
+      {emoji:'👑',titolo:'La modalità definitiva',testo:'Ogni fazione ha un obiettivo diverso. Contadini eliminano Lupi. Lupi eliminano tutti. Ordine vuole sopravvivere in maggioranza. Il Solista segue solo la sua agenda.'},
+      {emoji:'🎭',titolo:'Quale Solista scegliere?',testo:'Uno solo. Il Criceto Mannaro o il Corvo aggiungono caos silenzioso. Il Vampiro o il Suicida sconvolgono le dinamiche.'},
+      {emoji:'⚖️',titolo:'Bilanciamento consigliato',testo:'Con 12 giocatori: 2-3 Lupi, 3-4 Ordine, 1 Solista, resto Contadini con 1-2 ruoli speciali.'},
+      {emoji:'💡',titolo:'Consiglio',testo:'Questa modalità richiede un Narratore molto esperto. La gestione notturna è complessa: prepara l\'ordine dei turni in anticipo.'},
+    ],
     autoRoles:{ordineMode:true},
     preset:(n,dist)=>{
       const d={...dist};
-      if((d.veggente||0)<1) d.veggente=1;
-      if((d.negromante||0)<1) d.negromante=1;
-      if((d.alchimista||0)<1) d.alchimista=1;
+      if((d.veggente||0)<1)d.veggente=1;
+      if((d.negromante||0)<1)d.negromante=1;
+      if((d.alchimista||0)<1)d.alchimista=1;
       return d;
     },
-    filter:null, // tutti i ruoli disponibili
+    filter:null,
   },
   {
     id:'tutti_vampiro',
     icon:'🧛',
     name:'Tutti contro il Vampiro',
     color:'#6c3483',
-    short:'Un antico male si è risvegliato.',
-    desc:'Nessun branco, nessun solista. Solo il Vampiro. Il villaggio deve collaborare per eliminarlo prima che sia troppo tardi. Consigliato 8+ giocatori.',
+    short:'Un antico male si è risvegliato. Solo lui.',
+    desc:'Un antico male si è risvegliato nel villaggio. Nessun branco, nessun solista... solo lui. Il Vampiro è l\'unico vero nemico, e il villaggio deve collaborare per eliminarlo prima che sia troppo tardi. Consigliato per 8+ giocatori. Il Vampiro vince se controlla la maggioranza di voti diurni con le sue Prede.',
     fazioni:['Contadini','Ordine (opz.)','1 Vampiro'],
     nota:'Nessun Lupo · Nessun altro solista · 8+ giocatori',
+    guida:[
+      {emoji:'🧛',titolo:'Il Vampiro',testo:'Ogni notte morde qualcuno: quella persona diventa sua Preda segreta. Le Prede sono inconsapevolmente fedeli a lui. Il Veggente lo vede come Lupo.'},
+      {emoji:'🤝',titolo:'Il villaggio deve unirsi',testo:'Senza Lupi, il nemico è uno solo. Ma non si sa chi ha già ceduto alla sua influenza. La fiducia è ancora più rara del solito.'},
+      {emoji:'🔮',titolo:'Aggiungere l\'Ordine',testo:'Puoi includere 2-3 ruoli Ordine (Veggente, Negromante) per rendere il gioco più dinamico. Attiva la Modalità Ordine se lo fai.'},
+      {emoji:'⚖️',titolo:'Condizioni di vittoria',testo:'Villaggio: elimina il Vampiro con un voto. Vampiro: lui + le sue Prede vive superano tutti gli altri in numero.'},
+    ],
     autoRoles:{ordineMode:false},
     preset:(n,dist)=>{
       const d={...dist};
-      // Azzera lupi e altri solisti, attiva vampiro
       ['lupo','cucciolo','suicida','criceto','piromane','corvo','misantropo','mutaforma','condor'].forEach(k=>d[k]=0);
       d.vampiro=1;
-      if((d.veggente||0)<1) d.veggente=1;
-      if((d.guardia||0)<1) d.guardia=1;
+      if((d.veggente||0)<1)d.veggente=1;
+      if((d.guardia||0)<1)d.guardia=1;
       return d;
     },
     filter:['villico','veggente','guardia','meretrice','arciere','avvocato','negromante','alchimista','custode','araldo','vampiro'],
@@ -581,14 +622,19 @@ const MODALITA_SPECIALI = [
     icon:'🍵',
     name:'L\'Orfano Vendicatore',
     color:'#bdc3c7',
-    short:'Un contadino giura vendetta sui Lupi.',
-    desc:'Se riesce a far giustiziare tutti i Lupi mentre è ancora vivo, vince da solo — non con i Contadini. Una sfida personale.',
+    short:'Un contadino giura vendetta. Sfida personale.',
+    desc:'Uno dei contadini ha perso i genitori per colpa dei Lupi... e giura vendetta. Non sa chi siano, ma se riesce a identificarli e farli giustiziare, vince da solo. Non vince con i Contadini. Perfetto per chi vuole una sfida personale in un mondo ostile.',
     fazioni:['Contadini','Lupi','1 Orfano (solista)'],
-    nota:'L\'Orfano non vince con i Contadini',
+    nota:'L\'Orfano vince solo se tutti i Lupi vengono giustiziati mentre è ancora vivo',
+    guida:[
+      {emoji:'🍵',titolo:'L\'Orfano in gioco',testo:'Sembra un normalissimo Contadino. Se i Lupi lo uccidono, il giorno dopo i voti contro i Lupi valgono doppio. Se sopravvive e tutti i Lupi vengono giustiziati, vince da solo.'},
+      {emoji:'🎭',titolo:'Come gestirlo',testo:'L\'Orfano non deve rivelare la sua identità. Può fingere di essere un Villico. Se si rivela, i Lupi lo elimineranno subito per impedirne la vittoria.'},
+      {emoji:'⚠️',titolo:'Attenzione',testo:'L\'Orfano NON vince con i Contadini. Se i Contadini vincono ma l\'Orfano è già morto, i Contadini hanno vinto ma l\'Orfano ha perso.'},
+    ],
     autoRoles:{ordineMode:false},
     preset:(n,dist)=>{
       const d={...dist};
-      d.orfano=1;
+      d.orfano=Math.max(1,d.orfano||0);
       return d;
     },
     filter:['villico','lupo','cucciolo','veggente','guardia','meretrice','arciere','avvocato','orfano'],
@@ -599,13 +645,19 @@ const MODALITA_SPECIALI = [
     name:'La Notte del Fuoco',
     color:'#e67e22',
     short:'Un pazzo incendiario si aggira per il villaggio.',
-    desc:'Il Piromane è l\'unico vero solista. Ogni notte può incendiare una casa. Il caos dilaga. Consigliato 10+ giocatori.',
+    desc:'Un pazzo incendiario si aggira per il villaggio. Nessuna logica, solo fiamme. Ogni notte può incendiare la casa di un giocatore: se è un Lupo muore il Lupo, se è innocente muore il Piromane. I Lupi si nascondono, il villaggio brucia, e il caos dilaga. Consigliato per 10+ giocatori.',
     fazioni:['Contadini','Lupi','1 Piromane (solista)'],
-    nota:'Il Piromane vince se resta l\'unico in vita · 10+ giocatori',
+    nota:'Piromane vince se resta l\'unico in vita · 10+ giocatori',
+    guida:[
+      {emoji:'🔥',titolo:'Il Piromane',testo:'Ha una sola abilità: ogni notte incendia una casa. Se è un Lupo, muore il Lupo. Se è innocente o neutrale, muore il Piromane. È un\'arma a doppio taglio.'},
+      {emoji:'🎯',titolo:'Come vince?',testo:'Deve restare l\'unico in vita. È quasi impossibile, ma basta sbagliare un bersaglio per morire. La fortuna conta tanto quanto la strategia.'},
+      {emoji:'💡',titolo:'Consiglio per il Narratore',testo:'Il Piromane agisce in segreto durante la notte. Non annunciare mai chi ha incendiato: rivela solo il risultato (chi è morto per il fuoco).'},
+      {emoji:'👥',titolo:'Con quanti giocatori?',testo:'Almeno 10. Con meno giocatori il Piromane sbilancia troppo la partita. Perfetto quando il caos è già alto.'},
+    ],
     autoRoles:{ordineMode:false},
     preset:(n,dist)=>{
       const d={...dist};
-      d.piromane=1;
+      d.piromane=Math.max(1,d.piromane||0);
       return d;
     },
     filter:['villico','lupo','cucciolo','veggente','guardia','meretrice','arciere','avvocato','piromane'],
@@ -616,16 +668,22 @@ const MODALITA_SPECIALI = [
     name:'Il Processo Silenzioso',
     color:'#95a5a6',
     short:'Nessuno può parlare di giorno. Solo gesti e sguardi.',
-    desc:'Il Custode del Silenzio veglia. Perfetto per aumentare la tensione o frenare un giocatore troppo dominante. Si applica a qualsiasi configurazione.',
+    desc:'Il villaggio è sotto l\'effetto di un\'antica maledizione: nessuno può parlare di giorno. Solo gesti, sospiri e sguardi. In mezzo al silenzio... un Custode veglia. Perfetta per aumentare la tensione o impedire a un giocatore troppo dominante di influenzare la partita, rendendo il gioco più teatrale e silenziosamente letale.',
     fazioni:['Qualsiasi configurazione'],
-    nota:'Effetto: il Custode silenzia 1 giocatore per l\'intero giorno',
+    nota:'Si applica a qualsiasi configurazione di ruoli',
+    guida:[
+      {emoji:'🤫',titolo:'La regola del silenzio',testo:'Di giorno NESSUNO può parlare. Solo gesti e sguardi. Il Narratore legge i voti e annuncia i risultati. È lui a fare da voce.'},
+      {emoji:'🔒',titolo:'Il Custode del Silenzio',testo:'Una volta a notte può silenziare un giocatore specifico: quella persona non potrà nemmeno fare gesti durante la discussione del giorno dopo.'},
+      {emoji:'🎭',titolo:'Effetto sul gioco',testo:'Trasforma radicalmente la dinamica. I giocatori abili nel parlare perdono il loro vantaggio. L\'intuito e il linguaggio del corpo diventano tutto.'},
+      {emoji:'💡',titolo:'Consiglio',testo:'Puoi usarla come regola aggiuntiva in qualsiasi configurazione. Annuncia la regola prima di iniziare e mostra i gesti di voto consentiti.'},
+    ],
     autoRoles:{ordineMode:false},
     preset:(n,dist)=>{
       const d={...dist};
       d.custode=Math.max(1,d.custode||0);
       return d;
     },
-    filter:null, // tutti i ruoli
+    filter:null,
   },
 ];
 
@@ -1117,7 +1175,7 @@ function App(){
   const [openCats,setOpenCats]=useState({classici:true,lupi:false,villaggio:false,neutri:false});
   const [difficulty,setDifficulty]=useState('facile');
   const [unlockedRoles,setUnlockedRoles]=useState(()=>new Set());
-  const [useSindaco,setUseSindaco]=useState(true);
+  const [useSindaco,setUseSindaco]=useState(false);
   const [elimConfirm,setElimConfirm]=useState(false);
   const [showRoles,setShowRoles]=useState(false);
   const [menuConfirm,setMenuConfirm]=useState(false);
@@ -2833,110 +2891,115 @@ function App(){
         })()}
         {valid&&<p style={{color:'#2ecc71',fontSize:'.84rem',fontStyle:'italic',marginBottom:12,textAlign:'center'}}>✓ Configurazione valida</p>}
 
-        {/* ── ORDINE MODE TOGGLE ── */}
-        <div style={{background:'rgba(26,188,156,.07)',border:'1px solid rgba(26,188,156,.2)',borderRadius:12,padding:'14px 16px',marginBottom:14}}>
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:ordineMode?10:0}}>
-            <div>
-              <span style={{fontFamily:'Cinzel,serif',fontSize:'.78rem',color:'#1abc9c',letterSpacing:'.08em'}}>🔮 Modalità Ordine</span>
-              <p style={{fontSize:'.76rem',color:'#5a8070',marginTop:3,fontStyle:'italic'}}>Veggente, Negromante, Alchimista, Custode, Araldo → fazione Ordine</p>
-            </div>
-            <button onClick={()=>setOrdineMode(m=>!m)} style={{fontFamily:'Cinzel,serif',fontSize:'.65rem',letterSpacing:'.1em',textTransform:'uppercase',border:'none',borderRadius:9,padding:'8px 14px',cursor:'pointer',background:ordineMode?'rgba(26,188,156,.25)':'rgba(255,255,255,.06)',color:ordineMode?'#1abc9c':'#6a8070',border:ordineMode?'1px solid rgba(26,188,156,.5)':'1px solid rgba(255,255,255,.1)',transition:'all .2s'}}>
-              {ordineMode?'✓ Attiva':'Off'}
-            </button>
-          </div>
-          {ordineMode&&(
-            <div style={{padding:'8px 10px',background:'rgba(26,188,156,.05)',borderRadius:8,border:'1px solid rgba(26,188,156,.15)'}}>
-              <p style={{fontSize:'.8rem',color:'#1abc9c',fontFamily:'Cinzel,serif',marginBottom:4,letterSpacing:'.06em'}}>Condizione di vittoria Ordine:</p>
-              <p style={{fontSize:'.8rem',color:'#5a8070',fontStyle:'italic',lineHeight:1.6}}>Tutti i Lupi eliminati <strong style={{color:'#1abc9c'}}>E</strong> i membri dell'Ordine in vita superano i Contadini. Min. 3 membri consigliati.</p>
-            </div>
-          )}
-        </div>
-
-        {/* ── MODALITÀ SPECIALI ── */}
+        {/* ── MODALITÀ DI GIOCO ── */}
         {(()=>{
           const selMod=modalitaSpeciale?MODALITA_SPECIALI.find(m=>m.id===modalitaSpeciale):null;
           return(
-            <div style={{background:'rgba(155,89,182,.07)',border:'1px solid rgba(155,89,182,.22)',borderRadius:12,padding:'14px 16px',marginBottom:14}}>
-              {/* Header accordion */}
-              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',cursor:'pointer'}} onClick={()=>setModalitaOpen(o=>!o)}>
-                <div>
-                  <span style={{fontFamily:'Cinzel,serif',fontSize:'.78rem',color:'#9b59b6',letterSpacing:'.08em'}}>🎭 Modalità Speciale</span>
-                  {selMod&&<p style={{fontSize:'.74rem',color:'#7a5a90',marginTop:3,fontStyle:'italic'}}>{selMod.icon} {selMod.name}</p>}
-                  {!selMod&&<p style={{fontSize:'.74rem',color:'#5a4060',marginTop:3,fontStyle:'italic'}}>Nessuna — partita libera</p>}
-                </div>
-                <div style={{display:'flex',alignItems:'center',gap:8}}>
-                  {selMod&&(
-                    <button onClick={e=>{e.stopPropagation();setModalitaSpeciale(null);setOrdineMode(false);setDist(getSuggestedDist(names.length));}}
-                      style={{fontFamily:'Cinzel,serif',fontSize:'.6rem',letterSpacing:'.08em',border:'1px solid rgba(155,89,182,.4)',borderRadius:8,padding:'5px 10px',background:'rgba(155,89,182,.12)',color:'#9b59b6',cursor:'pointer'}}>
-                      ✕ Reset
-                    </button>
-                  )}
-                  <span style={{color:'#7a5a90',fontSize:'.9rem',transform:modalitaOpen?'rotate(180deg)':'none',transition:'transform .2s'}}>▼</span>
+            <div style={{marginBottom:14}}>
+
+              {/* ─ Header accordion ─ */}
+              <div style={{background:selMod?selMod.color+'14':'rgba(155,89,182,.07)',border:`1px solid ${selMod?selMod.color+'55':'rgba(155,89,182,.22)'}`,borderRadius:modalitaOpen?'12px 12px 0 0':'12px',padding:'14px 16px',cursor:'pointer',transition:'all .2s'}}
+                onClick={()=>setModalitaOpen(o=>!o)}>
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                  <div>
+                    <span style={{fontFamily:'Cinzel,serif',fontSize:'.78rem',color:selMod?selMod.color:'#9b59b6',letterSpacing:'.08em'}}>🎭 Modalità di Gioco</span>
+                    {selMod
+                      ?<p style={{fontSize:'.74rem',color:selMod.color,marginTop:3,fontWeight:700,fontFamily:'Cinzel,serif'}}>{selMod.icon} {selMod.name}</p>
+                      :<p style={{fontSize:'.74rem',color:'#5a4060',marginTop:3,fontStyle:'italic'}}>Partita Libera — configura i ruoli manualmente</p>
+                    }
+                  </div>
+                  <div style={{display:'flex',alignItems:'center',gap:8}}>
+                    {selMod&&(
+                      <button onClick={e=>{e.stopPropagation();setModalitaSpeciale(null);setOrdineMode(false);setDist(getSuggestedDist(names.length));}}
+                        style={{fontFamily:'Cinzel,serif',fontSize:'.6rem',letterSpacing:'.08em',border:`1px solid ${selMod.color}66`,borderRadius:8,padding:'5px 10px',background:`${selMod.color}18`,color:selMod.color,cursor:'pointer'}}>
+                        ✕ Reset
+                      </button>
+                    )}
+                    <span style={{color:'#7a5a90',fontSize:'.85rem',transform:modalitaOpen?'rotate(180deg)':'none',transition:'transform .2s'}}>▼</span>
+                  </div>
                 </div>
               </div>
 
-              {/* Dropdown lista modalità */}
+              {/* ─ Dropdown lista ─ */}
               {modalitaOpen&&(
-                <div style={{marginTop:14,display:'flex',flexDirection:'column',gap:8}}>
-                  {/* Opzione "nessuna" */}
+                <div style={{background:'rgba(10,8,18,.9)',border:'1px solid rgba(155,89,182,.2)',borderTop:'none',borderRadius:'0 0 12px 12px',padding:'10px 10px 14px',display:'flex',flexDirection:'column',gap:6}}>
+                  {/* Opzione "libera" */}
                   <div onClick={()=>{setModalitaSpeciale(null);setOrdineMode(false);setDist(getSuggestedDist(names.length));setModalitaOpen(false);}}
-                    style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',borderRadius:10,border:`1px solid ${!modalitaSpeciale?'rgba(201,162,39,.5)':'rgba(255,255,255,.08)'}`,background:!modalitaSpeciale?'rgba(201,162,39,.1)':'rgba(255,255,255,.02)',cursor:'pointer',transition:'all .15s'}}>
-                    <span style={{fontSize:'1.3rem'}}>🎲</span>
+                    style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',borderRadius:10,border:`1px solid ${!modalitaSpeciale?'rgba(201,162,39,.5)':'rgba(255,255,255,.07)'}`,background:!modalitaSpeciale?'rgba(201,162,39,.1)':'rgba(255,255,255,.02)',cursor:'pointer',transition:'all .15s'}}>
+                    <span style={{fontSize:'1.4rem'}}>🎲</span>
                     <div style={{flex:1}}>
                       <div style={{fontFamily:'Cinzel,serif',fontSize:'.8rem',color:!modalitaSpeciale?'#c9a227':'#7a6840',fontWeight:!modalitaSpeciale?700:400}}>Partita Libera</div>
-                      <div style={{fontSize:'.72rem',color:'#4a3a20',fontStyle:'italic',marginTop:2}}>Configura i ruoli manualmente</div>
+                      <div style={{fontSize:'.7rem',color:'#4a3a20',fontStyle:'italic',marginTop:1}}>Configura i ruoli manualmente</div>
                     </div>
-                    {!modalitaSpeciale&&<span style={{color:'#c9a227',fontSize:'.9rem'}}>✓</span>}
+                    {!modalitaSpeciale&&<span style={{color:'#c9a227'}}>✓</span>}
                   </div>
-
+                  {/* Separatore */}
+                  <div style={{height:1,background:'linear-gradient(to right,transparent,rgba(155,89,182,.2),transparent)',margin:'2px 0'}}/>
                   {MODALITA_SPECIALI.map(m=>{
                     const isSel=modalitaSpeciale===m.id;
                     return(
                       <div key={m.id}
-                        onClick={()=>{
-                          setModalitaSpeciale(m.id);
-                          // Applica preset ruoli
-                          const newDist=m.preset(names.length,getSuggestedDist(names.length));
-                          setDist(newDist);
-                          // Applica ordineMode
-                          setOrdineMode(m.autoRoles.ordineMode);
-                          setModalitaOpen(false);
-                        }}
-                        style={{display:'flex',alignItems:'flex-start',gap:10,padding:'12px 12px',borderRadius:10,border:`1px solid ${isSel?m.color+'88':'rgba(255,255,255,.08)'}`,background:isSel?m.color+'18':'rgba(255,255,255,.02)',cursor:'pointer',transition:'all .15s'}}>
-                        <span style={{fontSize:'1.5rem',flexShrink:0,marginTop:2}}>{m.icon}</span>
+                        onClick={()=>{setModalitaSpeciale(m.id);setDist(m.preset(names.length,getSuggestedDist(names.length)));setOrdineMode(m.autoRoles.ordineMode);setModalitaOpen(false);}}
+                        style={{display:'flex',alignItems:'flex-start',gap:10,padding:'10px 12px',borderRadius:10,border:`1px solid ${isSel?m.color+'88':'rgba(255,255,255,.07)'}`,background:isSel?m.color+'18':'rgba(255,255,255,.02)',cursor:'pointer',transition:'all .15s'}}>
+                        <span style={{fontSize:'1.4rem',flexShrink:0,marginTop:2}}>{m.icon}</span>
                         <div style={{flex:1,minWidth:0}}>
                           <div style={{fontFamily:'Cinzel,serif',fontSize:'.8rem',color:isSel?m.color:'#a08060',fontWeight:isSel?700:400,marginBottom:2}}>{m.name}</div>
-                          <div style={{fontSize:'.72rem',color:'#5a4a30',fontStyle:'italic',lineHeight:1.5,marginBottom:4}}>{m.short}</div>
-                          <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
+                          <div style={{fontSize:'.7rem',color:'#5a4a30',fontStyle:'italic',lineHeight:1.5,marginBottom:4}}>{m.short}</div>
+                          <div style={{display:'flex',flexWrap:'wrap',gap:3}}>
                             {m.fazioni.map(f=>(
-                              <span key={f} style={{fontFamily:'Cinzel,serif',fontSize:'.58rem',padding:'2px 7px',borderRadius:8,background:`${m.color}18`,border:`1px solid ${m.color}44`,color:m.color,letterSpacing:'.06em'}}>{f}</span>
+                              <span key={f} style={{fontFamily:'Cinzel,serif',fontSize:'.56rem',padding:'2px 6px',borderRadius:7,background:`${m.color}14`,border:`1px solid ${m.color}33`,color:m.color,letterSpacing:'.05em'}}>{f}</span>
                             ))}
                           </div>
-                          {m.nota&&<div style={{fontSize:'.65rem',color:'#4a3a20',marginTop:4,fontStyle:'italic'}}>⚠ {m.nota}</div>}
                         </div>
-                        {isSel&&<span style={{color:m.color,fontSize:'.9rem',flexShrink:0}}>✓</span>}
+                        {isSel&&<span style={{color:m.color,flexShrink:0}}>✓</span>}
                       </div>
                     );
                   })}
                 </div>
               )}
 
-              {/* Se modalità selezionata: mostra descrizione e badge fazioni */}
+              {/* ─ Riquadro guida modalità selezionata ─ */}
               {!modalitaOpen&&selMod&&(
-                <div style={{marginTop:10,padding:'10px 12px',background:'rgba(155,89,182,.05)',borderRadius:8,border:'1px solid rgba(155,89,182,.15)'}}>
-                  <p style={{fontSize:'.8rem',color:'#8a6aaa',fontStyle:'italic',lineHeight:1.6,marginBottom:8}}>{selMod.desc}</p>
-                  <div style={{display:'flex',flexWrap:'wrap',gap:5,marginBottom:selMod.nota?6:0}}>
+                <div style={{background:`${selMod.color}0c`,border:`1px solid ${selMod.color}33`,borderTop:'none',borderRadius:'0 0 12px 12px',padding:'16px 16px 18px'}}>
+                  {/* Descrizione */}
+                  <p style={{fontSize:'.82rem',color:'#9a8870',fontStyle:'italic',lineHeight:1.75,marginBottom:14}}>{selMod.desc}</p>
+                  {/* Fazioni */}
+                  <div style={{display:'flex',flexWrap:'wrap',gap:5,marginBottom:10}}>
                     {selMod.fazioni.map(f=>(
-                      <span key={f} style={{fontFamily:'Cinzel,serif',fontSize:'.6rem',padding:'3px 9px',borderRadius:10,background:`${selMod.color}18`,border:`1px solid ${selMod.color}44`,color:selMod.color,letterSpacing:'.08em'}}>{f}</span>
+                      <span key={f} style={{fontFamily:'Cinzel,serif',fontSize:'.6rem',padding:'3px 10px',borderRadius:10,background:`${selMod.color}18`,border:`1px solid ${selMod.color}44`,color:selMod.color,letterSpacing:'.08em'}}>{f}</span>
                     ))}
                   </div>
-                  {selMod.nota&&<p style={{fontSize:'.68rem',color:'#5a4060',fontStyle:'italic'}}>⚠ {selMod.nota}</p>}
+                  {selMod.nota&&<p style={{fontSize:'.68rem',color:'#5a4060',fontStyle:'italic',marginBottom:14}}>⚠ {selMod.nota}</p>}
+                  {/* Schede guida */}
+                  {selMod.guida&&selMod.guida.length>0&&(
+                    <>
+                      <div style={{height:1,background:`linear-gradient(to right,transparent,${selMod.color}33,transparent)`,margin:'4px 0 14px'}}/>
+                      <div style={{fontFamily:'Cinzel,serif',fontSize:'.6rem',letterSpacing:'.18em',textTransform:'uppercase',color:selMod.color,opacity:.7,marginBottom:10}}>Guida per il Narratore</div>
+                      <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                        {selMod.guida.map((g,gi)=>(
+                          <div key={gi} style={{display:'flex',gap:10,padding:'10px 12px',background:'rgba(0,0,0,.2)',borderRadius:10,border:`1px solid ${selMod.color}22`}}>
+                            <span style={{fontSize:'1.2rem',flexShrink:0,marginTop:1}}>{g.emoji}</span>
+                            <div>
+                              <div style={{fontFamily:'Cinzel,serif',fontSize:'.72rem',color:selMod.color,marginBottom:3,fontWeight:600}}>{g.titolo}</div>
+                              <div style={{fontSize:'.8rem',color:'#8a7a60',lineHeight:1.6,fontStyle:'italic'}}>{g.testo}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                  {/* Ordine mode info inline se attivo */}
+                  {selMod.autoRoles.ordineMode&&(
+                    <div style={{marginTop:12,padding:'8px 12px',background:'rgba(26,188,156,.07)',borderRadius:8,border:'1px solid rgba(26,188,156,.2)'}}>
+                      <p style={{fontSize:'.75rem',color:'#1abc9c',fontFamily:'Cinzel,serif',marginBottom:3,letterSpacing:'.06em'}}>🔮 Modalità Ordine attiva</p>
+                      <p style={{fontSize:'.75rem',color:'#4a8070',fontStyle:'italic',lineHeight:1.55}}>I ruoli Ordine (Veggente, Negromante, Alchimista, Custode, Araldo) formano una fazione separata. Vincono se tutti i Lupi sono morti <strong style={{color:'#1abc9c'}}>e</strong> superano i Contadini in vita.</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           );
         })()}
-
         <button className="btn btn-gold mb8" onClick={confirmRoles} disabled={!valid}>Inizia Partita</button>
         <button className="btn btn-outline mb8" onClick={()=>setSc('setup')}>← Modifica Giocatori</button>
         <button className="btn btn-outline" onClick={()=>setDist(getSuggestedDist(names.length))}>↺ Reimposta Suggeriti</button>
