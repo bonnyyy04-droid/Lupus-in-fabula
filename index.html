@@ -314,22 +314,21 @@ input[type=text]::placeholder{color:#2e2214}
 
 /* ── SETUP: NOME VILLAGGIO ── */
 .vill-section{margin-bottom:26px}
-.vill-eyebrow{font-family:'Cinzel',serif;font-size:.57rem;letter-spacing:.32em;text-transform:uppercase;color:#6a4820;text-align:center;margin-bottom:10px}
-@keyframes villNameIn{from{opacity:0;transform:scale(.94) translateY(4px)}to{opacity:1;transform:scale(1) translateY(0)}}
-.vill-frame{position:relative;background:linear-gradient(160deg,rgba(201,162,39,.07) 0%,rgba(0,0,0,.18) 60%,rgba(201,162,39,.05) 100%);border:1.5px solid rgba(201,162,39,.32);border-radius:14px;padding:18px 20px 16px;text-align:center;box-shadow:inset 0 0 40px rgba(0,0,0,.35),0 2px 18px rgba(0,0,0,.4);overflow:hidden}
-.vill-frame::before{content:'';position:absolute;inset:4px;border:1px solid rgba(201,162,39,.12);border-radius:11px;pointer-events:none}
-.vill-corner{position:absolute;font-size:.85rem;color:rgba(201,162,39,.55);line-height:1;pointer-events:none}
-.vill-corner-tl{top:6px;left:8px;transform:rotate(0deg)}
-.vill-corner-tr{top:6px;right:8px;transform:scaleX(-1)}
-.vill-corner-bl{bottom:6px;left:8px;transform:scaleY(-1)}
-.vill-corner-br{bottom:6px;right:8px;transform:scale(-1,-1)}
-.vill-rule-top,.vill-rule-bot{display:flex;align-items:center;gap:8px;margin-bottom:10px}
-.vill-rule-bot{margin-bottom:0;margin-top:10px}
+.vill-eyebrow{font-family:'Cinzel',serif;font-size:.57rem;letter-spacing:.32em;text-transform:uppercase;color:#8a6830;text-align:center;margin-bottom:10px}
+.vill-frame{position:relative;background:linear-gradient(160deg,rgba(201,162,39,.08) 0%,rgba(0,0,0,.2) 60%,rgba(201,162,39,.06) 100%);border:1.5px solid rgba(201,162,39,.35);border-radius:14px;padding:18px 20px 16px;text-align:center;box-shadow:inset 0 0 40px rgba(0,0,0,.35),0 2px 18px rgba(0,0,0,.4)}
+.vill-frame::before{content:'';position:absolute;inset:5px;border:1px solid rgba(201,162,39,.13);border-radius:10px;pointer-events:none}
+.vill-corner{position:absolute;font-size:.9rem;color:rgba(201,162,39,.5);line-height:1;pointer-events:none;user-select:none}
+.vill-corner-tl{top:7px;left:10px}
+.vill-corner-tr{top:7px;right:10px;transform:scaleX(-1)}
+.vill-corner-bl{bottom:7px;left:10px;transform:scaleY(-1)}
+.vill-corner-br{bottom:7px;right:10px;transform:scale(-1,-1)}
+.vill-rule{display:flex;align-items:center;gap:8px;margin:0 0 8px}
+.vill-rule.bot{margin:8px 0 0}
 .vill-rule-line{flex:1;height:1px;background:linear-gradient(to right,transparent,rgba(201,162,39,.4),transparent)}
-.vill-rule-gem{font-size:.65rem;color:rgba(201,162,39,.7);flex-shrink:0}
-.vill-title-input{display:block;width:100%;background:transparent;border:none;border-bottom:1px solid rgba(201,162,39,.28);padding:6px 4px 8px;color:#c9a227;font-family:'Cinzel Decorative',serif;font-size:clamp(1.1rem,5vw,1.5rem);text-align:center;letter-spacing:.06em;outline:none;-webkit-appearance:none;caret-color:#c9a227;box-sizing:border-box;text-shadow:0 0 18px rgba(201,162,39,.35)}
-.vill-title-input:focus{border-bottom-color:rgba(201,162,39,.7);background:rgba(201,162,39,.04)}
-.vill-title-input::placeholder{color:rgba(201,162,39,.22);font-style:italic;font-family:'EB Garamond',serif;font-size:1rem;letter-spacing:.03em}
+.vill-rule-gem{font-size:.6rem;color:rgba(201,162,39,.65);flex-shrink:0}
+.vill-title-input{display:block;width:100%;background:transparent;border:none;border-bottom:1px solid rgba(201,162,39,.3);padding:6px 4px 8px;color:#c9a227;font-family:'Cinzel Decorative',serif;font-size:clamp(1.1rem,5vw,1.5rem);text-align:center;letter-spacing:.06em;outline:none;-webkit-appearance:none;caret-color:#c9a227;box-sizing:border-box;text-shadow:0 0 18px rgba(201,162,39,.3)}
+.vill-title-input:focus{border-bottom-color:rgba(201,162,39,.7)}
+.vill-title-input::placeholder{color:rgba(201,162,39,.25);font-style:italic;font-family:'EB Garamond',serif;font-size:1rem;letter-spacing:.03em}
 
 /* ── SETUP: GIOCATORI ── */
 .players-section{background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px 16px 14px;margin-bottom:18px}
@@ -1515,23 +1514,13 @@ function App(){
         [`rooms/${roomCode}/alivePlayers`]:alive,
       });
     } else if(sc==='gameOver'){
-      const dr = {};
-      gameLog.forEach((g) => {
-        if(g.deaths) Object.entries(g.deaths).forEach(([pIdx, cause]) => {
-          if(!dr[players[pIdx].name]) dr[players[pIdx].name] = { round: g.round, cause };
-        });
-        if(g.voteVictim !== null) {
-          if(!dr[players[g.voteVictim].name]) dr[players[g.voteVictim].name] = { round: g.round, cause: 'vote' };
-        }
+      const dr={};
+      gameLog.forEach(g=>{
+        if(g.deaths)Object.entries(g.deaths).forEach(([pIdx,cause])=>{if(!dr[players[pIdx].name])dr[players[pIdx].name]={round:g.round,cause};});
+        if(g.voteVictim!=null&&!dr[players[g.voteVictim].name])dr[players[g.voteVictim].name]={round:g.round,cause:'vote'};
       });
-      const recap = {
-        win, log: gameLog, deathRound: dr,
-        players: players.map(p => {
-          const rk = (p.role==='mutaforma'&&mutRole)?mutRole:(p.role==='condor'&&conRole)?conRole:p.role;
-          return { name: p.name, roleName: ROLES[rk]?.name, emoji: ROLES[rk]?.emoji, color: ROLES[rk]?.color, alive: p.alive };
-        })
-      };
-      fbSyncGameOver(roomCode, recap);
+      const recap={win,log:gameLog,deathRound:dr,players:players.map(p=>{const rk=(p.role==='mutaforma'&&mutRole)?mutRole:(p.role==='condor'&&conRole)?conRole:p.role;return{name:p.name,roleName:ROLES[rk]?.name,emoji:ROLES[rk]?.emoji,color:ROLES[rk]?.color,alive:p.alive};})};
+      fbSyncGameOver(roomCode,recap);
       fbSet(`rooms/${roomCode}/phase`,'gameOver');
     }
   },[sc,roomCode,gameMode]);
@@ -1720,25 +1709,22 @@ function App(){
     return()=>ref.off('value',h);
   },[roomCode,roomRole]);
 
-  // ── PLAYER: ascolta tutti i giocatori, metadati e reveal ──────────────────
+  // ── PLAYER: ascolta allPlayers, stepMeta e nightReveal ───────────────────
   useEffect(()=>{
     if(!roomCode||roomRole!=='player')return;
     const refAll=getDb().ref(`rooms/${roomCode}/allPlayers`);
     const hAll=snap=>setMpAllPlayers(snap.val()||[]);
     refAll.on('value',hAll);
-    
     const refMeta=getDb().ref(`rooms/${roomCode}/stepMeta`);
     const hMeta=snap=>setMpStepMeta(snap.val()||{});
     refMeta.on('value',hMeta);
-
     const refReveal=getDb().ref(`rooms/${roomCode}/nightReveal/${myIdRef.current}`);
     const hReveal=snap=>setMpNightReveal(snap.val()||null);
     refReveal.on('value',hReveal);
-
     return()=>{refAll.off('value',hAll);refMeta.off('value',hMeta);refReveal.off('value',hReveal);};
   },[roomCode,roomRole]);
 
-  // ── PLAYER: ascolta apertura votazione ─────────────────────────────────────────
+  // ── PLAYER: ascolta apertura votazione ───────────────────────────────────
   useEffect(()=>{
     if(!roomCode||roomRole!=='player')return;
     const ref=getDb().ref(`rooms/${roomCode}/voting/open`);
@@ -1764,22 +1750,6 @@ function App(){
 
   const goRolePick=()=>{setVName(vInp.trim()||'il Villaggio');setDist(getSuggestedDist(names.length));setSc('rolePick');};
 
-  const resetNight=()=>{setGc(null);setWc(null);setVc(null);setVr(null);setMc(null);setAc(null);setCusC(null);setNegC(null);setNegR(null);setPirC(null);setAccC(null);setAccR(null);setAlchAct(null);setAlchT(null);setAlchTs([]);setMutC(null);setConC(null);setCorC(null);setSeerKill(null);setFunamboloCoin(null);setVampC(null);setAraldoCands([]);setSuicidaWonInfo(null);setMimicSel(null);setMimicPhase('select');setMimicData(null);setMutShowReveal(false);setConShowReveal(false);setLupoAlphaActivatedName(null);};
-
-  const startNight=(ps,ca,cf)=>{
-    let fr=ps.map(p=>({...p,protected:false}));
-    let activatedName=null;
-    if(alphaTransf){
-      const lai=fr.findIndex(p=>p.role==='lupoAlpha'&&p.alive);
-      if(lai!==-1){activatedName=fr[lai].name;fr[lai]={...fr[lai],role:'lupo'};}
-      setAlphaTransf(false);
-    }
-    setPlayers(fr);resetNight();setCAlone(ca);setCFirst(cf);
-    if(activatedName)setLupoAlphaActivatedName(activatedName);
-    const first=NIGHT_STEPS.find(s=>stepHasPlayer(s,fr))||'lupi';
-    setNs(first);setSc('night');
-  };
-
   const confirmRoles=()=>{
     const _n=names.length;
     const _nonV=ROLE_ORDER.filter(k=>k!=='villico').reduce((s,k)=>s+(dist[k]||0),0);
@@ -1797,7 +1767,7 @@ function App(){
     if(gameMode==='multiplayer'&&roomCode){
       fbWriteRoles(roomCode,ps,lobbyPlayerMap);
       startNight(ps,false,false);
-    } else {
+    }else{
       setSc('roleReveal');
     }
   };
@@ -1824,6 +1794,22 @@ function App(){
 
   const nextReveal=()=>{if(ri+1<players.length){setRi(r=>r+1);setRv(false);}else startNight(players,false,false);};
 
+  const resetNight=()=>{setGc(null);setWc(null);setVc(null);setVr(null);setMc(null);setAc(null);setCusC(null);setNegC(null);setNegR(null);setPirC(null);setAccC(null);setAccR(null);setAlchAct(null);setAlchT(null);setAlchTs([]);setMutC(null);setConC(null);setCorC(null);setSeerKill(null);setFunamboloCoin(null);setVampC(null);setAraldoCands([]);setSuicidaWonInfo(null);setMimicSel(null);setMimicPhase('select');setMimicData(null);setMutShowReveal(false);setConShowReveal(false);setLupoAlphaActivatedName(null);};
+
+  const startNight=(ps,ca,cf)=>{
+    let fr=ps.map(p=>({...p,protected:false}));
+    let activatedName=null;
+    if(alphaTransf){
+      const lai=fr.findIndex(p=>p.role==='lupoAlpha'&&p.alive);
+      if(lai!==-1){activatedName=fr[lai].name;fr[lai]={...fr[lai],role:'lupo'};}
+      setAlphaTransf(false);
+    }
+    setPlayers(fr);resetNight();setCAlone(ca);setCFirst(cf);
+    if(activatedName)setLupoAlphaActivatedName(activatedName);
+    const first=NIGHT_STEPS.find(s=>stepHasPlayer(s,fr))||'lupi';
+    setNs(first);setSc('night');
+  };
+
   const advance=(doneStep,ps,ov={})=>{
     const rem=NIGHT_STEPS.slice(NIGHT_STEPS.indexOf(doneStep)+1);
     const nxt=rem.find(s=>stepHasPlayer(s,ps));
@@ -1848,8 +1834,8 @@ function App(){
       const vPlayer=players.find(x=>x.role==='veggente'&&x.alive);
       if(vPlayer&&lobbyPlayerMap[vPlayer.name]){
         getDb().ref(`rooms/${roomCode}/nightReveal/${lobbyPlayerMap[vPlayer.name]}`).set({
-          title:'La Veggente vede:', targetName:p.name, emoji:seen==='lupo'?'🐺':'🧑‍🌾',
-          roleName:seen==='lupo'?'Lupo':'Innocente', isGood:seen!=='lupo'
+          title:'La Veggente vede:',targetName:p.name,emoji:seen==='lupo'?'🐺':'🧑‍🌾',
+          roleName:seen==='lupo'?'Lupo':'Innocente',isGood:seen!=='lupo'
         });
       }
     }
@@ -1866,8 +1852,8 @@ function App(){
       const nPlayer=players.find(x=>x.role==='negromante'&&x.alive);
       if(nPlayer&&lobbyPlayerMap[nPlayer.name]){
         getDb().ref(`rooms/${roomCode}/nightReveal/${lobbyPlayerMap[nPlayer.name]}`).set({
-          title:'Il morto era:', targetName:p.name, emoji:ROLES[eR]?.emoji||'👤',
-          roleName:ROLES[eR]?.name||'Sconosciuto', isGood:!(ROLES[eR]?.wolfTeam||ROLES[eR]?.winsWithWolves)
+          title:'Il morto era:',targetName:p.name,emoji:ROLES[eR]?.emoji||'👤',
+          roleName:ROLES[eR]?.name||'Sconosciuto',isGood:!(ROLES[eR]?.wolfTeam||ROLES[eR]?.winsWithWolves)
         });
       }
     }
@@ -2587,15 +2573,12 @@ function App(){
       {/* Overlay Reveal Veggente/Negromante */}
       {mpNightReveal&&(
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.92)',zIndex:300,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:28,textAlign:'center'}}>
-          <div style={{background:mpNightReveal.isGood?'rgba(46,204,113,.15)':'rgba(231,76,60,.15)',border:`1px solid ${mpNightReveal.isGood?'rgba(46,204,113,.4)':'rgba(231,76,60,.4)'}`,borderRadius:16,padding:'30px 20px',width:'100%',maxWidth:340,animation:'fadeUp .3s ease'}}>
+          <div style={{background:mpNightReveal.isGood?'rgba(46,204,113,.15)':'rgba(231,76,60,.15)',border:`1px solid ${mpNightReveal.isGood?'rgba(46,204,113,.4)':'rgba(231,76,60,.4)'}`,borderRadius:16,padding:'30px 20px',width:'100%',maxWidth:340}}>
             <p style={{fontFamily:'Cinzel,serif',fontSize:'.85rem',color:'#c8a05a',marginBottom:16}}>{mpNightReveal.title}</p>
             <div style={{fontSize:'3.5rem',marginBottom:10}}>{mpNightReveal.emoji}</div>
             <div style={{fontFamily:'Cinzel,serif',fontSize:'1.3rem',fontWeight:700,color:mpNightReveal.isGood?'#2ecc71':'#e74c3c',marginBottom:6}}>{mpNightReveal.roleName}</div>
             <p style={{fontSize:'.9rem',color:'#a09080',marginBottom:24}}>Bersaglio: <strong style={{color:'#fff'}}>{mpNightReveal.targetName}</strong></p>
-            <button className="btn btn-gold" onClick={()=>{
-              getDb().ref(`rooms/${roomCode}/nightReveal/${myIdRef.current}`).remove();
-              setMpNightReveal(null);
-            }}>✓ Ho capito</button>
+            <button className="btn btn-gold" onClick={()=>{getDb().ref(`rooms/${roomCode}/nightReveal/${myIdRef.current}`).remove();setMpNightReveal(null);}}>✓ Ho capito</button>
           </div>
         </div>
       )}
@@ -2736,59 +2719,42 @@ function App(){
                     <p style={{fontFamily:'Cinzel,serif',fontSize:'.8rem',color:'#d4b866',letterSpacing:'.1em',marginBottom:12}}>📖 LA STORIA DI QUESTA NOTTE</p>
                     <div className="nlog-wrap">
                       <table className="nlog-table">
-                        <thead>
-                          <tr>
-                            <th className="nlog-corner">Giocatore</th>
-                            {mpGameOver.log.map(r=><th key={r.round} className="nlog-th">🌙 {r.round}</th>)}
-                          </tr>
-                        </thead>
+                        <thead><tr>
+                          <th className="nlog-corner">Giocatore</th>
+                          {mpGameOver.log.map(r=><th key={r.round} className="nlog-th">🌙 {r.round}</th>)}
+                        </tr></thead>
                         <tbody>
-                          {mpGameOver.players.map((p,pi)=>{
-                            const di = mpGameOver.deathRound?.[p.name];
-                            return (
-                              <tr key={pi} className={!p.alive?'nlog-row-dead':''}>
-                                <td className="nlog-td-name">
-                                  <div className="nlog-name-cell">
-                                    <span className="nlog-name-em">{p.emoji}</span>
-                                    <div>
-                                      <span className="nlog-name-txt">{p.name}</span>
-                                      <span className="nlog-name-role" style={{color:p.color}}>{p.roleName}</span>
-                                    </div>
-                                  </div>
-                                </td>
-                                {mpGameOver.log.map(r=>{
-                                  const act = r.actions?.[pi];
-                                  const diedNight = r.deaths?.[pi];
-                                  const votedOut = r.voteVictim === pi;
-                                  const alreadyDead = di && di.round < r.round;
-                                  
-                                  let choiceEl = null;
-                                  if(!alreadyDead && act && act.target !== null && mpGameOver.players[act.target]){
-                                    let icon = '';
-                                    if(act.type==='wolf') icon='🐺'; else if(act.type==='seer') icon='👁️'; else if(act.type==='guard') icon='🛡️'; else if(act.type==='mer') icon='💃'; else if(act.type==='arc') icon='🏹'; else if(act.type==='custode') icon='🤫'; else if(act.type==='neg') icon='💀'; else if(act.type==='acc') icon='👉'; else if(act.type==='pir') icon='🔥'; else if(act.type==='alch') icon='⚗️'; else if(act.type==='vamp') icon='🧛';
-                                    choiceEl = <><span className="nlog-action-icon">{icon}</span><span className="nlog-choice">{mpGameOver.players[act.target].name}</span></>;
-                                  }
-                                  
-                                  let deathEl = null;
-                                  if(diedNight) deathEl = <span className="nlog-death">💀</span>;
-                                  else if(votedOut) deathEl = <span className="nlog-death">🗳️💀</span>;
-                                  
-                                  const cellCls=`nlog-td${diedNight?' dead-night':votedOut?' dead-vote':alreadyDead?' past-death':''}`;
-                                  return (
-                                    <td key={r.round} className={cellCls} style={{opacity:alreadyDead?0.22:1}}>
-                                      {!alreadyDead && choiceEl}
-                                      {deathEl}
-                                    </td>
-                                  );
-                                })}
-                              </tr>
-                            );
+                          {(mpGameOver.players||[]).map((p,pi)=>{
+                            const di=mpGameOver.deathRound?.[p.name];
+                            return(<tr key={pi} className={!p.alive?'nlog-row-dead':''}>
+                              <td className="nlog-td-name"><div className="nlog-name-cell">
+                                <span className="nlog-name-em">{p.emoji}</span>
+                                <div><span className="nlog-name-txt">{p.name}</span><span className="nlog-name-role" style={{color:p.color}}>{p.roleName}</span></div>
+                              </div></td>
+                              {mpGameOver.log.map(r=>{
+                                const act=r.actions?.[pi];
+                                const diedNight=r.deaths?.[pi];
+                                const votedOut=r.voteVictim===pi;
+                                const alreadyDead=di&&di.round<r.round;
+                                let choiceEl=null;
+                                if(!alreadyDead&&act&&act.target!=null&&(mpGameOver.players||[])[act.target]){
+                                  const icons={wolf:'🐺',seer:'👁️',guard:'🛡️',mer:'💃',arc:'🏹',custode:'🤫',neg:'💀',acc:'👉',pir:'🔥',alch:'⚗️',vamp:'🧛'};
+                                  choiceEl=<><span className="nlog-action-icon">{icons[act.type]||''}</span><span className="nlog-choice">{mpGameOver.players[act.target].name}</span></>;
+                                }
+                                let deathEl=null;
+                                if(diedNight)deathEl=<span className="nlog-death">💀</span>;
+                                else if(votedOut)deathEl=<span className="nlog-death">🗳️💀</span>;
+                                return(<td key={r.round} className={`nlog-td${diedNight?' dead-night':votedOut?' dead-vote':alreadyDead?' past-death':''}`} style={{opacity:alreadyDead?0.22:1}}>
+                                  {!alreadyDead&&choiceEl}{deathEl}
+                                </td>);
+                              })}
+                            </tr>);
                           })}
                         </tbody>
                       </table>
                     </div>
-                    <div style={{display:'flex',flexWrap:'wrap',gap:'6px 14px',marginBottom:6}}>
-                      {[['🐺💀','Lupi'],['🗳️💀','Voto'],['💀','Altro']].map(([em,lb])=> <span key={lb} style={{fontSize:'.62rem',color:'#5a4830',fontFamily:'Cinzel,serif',letterSpacing:'.06em'}}>{em} {lb}</span> )}
+                    <div style={{display:'flex',flexWrap:'wrap',gap:'6px 14px',marginTop:8}}>
+                      {[['🐺💀','Lupi'],['🗳️💀','Voto'],['💀','Altro']].map(([em,lb])=><span key={lb} style={{fontSize:'.62rem',color:'#5a4830',fontFamily:'Cinzel,serif'}}>{em} {lb}</span>)}
                     </div>
                   </div>
                 )}
@@ -2864,18 +2830,14 @@ function App(){
         {/* ── NOME VILLAGGIO ── */}
         <div className="vill-section">
           <div className="vill-frame">
-            {/* Corner ornaments */}
             <span className="vill-corner vill-corner-tl">❧</span>
             <span className="vill-corner vill-corner-tr">❧</span>
             <span className="vill-corner vill-corner-bl">❧</span>
             <span className="vill-corner vill-corner-br">❧</span>
-            {/* Top rule */}
-            <div className="vill-rule-top">
+            <div className="vill-rule">
               <div className="vill-rule-line"/><span className="vill-rule-gem">✦</span><div className="vill-rule-line"/>
             </div>
-            {/* Label */}
             <div className="vill-eyebrow">— Il Villaggio di —</div>
-            {/* Single input that IS the title */}
             <input
               type="text"
               className="vill-title-input"
@@ -2884,8 +2846,7 @@ function App(){
               onChange={e=>setVInp(e.target.value)}
               maxLength={30}
             />
-            {/* Bottom rule */}
-            <div className="vill-rule-bot">
+            <div className="vill-rule bot">
               <div className="vill-rule-line"/><span className="vill-rule-gem">✦</span><div className="vill-rule-line"/>
             </div>
           </div>
@@ -4159,13 +4120,8 @@ function App(){
 
         {/* ── LOG NOTTURNO: TABELLA MATRICE ── */}
         {gameLog.length>0&&(
-          <div style={{marginTop:8}}>
-            <button onClick={()=>setLogOpen(v=>!v)}
-              style={{display:'flex',alignItems:'center',justifyContent:'space-between',width:'100%',
-                padding:'12px 14px',background:'rgba(201,162,39,.04)',border:'1px solid rgba(201,162,39,.15)',
-                borderRadius:logOpen?'12px 12px 0 0':'12px',cursor:'pointer',WebkitTapHighlightColor:'transparent',
-                fontFamily:'Cinzel,serif',fontSize:'.72rem',color:'#8a7040',letterSpacing:'.12em',
-                transition:'border-radius .15s'}}>
+          <div>
+            <button onClick={()=>setLogOpen(v=>!v)} style={{display:'flex',alignItems:'center',justifyContent:'space-between',width:'100%',padding:'12px 14px',background:'rgba(201,162,39,.04)',border:'1px solid rgba(201,162,39,.15)',borderRadius:logOpen?'12px 12px 0 0':'12px',cursor:'pointer',WebkitTapHighlightColor:'transparent',fontFamily:'Cinzel,serif',fontSize:'.72rem',color:'#8a7040',letterSpacing:'.12em',transition:'border-radius .15s'}}>
               <span>📊 Log delle Notti</span>
               <span style={{fontSize:'.85rem',transform:logOpen?'rotate(180deg)':'none',transition:'transform .22s'}}>▼</span>
             </button>
@@ -4187,7 +4143,7 @@ function App(){
           // Emoji causa morte
           const causeEmoji=c=>c==='wolf'?'🐺💀':c==='seer'?'👁️💀':c==='vote'?'🗳️💀':c==='mer'?'💃💀':'💀';
           return(
-            <div style={{border:'1px solid rgba(201,162,39,.15)',borderTop:'none',borderRadius:'0 0 12px 12px',padding:'0 0 10px',background:'rgba(0,0,0,.12)'}}>
+            <div style={{borderTop:'none',borderRadius:'0 0 12px 12px',border:'1px solid rgba(201,162,39,.15)',padding:'0 0 10px',background:'rgba(0,0,0,.12)'}}>
               <div className="nlog-wrap" style={{paddingTop:10}}>
                 <table className="nlog-table">
                   <thead>
@@ -4273,7 +4229,7 @@ function App(){
               </div>
             </div>
           );
-        })())}
+        })()}
           </div>
         )}
       </div></div>
