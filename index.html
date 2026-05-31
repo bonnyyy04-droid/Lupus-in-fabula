@@ -546,6 +546,7 @@ const MODALITA_SPECIALI = [
     icon:'⚔️',
     name:'Classica',
     color:'#e67e22',
+    difficulty:'facile',
     short:'La più semplice: Lupi contro Contadini.',
     desc:'La forma originale del gioco. Due sole fazioni: i Lupi, che cacciano nell\'ombra, e i Contadini, che cercano di smascherarli. Nessun potere speciale, solo intuito, bluff e fiducia. Ideale per partite veloci o per chi si avvicina al gioco per la prima volta.',
     fazioni:['Contadini','Lupi'],
@@ -568,6 +569,7 @@ const MODALITA_SPECIALI = [
     icon:'🔮',
     name:'Contadini · Lupi · Ordine',
     color:'#1abc9c',
+    difficulty:'medio',
     short:'L\'equilibrio si rompe: nasce l\'Ordine.',
     desc:'Una fazione misteriosa, formata da individui dai poteri arcani o oscuri, non è fedele ai Contadini ma lotta contro i Lupi per ragioni proprie. L\'Ordine ha regole di vittoria autonome: vince solo se tutti i Lupi sono morti e i suoi membri in vita superano i Contadini. Devono essere presenti almeno 3 membri dell\'Ordine per questa variante.',
     fazioni:['Contadini','Lupi','Ordine'],
@@ -593,6 +595,7 @@ const MODALITA_SPECIALI = [
     icon:'🌙',
     name:'Lupi · Ordine',
     color:'#e74c3c',
+    difficulty:'difficile',
     short:'La sfida è tra Lupi e l\'Ordine. I Contadini non esistono.',
     desc:'I Contadini non sono più protagonisti. La sfida è tra il branco dei Lupi e chi cerca di preservare l\'equilibrio del mondo attraverso poteri antichi e segreti. Una partita adatta a pochi giocatori esperti, incentrata su poteri e bluff. Nessun Contadino. Nessun solista.',
     fazioni:['Lupi','Ordine'],
@@ -1262,6 +1265,13 @@ function App(){
   const [mpAllPlayers,setMpAllPlayers]=useState([]);
   const [mpStepMeta,setMpStepMeta]=useState({});
   const [mpNightReveal,setMpNightReveal]=useState(null);
+  const [mpRoleReady,setMpRoleReady]=useState(false);   // player ha confermato il ruolo
+  const [mpReadyCount,setMpReadyCount]=useState(0);      // host: quanti pronti
+  const [wolfLeader,setWolfLeader]=useState(null);        // nome del lupo decisore
+  const [wolfSuggestions,setWolfSuggestions]=useState({}); // {fbId:{name,targetIdx}} suggerimenti lupi
+  const [mpWolfSuggest,setMpWolfSuggest]=useState(null);  // suggerimento inviato dal player
+  const [wolfElecting,setWolfElecting]=useState(false);   // prima notte: elezione leader
+  const wolfLeaderRef=useRef(null);
   const [mpActionSent,setMpActionSent]=useState(false);  // azione già inviata questo turno
   const [mpIsAlive,setMpIsAlive]=useState(true);         // questo giocatore è vivo
   const [mpSelTarget,setMpSelTarget]=useState(null);     // target selezionato nella lista
@@ -1479,6 +1489,7 @@ function App(){
       if(s==='replay'){
         setMyRole(null);setMpGameOver(null);setMpPhase(null);setMpDawn([]);
         setMpCurStep(null);setMpAlive([]);setMpActionSent(false);setMpIsAlive(true);
+        setMpRoleReady(false);setMpWolfSuggest(null);
         setMpVoteOpen(false);setMpVoteTarget(null);setMpVotedTarget(null);
         setMpIsSilenced(false);setMpNotif(null);setMpNightLog({});
         setSc('playerWait');
@@ -1709,6 +1720,36 @@ function App(){
     return()=>ref.off('value',h);
   },[roomCode,roomRole]);
 
+  // ── HOST: ascolta wolfLeader e suggerimenti lupi ────────────────────────
+  useEffect(()=>{
+    if(!roomCode||gameMode!=='multiplayer'||roomRole!=='host')return;
+    const refL=getDb().ref(`rooms/${roomCode}/wolfLeader`);
+    const hL=snap=>{const v=snap.val();setWolfLeader(v);wolfLeaderRef.current=v;};
+    refL.on('value',hL);
+    const refS=getDb().ref(`rooms/${roomCode}/wolfSuggestions`);
+    const hS=snap=>{setWolfSuggestions(snap.val()||{});};
+    refS.on('value',hS);
+    return()=>{refL.off('value',hL);refS.off('value',hS);};
+  },[roomCode,gameMode,roomRole]);
+
+  // ── PLAYER: ascolta se è leader e i propri suggerimenti ──────────────────
+  useEffect(()=>{
+    if(!roomCode||roomRole!=='player')return;
+    const refL=getDb().ref(`rooms/${roomCode}/wolfLeader`);
+    const hL=snap=>{wolfLeaderRef.current=snap.val();};
+    refL.on('value',hL);
+    return()=>refL.off('value',hL);
+  },[roomCode,roomRole]);
+
+  // ── HOST: ascolta quanti player hanno confermato il ruolo ────────────────
+  useEffect(()=>{
+    if(!roomCode||gameMode!=='multiplayer'||roomRole!=='host')return;
+    const ref=getDb().ref(`rooms/${roomCode}/roleReady`);
+    const h=snap=>{setMpReadyCount(Object.keys(snap.val()||{}).length);};
+    ref.on('value',h);
+    return()=>ref.off('value',h);
+  },[roomCode,gameMode,roomRole]);
+
   // ── PLAYER: ascolta allPlayers, stepMeta e nightReveal ───────────────────
   useEffect(()=>{
     if(!roomCode||roomRole!=='player')return;
@@ -1766,7 +1807,8 @@ function App(){
     setGameLog([]);
     if(gameMode==='multiplayer'&&roomCode){
       fbWriteRoles(roomCode,ps,lobbyPlayerMap);
-      startNight(ps,false,false);
+      fbSet(`rooms/${roomCode}/phase`,'roleReveal');
+      setSc('multiRoleReveal');
     }else{
       setSc('roleReveal');
     }
@@ -1799,13 +1841,47 @@ function App(){
   const startNight=(ps,ca,cf)=>{
     let fr=ps.map(p=>({...p,protected:false}));
     let activatedName=null;
+    let alphaJustActivated=false;
     if(alphaTransf){
       const lai=fr.findIndex(p=>p.role==='lupoAlpha'&&p.alive);
-      if(lai!==-1){activatedName=fr[lai].name;fr[lai]={...fr[lai],role:'lupo'};}
+      if(lai!==-1){activatedName=fr[lai].name;fr[lai]={...fr[lai],role:'lupo'};alphaJustActivated=true;}
       setAlphaTransf(false);
     }
     setPlayers(fr);resetNight();setCAlone(ca);setCFirst(cf);
     if(activatedName)setLupoAlphaActivatedName(activatedName);
+    // ── Gerarchia lupi in multiplayer ────────────────────────────
+    if(gameMode==='multiplayer'&&roomCode){
+      const bigWolves=fr.filter(p=>p.alive&&p.role==='lupo');
+      const cubs=fr.filter(p=>p.alive&&p.role==='cucciolo');
+      // Se il leader corrente è morto → cucciolo prende il posto di leader
+      const curLeader=wolfLeaderRef.current;
+      const leaderAlive=curLeader&&fr.some(p=>p.alive&&p.name===curLeader);
+      if(!leaderAlive){
+        // alpha appena attivato: resta leader preesistente (già grande); altrimenti:
+        if(bigWolves.length===1){
+          // 1 solo grande → lui è leader
+          const newLeader=bigWolves[0].name;
+          getDb().ref(`rooms/${roomCode}/wolfLeader`).set(newLeader);
+          setWolfLeader(newLeader);wolfLeaderRef.current=newLeader;
+          setWolfElecting(false);
+        } else if(bigWolves.length>1&&!alphaJustActivated){
+          // più grandi, prima notte o leader morto → elezione
+          getDb().ref(`rooms/${roomCode}/wolfLeader`).remove();
+          setWolfLeader(null);wolfLeaderRef.current=null;
+          setWolfElecting(true);
+          getDb().ref(`rooms/${roomCode}/wolfElection`).remove();
+        } else if(alphaJustActivated&&bigWolves.length>0){
+          // mannaro attivato: il grande preesistente rimane leader (primo della lista)
+          const newLeader=bigWolves.find(p=>p.name!==activatedName)?.name||bigWolves[0].name;
+          getDb().ref(`rooms/${roomCode}/wolfLeader`).set(newLeader);
+          setWolfLeader(newLeader);wolfLeaderRef.current=newLeader;
+          setWolfElecting(false);
+        }
+      } else {
+        setWolfElecting(false);
+      }
+      getDb().ref(`rooms/${roomCode}/wolfSuggestions`).remove();
+    }
     const first=NIGHT_STEPS.find(s=>stepHasPlayer(s,fr))||'lupi';
     setNs(first);setSc('night');
   };
@@ -2253,15 +2329,38 @@ function App(){
   const ScoreboardModal=()=>{
     const sorted=Object.entries(scores).sort((a,b)=>b[1].pts-a[1].pts);
     const medals=['🥇','🥈','🥉'];
+    const [showPtsInfo,setShowPtsInfo]=useState(false);
     const resetScores=()=>{if(window.confirm('Azzerare lo scoreboard?')){const ns={};setScores(ns);saveScores(ns);}};
     return(
       <div className="modal-bg" onClick={()=>setShowScores(false)}>
         <div className="modal fade" onClick={e=>e.stopPropagation()} style={{maxWidth:420,width:'100%'}}>
           <button className="modal-close" onClick={()=>setShowScores(false)}>✕</button>
-          <div style={{textAlign:'center',marginBottom:20}}>
+          <div style={{textAlign:'center',marginBottom:20,position:'relative'}}>
             <span style={{fontSize:'2rem',display:'block',marginBottom:6}}>🏆</span>
             <div style={{fontFamily:'Cinzel Decorative,serif',fontSize:'1.1rem',color:'#c8a05a'}}>Scoreboard</div>
+            <button onClick={()=>setShowPtsInfo(v=>!v)} title="Regole punteggio" style={{position:'absolute',top:0,right:0,background:'none',border:'1px solid rgba(201,162,39,.3)',borderRadius:20,padding:'3px 10px',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:'.65rem',color:'#8a6820',letterSpacing:'.05em'}}>ℹ️ Punti</button>
           </div>
+          {showPtsInfo&&(
+            <div style={{background:'rgba(0,0,0,.4)',border:'1px solid rgba(201,162,39,.2)',borderRadius:12,padding:'14px 16px',marginBottom:16,fontSize:'.78rem',color:'#a09070',lineHeight:1.7}}>
+              <p style={{fontFamily:'Cinzel,serif',fontSize:'.68rem',color:'#c8a05a',letterSpacing:'.1em',marginBottom:10}}>📊 TABELLA PUNTI</p>
+              {[
+                ['🐺 Lupi (vince il branco)','2.0'],
+                ['🏘️ Villicio/Ordine (vince il villaggio)','1.0'],
+                ['😒 Misantropo (vince coi lupi)','1.0'],
+                ['🪶 Corvo (sopravvive)','1.5'],
+                ['🐹 Criceto Mannaro (vince da solo)','3.5'],
+                ['💀 Suicida (eliminato dai voti)','2.5'],
+              ].map(([label,pts])=>(
+                <div key={label} style={{display:'flex',justifyContent:'space-between',padding:'3px 0',borderBottom:'1px solid rgba(255,255,255,.04)'}}>
+                  <span>{label}</span><span style={{color:'#c9a227',fontWeight:700,minWidth:40,textAlign:'right'}}>{pts} pt</span>
+                </div>
+              ))}
+              <div style={{marginTop:10,padding:'8px 10px',background:'rgba(201,162,39,.07)',border:'1px solid rgba(201,162,39,.2)',borderRadius:8}}>
+                <span style={{color:'#c9a227'}}>+0.5</span> pt bonus se sei <strong>ancora vivo</strong> a fine partita
+              </div>
+              <p style={{fontSize:'.7rem',color:'#6a5030',fontStyle:'italic',marginTop:8}}>Punteggio 0 se la tua fazione non vince. La Meretrice sopravvissuta che visita un lupo e sopravvive conta come vittoria villaggio.</p>
+            </div>
+          )}
           {sorted.length===0?(
             <p style={{textAlign:'center',color:'#5a4a30',fontStyle:'italic',padding:'20px 0'}}>Nessuna partita registrata</p>
           ):(
@@ -2585,13 +2684,42 @@ function App(){
       <div className="screen fade" style={{maxWidth:400,paddingTop:8}}>
 
         {/* Phase banner */}
-        {mpPhase&&(
+        {mpPhase&&mpPhase!=='roleReveal'&&(
           <div style={{background:phaseBg,border:`1px solid ${phaseColor}44`,borderRadius:12,padding:'12px 16px',marginBottom:16,textAlign:'center'}}>
             <span style={{fontSize:'1.4rem'}}>{isNight?'🌙':isDay?'☀️':isOver?'🏁':'⏳'}</span>
             <span style={{fontFamily:'Cinzel,serif',fontSize:'.88rem',color:phaseColor,fontWeight:700,marginLeft:8}}>
               {isNight?'È Notte':isDay?'È Giorno':isOver?'Partita Terminata':'In attesa...'}
             </span>
           </div>
+        )}
+        {/* Role reveal panel for player */}
+        {mpPhase==='roleReveal'&&myRole&&(()=>{
+          const R2=ROLES[myRole.role]||{};
+          const isWolf=R2.wolfTeam||false;
+          const tl=R2.soloTeam?'⚖️ Fazione Solitaria':isWolf?'🐺 Squadra Lupi':R2.winsWithWolves?'😒 Vinci coi Lupi':'🏘️ Squadra Villaggio';
+          const tc=R2.soloTeam?'#f39c12':isWolf||R2.winsWithWolves?'#e74c3c':'#2ecc71';
+          return(
+            <div style={{marginBottom:16}}>
+              <div style={{background:R2.bg||'rgba(201,162,39,.08)',border:`1px solid ${R2.color||'#c9a227'}55`,borderRadius:14,padding:'20px 16px',marginBottom:12,textAlign:'center'}}>
+                <p style={{fontFamily:'Cinzel,serif',fontSize:'.65rem',letterSpacing:'.18em',color:R2.color||'#c9a227',marginBottom:10,textTransform:'uppercase'}}>Il tuo ruolo</p>
+                <div style={{fontSize:'3rem',marginBottom:8}}>{R2.emoji||'❓'}</div>
+                <div style={{fontFamily:'Cinzel Decorative,serif',fontSize:'1.2rem',color:R2.color||'#c9a227',marginBottom:8}}>{R2.name||myRole.role}</div>
+                <p style={{fontSize:'.8rem',color:'#a09070',lineHeight:1.6,marginBottom:10}}>{R2.desc||''}</p>
+                <div style={{display:'inline-block',padding:'4px 14px',border:`1px solid ${tc}44`,borderRadius:20,fontSize:'.7rem',color:tc,fontFamily:'Cinzel,serif'}}>{tl}</div>
+              </div>
+              {!mpRoleReady?(
+                <button className="btn btn-gold" style={{width:'100%',padding:13}} onClick={async()=>{
+                  await fbSet(`rooms/${roomCode}/roleReady/${myIdRef.current}`,true);
+                  setMpRoleReady(true);
+                }}>✓ Ho capito il mio ruolo</button>
+              ):(
+                <div style={{textAlign:'center',padding:'10px 0',color:'#4a9a70',fontFamily:'Cinzel,serif',fontSize:'.8rem'}}>✓ Ruolo confermato — in attesa degli altri...</div>
+              )}
+            </div>
+          );
+        })()}
+        {mpPhase==='roleReveal'&&!myRole&&(
+          <div style={{textAlign:'center',padding:'20px 0',color:'#6a5030',fontStyle:'italic',fontSize:'.85rem'}}>⏳ Ricezione del ruolo in corso...</div>
         )}
 
         {/* Dawn events */}
@@ -2608,17 +2736,92 @@ function App(){
         )}
 
         {/* Night action UI */}
-        {isNight&&mpIsAlive&&myRole&&mpCurStep&&isMyTurn(myRole.role,mpCurStep)&&(
-          <div style={{background:ROLES[myRole.role]?.wolfTeam?'rgba(120,20,20,.35)':'rgba(30,50,90,.4)',border:`1px solid ${ROLES[myRole.role]?.wolfTeam?'rgba(200,50,50,.4)':'rgba(60,100,180,.4)'}`,borderRadius:14,padding:'14px 16px',marginBottom:16}}>
-            <p style={{fontFamily:'Cinzel,serif',fontSize:'.72rem',color:ROLES[myRole.role]?.wolfTeam?'#e57373':'#7aa8e0',letterSpacing:'.12em',marginBottom:6}}>
-              {ROLES[myRole.role]?.wolfTeam?'⚔️ TURNO DEI LUPI':'⚡ IL TUO TURNO'}
-            </p>
-            <p style={{fontSize:'.85rem',color:'#c4a882',marginBottom:14,lineHeight:1.5}}>
-              {ACTION_LABELS[mpCurStep]||'Scegli un giocatore:'}
+        {isNight&&mpIsAlive&&myRole&&mpCurStep&&isMyTurn(myRole.role,mpCurStep)&&(()=>{
+          const isWolfTurn=mpCurStep==='lupi';
+          const amLeader=isWolfTurn&&myRole.name===wolfLeaderRef.current;
+          const amWolf=isWolfTurn&&ROLES[myRole.role]?.wolfTeam;
+          const isElecting=isWolfTurn&&amWolf&&!wolfLeaderRef.current;
+
+          // Player lista (esclude se stesso e lupi per attacchi)
+          const actionTargets=mpAllPlayers.length>0
+            ? mpAllPlayers.filter(p=>p.alive&&p.name!==myRole.name&&(isWolfTurn?!ROLES[p.role||'villico']?.wolfTeam:true))
+            : mpAlive.filter(p=>p.name!==myRole.name);
+          const bigWolfTargets=mpAllPlayers.filter(p=>p.alive&&p.role==='lupo'&&p.name!==myRole.name);
+
+          return(
+          <div style={{background:amWolf?'rgba(120,20,20,.35)':'rgba(30,50,90,.4)',border:`1px solid ${amWolf?'rgba(200,50,50,.4)':'rgba(60,100,180,.4)'}`,borderRadius:14,padding:'14px 16px',marginBottom:16}}>
+            <p style={{fontFamily:'Cinzel,serif',fontSize:'.72rem',color:amWolf?'#e57373':'#7aa8e0',letterSpacing:'.12em',marginBottom:6}}>
+              {amLeader?'👑 SEI IL LEADER — SCEGLI LA VITTIMA':isElecting?'⚔️ VOTA IL TUO LEADER':amWolf?'💬 SUGGERISCI UNA VITTIMA':'⚡ IL TUO TURNO'}
             </p>
 
-            {!mpActionSent?(
+            {/* Elezione leader */}
+            {isElecting&&!mpActionSent&&(
               <>
+                <p style={{fontSize:'.8rem',color:'#c4a882',marginBottom:12,fontStyle:'italic'}}>Vota il Lupo Grande che sarà il vostro leader questa notte:</p>
+                <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:12}}>
+                  {bigWolfTargets.map(p=>(
+                    <div key={p.idx} onClick={()=>setMpSelTarget(p.idx)}
+                      style={{padding:'10px 14px',borderRadius:10,border:`1px solid ${mpSelTarget===p.idx?'rgba(231,76,60,.7)':'rgba(231,76,60,.2)'}`,background:mpSelTarget===p.idx?'rgba(231,76,60,.15)':'rgba(0,0,0,.2)',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:'.88rem',color:mpSelTarget===p.idx?'#e74c3c':'#a06050',display:'flex',alignItems:'center',gap:8}}>
+                      <span>{mpSelTarget===p.idx?'●':'○'}</span>{p.name}
+                    </div>
+                  ))}
+                </div>
+                <button className="btn btn-gold" style={{width:'100%',padding:12}} disabled={mpSelTarget===null}
+                  onClick={async()=>{
+                    const target=mpAllPlayers.find(p=>p.idx===mpSelTarget);
+                    await fbSet(`rooms/${roomCode}/wolfSuggestions/${myIdRef.current}`,{senderName:myRole.name,leaderVote:target?.name});
+                    setMpActionSent(true);
+                  }}>Vota come Leader</button>
+              </>
+            )}
+
+            {/* Leader: scelta vittima finale */}
+            {isWolfTurn&&amLeader&&!isElecting&&!mpActionSent&&(
+              <>
+                <p style={{fontSize:'.85rem',color:'#c4a882',marginBottom:8,lineHeight:1.5}}>La tua parola è definitiva. Scegli chi eliminare stanotte:</p>
+                {mpWolfSuggest&&<div style={{padding:'8px 12px',borderRadius:8,background:'rgba(0,0,0,.3)',border:'1px solid rgba(200,100,50,.3)',marginBottom:10,fontSize:'.8rem',color:'#c09070'}}>💬 Il branco suggerisce: <strong style={{color:'#c9a227'}}>{mpAllPlayers.find(p=>p.idx===mpWolfSuggest)?.name||'?'}</strong></div>}
+                <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:12,maxHeight:200,overflowY:'auto'}}>
+                  {actionTargets.map(p=>(
+                    <div key={p.idx} onClick={()=>setMpSelTarget(p.idx)}
+                      style={{padding:'10px 14px',borderRadius:10,border:`1px solid ${mpSelTarget===p.idx?'rgba(231,76,60,.7)':'rgba(231,76,60,.2)'}`,background:mpSelTarget===p.idx?'rgba(231,76,60,.15)':'rgba(0,0,0,.2)',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:'.88rem',color:mpSelTarget===p.idx?'#e74c3c':'#a06050',display:'flex',alignItems:'center',gap:8}}>
+                      <span>{mpSelTarget===p.idx?'●':'○'}</span>{p.name}
+                    </div>
+                  ))}
+                </div>
+                <button className="btn btn-gold" style={{width:'100%',padding:12}} disabled={mpSelTarget===null}
+                  onClick={async()=>{
+                    await fbSet(`rooms/${roomCode}/nightActions/lupi`,{targetIdx:mpSelTarget});
+                    setMpActionSent(true);
+                  }}>⚔️ Conferma Vittima</button>
+              </>
+            )}
+
+            {/* Non-leader: suggerimento vittima */}
+            {isWolfTurn&&amWolf&&!amLeader&&!isElecting&&!mpActionSent&&(
+              <>
+                <p style={{fontSize:'.82rem',color:'#c4a882',marginBottom:8,fontStyle:'italic',lineHeight:1.5}}>
+                  {wolfLeaderRef.current?`Il leader è ${wolfLeaderRef.current} — manda il tuo suggerimento:`:'Suggerisci una vittima al leader:'}
+                </p>
+                <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:12,maxHeight:200,overflowY:'auto'}}>
+                  {actionTargets.map(p=>(
+                    <div key={p.idx} onClick={()=>setMpSelTarget(p.idx)}
+                      style={{padding:'10px 14px',borderRadius:10,border:`1px solid ${mpSelTarget===p.idx?'rgba(231,76,60,.5)':'rgba(231,76,60,.12)'}`,background:mpSelTarget===p.idx?'rgba(231,76,60,.1)':'rgba(0,0,0,.15)',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:'.88rem',color:mpSelTarget===p.idx?'#e07050':'#7a5040',display:'flex',alignItems:'center',gap:8}}>
+                      <span>{mpSelTarget===p.idx?'●':'○'}</span>{p.name}
+                    </div>
+                  ))}
+                </div>
+                <button className="btn btn-outline" style={{width:'100%',padding:12,borderColor:'rgba(200,100,50,.4)',color:'#c07050',fontSize:'.88rem'}} disabled={mpSelTarget===null}
+                  onClick={async()=>{
+                    await fbSet(`rooms/${roomCode}/wolfSuggestions/${myIdRef.current}`,{senderName:myRole.name,targetIdx:mpSelTarget});
+                    setMpWolfSuggest(mpSelTarget);setMpActionSent(true);
+                  }}>💬 Invia Suggerimento</button>
+              </>
+            )}
+
+            {/* Azione normale (non lupi) */}
+            {!isWolfTurn&&!mpActionSent&&(
+              <>
+                <p style={{fontSize:'.85rem',color:'#c4a882',marginBottom:14,lineHeight:1.5}}>{ACTION_LABELS[mpCurStep]||'Scegli un giocatore:'}</p>
                 <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:14,maxHeight:220,overflowY:'auto'}}>
                   {mpAlive.filter(p=>p.name!==myRole.name).map(p=>(
                     <div key={p.idx} onClick={()=>setMpSelTarget(p.idx)}
@@ -2633,18 +2836,21 @@ function App(){
                   onClick={async()=>{
                     await fbSet(`rooms/${roomCode}/nightActions/${mpCurStep}`,{targetIdx:mpSelTarget});
                     setMpActionSent(true);
-                  }}>
-                  Conferma Scelta
-                </button>
+                  }}>Conferma Scelta</button>
               </>
-            ):(
+            )}
+
+            {mpActionSent&&(
               <div style={{textAlign:'center',padding:'8px 0'}}>
                 <span style={{color:'#27ae60',fontSize:'.9rem'}}>✓ </span>
-                <span style={{color:'#4a9a70',fontSize:'.85rem',fontStyle:'italic'}}>Azione inviata — in attesa del Narratore...</span>
+                <span style={{color:'#4a9a70',fontSize:'.85rem',fontStyle:'italic'}}>
+                  {amLeader?'Vittima confermata — il Narratore decide':isElecting?'Voto inviato — in attesa...':amWolf?'Suggerimento inviato al leader...':'Azione inviata — in attesa del Narratore...'}
+                </span>
               </div>
             )}
           </div>
-        )}
+          );
+        })()}
 
         {/* Waiting for turn during night */}
         {isNight&&mpIsAlive&&myRole&&mpCurStep&&!isMyTurn(myRole.role,mpCurStep)&&(
@@ -3125,6 +3331,8 @@ function App(){
                   <div style={{height:1,background:'linear-gradient(to right,transparent,rgba(155,89,182,.2),transparent)',margin:'2px 0'}}/>
                   {MODALITA_SPECIALI.map(m=>{
                     const isSel=modalitaSpeciale===m.id;
+                    const diffLabels={facile:'🌱 Facile',medio:'⚔️ Medio',difficile:'💀 Difficile'};
+                    const diffColors={facile:'#2ecc71',medio:'#f39c12',difficile:'#e74c3c'};
                     return(
                       <div key={m.id}
                         onClick={()=>{setModalitaSpeciale(m.id);setDist(m.preset(names.length,getSuggestedDist(names.length)));setOrdineMode(m.autoRoles.ordineMode);setModalitaOpen(false);}}
@@ -3133,10 +3341,11 @@ function App(){
                         <div style={{flex:1,minWidth:0}}>
                           <div style={{fontFamily:'Cinzel,serif',fontSize:'.8rem',color:isSel?m.color:'#a08060',fontWeight:isSel?700:400,marginBottom:2}}>{m.name}</div>
                           <div style={{fontSize:'.7rem',color:'#5a4a30',fontStyle:'italic',lineHeight:1.5,marginBottom:4}}>{m.short}</div>
-                          <div style={{display:'flex',flexWrap:'wrap',gap:3}}>
+                          <div style={{display:'flex',flexWrap:'wrap',gap:3,alignItems:'center'}}>
                             {m.fazioni.map(f=>(
                               <span key={f} style={{fontFamily:'Cinzel,serif',fontSize:'.56rem',padding:'2px 6px',borderRadius:7,background:`${m.color}14`,border:`1px solid ${m.color}33`,color:m.color,letterSpacing:'.05em'}}>{f}</span>
                             ))}
+                            {m.difficulty&&<span style={{fontFamily:'Cinzel,serif',fontSize:'.54rem',padding:'2px 7px',borderRadius:7,background:'rgba(0,0,0,.25)',border:`1px solid ${diffColors[m.difficulty]||'#888'}44`,color:diffColors[m.difficulty]||'#888',letterSpacing:'.05em',marginLeft:2}}>{diffLabels[m.difficulty]||m.difficulty}</span>}
                           </div>
                         </div>
                         {isSel&&<span style={{color:m.color,flexShrink:0}}>✓</span>}
@@ -3196,6 +3405,40 @@ function App(){
   }
 
   // ── ROLE REVEAL ─────────────────────────────────────────────────────────────
+  if(sc==='multiRoleReveal'){
+    const totalPlayers=players.length;
+    const allReady=mpReadyCount>=totalPlayers;
+    const handleStartNight=()=>{
+      getDb().ref(`rooms/${roomCode}/roleReady`).remove();
+      startNight(players,false,false);
+    };
+    return(
+      <div className="app night"><MuteBtn/><div className="astro moon"/>
+      <div className="screen fade">
+        <h1 className="title" style={{fontSize:'1.3rem',marginBottom:4}}>Ruoli Assegnati</h1>
+        <p className="subtitle" style={{marginBottom:20}}>{vName}</p>
+        <div style={{background:'rgba(201,162,39,.06)',border:'1px solid rgba(201,162,39,.18)',borderRadius:14,padding:'20px 18px',marginBottom:20,textAlign:'center'}}>
+          <div style={{fontSize:'2.5rem',marginBottom:10}}>📱</div>
+          <p style={{fontFamily:'Cinzel,serif',fontSize:'.82rem',color:'#c8a05a',marginBottom:6}}>Ogni giocatore sta leggendo il proprio ruolo</p>
+          <p style={{fontSize:'.78rem',color:'#6a5030',fontStyle:'italic',marginBottom:16}}>I ruoli sono stati inviati ai telefoni automaticamente</p>
+          <div style={{background:'rgba(0,0,0,.3)',borderRadius:10,padding:'12px 16px',marginBottom:12}}>
+            <span style={{fontFamily:'Cinzel,serif',fontSize:'1.4rem',color:allReady?'#2ecc71':'#c9a227',fontWeight:700}}>{mpReadyCount}</span>
+            <span style={{color:'#6a5030',fontSize:'.85rem'}}> / {totalPlayers} pronti</span>
+          </div>
+          <div style={{display:'flex',gap:6,justifyContent:'center',flexWrap:'wrap'}}>
+            {players.map((p,i)=>{
+              const fbId=lobbyPlayerMap[p.name];
+              return(<span key={i} style={{fontSize:'.75rem',padding:'4px 10px',borderRadius:20,background:'rgba(0,0,0,.3)',color:'#7a6040',fontFamily:'Cinzel,serif'}}>{p.name}</span>);
+            })}
+          </div>
+        </div>
+        <button className="btn btn-gold" onClick={handleStartNight} style={{width:'100%',padding:'14px',fontSize:'1rem'}}>
+          {allReady?'🌙 Tutti pronti — Inizia la Notte':'🌙 Inizia la Notte (salta attesa)'}
+        </button>
+      </div></div>
+    );
+  }
+
   if(sc==='roleReveal'){
     const p=players[ri];const r=ROLES[p.role];
     const isOrdineRole=ordineMode&&r.isOrdine;
@@ -3334,6 +3577,47 @@ function App(){
             <><div className="instr">{cucHere?'Il Cucciolo si è trasformato. Indica la vittima.':'I Lupi si riconoscono e scelgono la vittima in silenzio.'}</div>
             {lupoAlphaActivatedName&&<div style={{fontSize:'.82rem',color:'#e74c3c',fontWeight:600,marginBottom:10,padding:'8px 12px',background:'rgba(231,76,60,.1)',borderRadius:8,border:'1px solid rgba(231,76,60,.3)'}}>🐺 <strong>{lupoAlphaActivatedName}</strong> il Lupo Mannaro si è trasformato stanotte — è ora un Lupo Grande. Chiamatelo nel turno del branco!</div>}
             {(()=>{const mIdx=players.findIndex(p=>p.role==='mutaforma'&&p.alive);const cIdx=players.findIndex(p=>p.role==='condor'&&p.alive);const mutW=mutRole&&ROLES[mutRole]?.wolfTeam;const conW=conRole&&ROLES[conRole]?.wolfTeam;return(<>{mutW&&mIdx!==-1&&<div style={{fontSize:'.78rem',color:'#bdc3c7',fontStyle:'italic',marginBottom:8,padding:'6px 10px',background:'rgba(189,195,199,.08)',borderRadius:6,border:'1px solid rgba(189,195,199,.2)'}}>🔄 {players[mIdx].name} (Mutaforma → {ROLES[mutRole].emoji}{ROLES[mutRole].name}) si sveglia con il branco.</div>}{conW&&cIdx!==-1&&<div style={{fontSize:'.78rem',color:'#d35400',fontStyle:'italic',marginBottom:8,padding:'6px 10px',background:'rgba(211,84,0,.08)',borderRadius:6,border:'1px solid rgba(211,84,0,.2)'}}>🦅 {players[cIdx].name} (Condor → {ROLES[conRole].emoji}{ROLES[conRole].name}) si sveglia con il branco.</div>}</>);})()}
+            {/* Elezione leader (1ª notte con più grandi) */}
+            {gameMode==='multiplayer'&&wolfElecting&&(
+              <div style={{background:'rgba(231,76,60,.1)',border:'1px solid rgba(231,76,60,.3)',borderRadius:12,padding:'12px 14px',marginBottom:12}}>
+                <p style={{fontFamily:'Cinzel,serif',fontSize:'.72rem',color:'#e74c3c',letterSpacing:'.1em',marginBottom:8}}>⚔️ ELEZIONE LEADER</p>
+                <p style={{fontSize:'.8rem',color:'#a07060',marginBottom:10,fontStyle:'italic'}}>I lupi scelgono il loro capo. Ogni lupo grande ha votato sul suo telefono — il più votato diventa leader.</p>
+                {(()=>{
+                  const votes={};
+                  Object.values(wolfSuggestions).forEach(s=>{if(s.leaderVote)votes[s.leaderVote]=(votes[s.leaderVote]||0)+1;});
+                  const bigWolvesAlive=players.filter(p=>p.alive&&p.role==='lupo');
+                  return(<>
+                    <div style={{display:'flex',flexDirection:'column',gap:5,marginBottom:10}}>
+                      {bigWolvesAlive.map((p,i)=><div key={i} style={{display:'flex',justifyContent:'space-between',padding:'6px 10px',borderRadius:8,background:'rgba(0,0,0,.2)',border:'1px solid rgba(231,76,60,.2)'}}>
+                        <span style={{fontFamily:'Cinzel,serif',fontSize:'.8rem',color:'#c9a227'}}>{p.name}</span>
+                        <span style={{color:'#e74c3c',fontWeight:700}}>{votes[p.name]||0} voti</span>
+                      </div>)}
+                    </div>
+                    {Object.keys(votes).length>0&&(()=>{
+                      const winner=Object.entries(votes).sort((a,b)=>b[1]-a[1])[0][0];
+                      return(<button className="btn btn-gold" style={{width:'100%',fontSize:'.82rem'}} onClick={()=>{
+                        getDb().ref(`rooms/${roomCode}/wolfLeader`).set(winner);
+                        setWolfLeader(winner);wolfLeaderRef.current=winner;setWolfElecting(false);
+                        getDb().ref(`rooms/${roomCode}/wolfElection`).remove();
+                      }}>✓ {winner} è il Leader</button>);
+                    })()}
+                  </>);
+                })()}
+              </div>
+            )}
+            {/* Suggerimenti lupi in multiplayer */}
+            {gameMode==='multiplayer'&&!wolfElecting&&Object.keys(wolfSuggestions).length>0&&(
+              <div style={{background:'rgba(60,0,0,.3)',border:'1px solid rgba(200,50,50,.25)',borderRadius:10,padding:'10px 12px',marginBottom:10}}>
+                <p style={{fontFamily:'Cinzel,serif',fontSize:'.65rem',color:'#8a4040',letterSpacing:'.12em',marginBottom:6}}>💬 SUGGERIMENTI DEL BRANCO</p>
+                {Object.entries(wolfSuggestions).filter(([,s])=>!s.leaderVote).map(([fbId,s])=>(
+                  <div key={fbId} style={{display:'flex',justifyContent:'space-between',padding:'5px 8px',borderRadius:6,background:'rgba(0,0,0,.2)',marginBottom:4}}>
+                    <span style={{fontSize:'.78rem',color:'#a06050',fontFamily:'Cinzel,serif'}}>{s.senderName||'?'}</span>
+                    <span style={{fontSize:'.78rem',color:'#c9a227',fontFamily:'Cinzel,serif'}}>{s.targetIdx!=null?players[s.targetIdx]?.name||'?':'—'}</span>
+                  </div>
+                ))}
+                {wolfLeader&&<p style={{fontSize:'.7rem',color:'#6a4040',fontStyle:'italic',marginTop:6}}>Leader: <strong style={{color:'#e74c3c'}}>{wolfLeader}</strong> — la scelta finale è sua</p>}
+              </div>
+            )}
             <div className="nlbl">Chi attaccano i Lupi?</div>
             <PList players={alive.filter(p=>{const ek=(p.role==='mutaforma'&&mutRole)?mutRole:(p.role==='condor'&&conRole)?conRole:p.role;return!ROLES[ek].wolfTeam&&!ROLES[ek].winsWithWolves&&ek!=='cucciolo';})} sel={wc} onSel={setWc}/>
             <button className="btn btn-gold mb8" onClick={()=>confWolves(false)} disabled={wc===null}>Conferma Vittima</button>
