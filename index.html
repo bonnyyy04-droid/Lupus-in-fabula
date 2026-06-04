@@ -211,6 +211,15 @@ input[type=text]::placeholder{color:#2e2214}
 .ibtn:hover{background:rgba(201,162,39,.2)}
 
 /* ── NIGHT LOG MATRIX TABLE ── */
+/* ── TURN TIMER ── */
+.conn-banner{position:fixed;top:0;left:0;right:0;z-index:9999;background:#c0392b;color:#fff;font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:.1em;text-align:center;padding:8px 16px;display:flex;align-items:center;justify-content:center;gap:8px;animation:slideDown .3s ease}
+@keyframes slideDown{from{transform:translateY(-100%)}to{transform:translateY(0)}}
+.ttimer{display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:8px;background:rgba(0,0,0,.3);border:1px solid rgba(201,162,39,.15);margin-bottom:12px;font-family:'Cinzel',serif}
+.ttimer-bar-wrap{flex:1;height:4px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden}
+.ttimer-bar{height:100%;border-radius:2px;transition:width .9s linear}
+.ttimer-val{font-size:.78rem;min-width:36px;text-align:right;color:#c9a227;font-weight:700}
+.ttimer-label{font-size:.6rem;letter-spacing:.12em;color:#5a4a28}
+
 .nlog-wrap{overflow-x:auto;margin-bottom:16px;border-radius:10px;border:1px solid rgba(201,162,39,.12);-webkit-overflow-scrolling:touch}
 .nlog-table{border-collapse:collapse;font-family:'Cinzel',serif;width:100%}
 .nlog-corner{padding:8px 12px;font-size:.55rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-dim);border-bottom:2px solid rgba(201,162,39,.16);background:rgba(0,0,0,.25);white-space:nowrap;position:sticky;left:0;z-index:2}
@@ -1002,11 +1011,11 @@ const fbCreateRoom=async(code,hostId,mode)=>{
   await fbSet(`rooms/${code}`,{mode,hostId,status:'lobby',
     createdAt:window.firebase.database.ServerValue.TIMESTAMP,players:{}});
 };
-const fbJoinRoom=async(code,playerId,playerName)=>{
+const fbJoinRoom=async(code,playerId,playerName,asObserver=false)=>{
   const room=await fbGet(`rooms/${code}`);
   if(!room)throw new Error('Stanza non trovata.');
   if(room.status==='gameOver')throw new Error('Partita già terminata.');
-  await fbSet(`rooms/${code}/players/${playerId}`,{name:playerName,connected:true});
+  await fbSet(`rooms/${code}/players/${playerId}`,{name:playerName,connected:true,observer:asObserver||false});
   return room;
 };
 const fbStartGame=async(code)=>fbSet(`rooms/${code}/status`,'playing');
@@ -1031,6 +1040,15 @@ const fbCloseVote=code=>{if(code)getDb().ref(`rooms/${code}/voting/open`).set(fa
 const fbSubmitVote=(code,fbId,targetIdx)=>{if(!code||!fbId)return;return getDb().ref(`rooms/${code}/voting/votes/${fbId}`).set(targetIdx);};
 const fbSyncGameOver=(code,recap)=>{if(code)try{fbSet(`rooms/${code}/gameOver`,recap);}catch(e){}};
 const isMyTurn=(role,step)=>{if(!role||!step)return false;if(step==='lupi')return !!ROLES[role]?.wolfTeam;return role===step;};
+
+// ── HELPER: Firebase room path shorthand ─────────────────────────────────
+// Usage: rp('phase') → 'rooms/${roomCode}/phase'  (used inside closures with roomCode)
+// Not a standalone function since roomCode is closure-scoped; use template literals directly.
+
+// ── HELPER: effRole — ruolo effettivo (risolve mutaforma/condor) ──────────
+// Usata a livello componente come closure su mutRole/conRole
+// Definita dentro App() come const effRole = (p) => ...
+
 const ACTION_LABELS={arciere:'Chi vuoi bloccare stanotte?',guardia:'Chi vuoi proteggere?',custode:'Chi vuoi silenziare domani?',lupi:'Chi attaccate questa notte?',veggente:'Chi vuoi scrutare?',meretrice:'Chi vuoi visitare?',negromante:'Chi vuoi evocare?',accusatore:'Chi vuoi accusare?',piromane:'Chi vuoi bruciare? (usa con cura!)',mutaforma:'Chi vuoi copiare?',condor:'Chi vuoi assorbire?',corvo:'Chi vuoi segnare?',vampiro:'Chi vuoi mordere?',araldo:'Chi metti al primo posto?'};
 
 // ── SCOREBOARD ─────────────────────────────────────────────────────────────
@@ -1272,7 +1290,12 @@ function App(){
   const [mpWolfSuggest,setMpWolfSuggest]=useState(null);  // suggerimento inviato dal player
   const [wolfElecting,setWolfElecting]=useState(false);   // prima notte: elezione leader
   const wolfLeaderRef=useRef(null);
+  const [fbConnected,setFbConnected]=useState(true);     // Firebase connected status
+  const [wolfChat,setWolfChat]=useState([]);         // messaggi chat lupi (host)
+  const [mpWolfChat,setMpWolfChat]=useState([]);     // messaggi chat lupi (player)
+  const [wolfChatInput,setWolfChatInput]=useState(''); // input chat lupo player
   const [mpActionSent,setMpActionSent]=useState(false);  // azione già inviata questo turno
+  const [isObserver,setIsObserver]=useState(false);       // questo client è uno spettatore
   const [mpIsAlive,setMpIsAlive]=useState(true);         // questo giocatore è vivo
   const [mpSelTarget,setMpSelTarget]=useState(null);     // target selezionato nella lista
   // ── VOTO DIGITALE — HOST ───────────────────────────────────────────────────
@@ -1288,6 +1311,10 @@ function App(){
   const [mpNotif,setMpNotif]=useState(null);             // notifica speciale (es. trasformazione lupo)
   const [mpNightLog,setMpNightLog]=useState({});         // storico notturno {round: {events:[]}}
   const [logOpen,setLogOpen]=useState(false);            // espandi log notturno a fine partita
+  const [recapCopied,setRecapCopied]=useState(false);    // feedback copia recap
+  const [turnTimeout,setTurnTimeout]=useState(0);        // 0=off, 60,180,300 secondi
+  const [turnTimeLeft,setTurnTimeLeft]=useState(0);      // secondi rimanenti
+  const turnTimerRef=useRef(null);
   const [gameLog,setGameLog]=useState([]);               // [{round,actions:{pidx:{target,type,seerRole}},deaths:{pidx:cause},voteVictim}]
 
   // ── FIRST-TIME GUIDE ──────────────────────────────────────────────────────
@@ -1470,7 +1497,7 @@ function App(){
   // ── LOBBY: giocatori in tempo reale ───────────────────────────────────────
   useEffect(()=>{
     if(!roomCode)return;
-    const ref=getDb().ref(`rooms/${roomCode}/players`);
+    const ref=getDb().ref(rp('players'));
     const handler=snap=>{
       const val=snap.val()||{};
       setLobbyPlayers(Object.entries(val).map(([id,p])=>({id,...p})));
@@ -1482,7 +1509,7 @@ function App(){
   // ── LOBBY: player aspetta avvio/riavvio partita ───────────────────────────
   useEffect(()=>{
     if(!roomCode||roomRole!=='player')return;
-    const ref=getDb().ref(`rooms/${roomCode}/status`);
+    const ref=getDb().ref(rp('status'));
     const handler=snap=>{
       const s=snap.val();
       if(s==='playing')setSc('playerWait');
@@ -1530,11 +1557,25 @@ function App(){
         if(g.deaths)Object.entries(g.deaths).forEach(([pIdx,cause])=>{if(!dr[players[pIdx].name])dr[players[pIdx].name]={round:g.round,cause};});
         if(g.voteVictim!=null&&!dr[players[g.voteVictim].name])dr[players[g.voteVictim].name]={round:g.round,cause:'vote'};
       });
-      const recap={win,log:gameLog,deathRound:dr,players:players.map(p=>{const rk=(p.role==='mutaforma'&&mutRole)?mutRole:(p.role==='condor'&&conRole)?conRole:p.role;return{name:p.name,roleName:ROLES[rk]?.name,emoji:ROLES[rk]?.emoji,color:ROLES[rk]?.color,alive:p.alive};})};
+      const recap={win,log:gameLog,deathRound:dr,players:players.map(p=>{const rk=effRole(p);return{name:p.name,roleName:ROLES[rk]?.name,emoji:ROLES[rk]?.emoji,color:ROLES[rk]?.color,alive:p.alive};})};
       fbSyncGameOver(roomCode,recap);
-      fbSet(`rooms/${roomCode}/phase`,'gameOver');
+      fbSet(rp('phase'),'gameOver');
     }
   },[sc,roomCode,gameMode]);
+
+  // ── HOST: timeout turno notte ────────────────────────────────────────────
+  useEffect(()=>{
+    if(turnTimerRef.current)clearInterval(turnTimerRef.current);
+    if(!turnTimeout||sc!=='night'||!ns)return;
+    setTurnTimeLeft(turnTimeout);
+    turnTimerRef.current=setInterval(()=>{
+      setTurnTimeLeft(t=>{
+        if(t<=1){clearInterval(turnTimerRef.current);return 0;}
+        return t-1;
+      });
+    },1000);
+    return()=>clearInterval(turnTimerRef.current);
+  },[ns,sc,turnTimeout]);
 
   // ── HOST: sincronizza eventi alba su Firebase ─────────────────────────────
   useEffect(()=>{
@@ -1580,7 +1621,7 @@ function App(){
   // ── HOST: ascolta voti digitali in tempo reale ────────────────────────────
   useEffect(()=>{
     if(!roomCode||gameMode!=='multiplayer')return;
-    const ref=getDb().ref(`rooms/${roomCode}/voting/votes`);
+    const ref=getDb().ref(rp('voting/votes'));
     const h=snap=>{
       const data=snap.val()||{};
       const counts={};
@@ -1594,7 +1635,7 @@ function App(){
   // ── HOST: ascolta apertura/chiusura votazione ─────────────────────────────
   useEffect(()=>{
     if(!roomCode||gameMode!=='multiplayer')return;
-    const ref=getDb().ref(`rooms/${roomCode}/voting/open`);
+    const ref=getDb().ref(rp('voting/open'));
     const h=snap=>{setVoteOpen(!!snap.val());if(!snap.val())setLiveVotes({});};
     ref.on('value',h);
     return()=>ref.off('value',h);
@@ -1604,7 +1645,7 @@ function App(){
   useEffect(()=>{
     if(!roomCode||gameMode!=='multiplayer')return;
     const name=silenced!==null&&players[silenced]?players[silenced].name:null;
-    fbSet(`rooms/${roomCode}/silencedPlayer`,name);
+    fbSet(rp('silencedPlayer'),name);
   },[silenced,roomCode,gameMode]);
 
   // ── HOST: applica eliminazione da voto digitale ───────────────────────────
@@ -1612,7 +1653,7 @@ function App(){
     if(!pendingDigitalElim||vi===null)return;
     elimVote();
     setPendingDigitalElim(false);
-    if(roomCode)getDb().ref(`rooms/${roomCode}/voting`).remove();
+    if(roomCode)getDb().ref(rp('voting')).remove();
   },[pendingDigitalElim,vi]);
 
   // ── HOST: sincronizza recap finale ───────────────────────────────────────
@@ -1640,7 +1681,7 @@ function App(){
   // ── PLAYER: ascolta recap finale ─────────────────────────────────────────
   useEffect(()=>{
     if(!roomCode||roomRole!=='player')return;
-    const ref=getDb().ref(`rooms/${roomCode}/gameOver`);
+    const ref=getDb().ref(rp('gameOver'));
     const h=snap=>{if(snap.val())setMpGameOver(snap.val());};
     ref.on('value',h);
     return()=>ref.off('value',h);
@@ -1658,7 +1699,7 @@ function App(){
   // ── PLAYER: ascolta storico notturno ─────────────────────────────────────
   useEffect(()=>{
     if(!roomCode||roomRole!=='player')return;
-    const ref=getDb().ref(`rooms/${roomCode}/nightLog`);
+    const ref=getDb().ref(rp('nightLog'));
     const h=snap=>{setMpNightLog(snap.val()||{});};
     ref.on('value',h);
     return()=>ref.off('value',h);
@@ -1678,7 +1719,7 @@ function App(){
   // ── PLAYER: ascolta fase di gioco ─────────────────────────────────────────
   useEffect(()=>{
     if(!roomCode||roomRole!=='player')return;
-    const ref=getDb().ref(`rooms/${roomCode}/phase`);
+    const ref=getDb().ref(rp('phase'));
     const h=snap=>{setMpPhase(snap.val());};
     ref.on('value',h);
     return()=>ref.off('value',h);
@@ -1687,7 +1728,7 @@ function App(){
   // ── PLAYER: ascolta eventi alba ───────────────────────────────────────────
   useEffect(()=>{
     if(!roomCode||roomRole!=='player')return;
-    const ref=getDb().ref(`rooms/${roomCode}/dawnEvents`);
+    const ref=getDb().ref(rp('dawnEvents'));
     const h=snap=>{setMpDawn(snap.val()||[]);};
     ref.on('value',h);
     return()=>ref.off('value',h);
@@ -1696,7 +1737,7 @@ function App(){
   // ── PLAYER: ascolta step corrente della notte ─────────────────────────────
   useEffect(()=>{
     if(!roomCode||roomRole!=='player')return;
-    const ref=getDb().ref(`rooms/${roomCode}/currentStep`);
+    const ref=getDb().ref(rp('currentStep'));
     const h=snap=>{setMpCurStep(snap.val());setMpActionSent(false);setMpSelTarget(null);};
     ref.on('value',h);
     return()=>ref.off('value',h);
@@ -1705,7 +1746,7 @@ function App(){
   // ── PLAYER: ascolta lista giocatori vivi ──────────────────────────────────
   useEffect(()=>{
     if(!roomCode||roomRole!=='player')return;
-    const ref=getDb().ref(`rooms/${roomCode}/alivePlayers`);
+    const ref=getDb().ref(rp('alivePlayers'));
     const h=snap=>{setMpAlive(snap.val()||[]);};
     ref.on('value',h);
     return()=>ref.off('value',h);
@@ -1720,13 +1761,31 @@ function App(){
     return()=>ref.off('value',h);
   },[roomCode,roomRole]);
 
+  // ── MULTIPLAYER: monitora connessione Firebase ────────────────────────────
+  useEffect(()=>{
+    if(gameMode!=='multiplayer')return;
+    const ref=getDb().ref('.info/connected');
+    const h=snap=>setFbConnected(!!snap.val());
+    ref.on('value',h);
+    return()=>ref.off('value',h);
+  },[gameMode]);
+
+  // ── HOST: ascolta wolfChat ────────────────────────────────────────────────
+  useEffect(()=>{
+    if(!roomCode||gameMode!=='multiplayer')return;
+    const ref=getDb().ref(rp('wolfChat'));
+    const h=snap=>{const v=snap.val();setWolfChat(v?Object.values(v).sort((a,b)=>a.ts-b.ts):[]);};
+    ref.on('value',h);
+    return()=>ref.off('value',h);
+  },[roomCode,gameMode]);
+
   // ── HOST: ascolta wolfLeader e suggerimenti lupi ────────────────────────
   useEffect(()=>{
     if(!roomCode||gameMode!=='multiplayer'||roomRole!=='host')return;
-    const refL=getDb().ref(`rooms/${roomCode}/wolfLeader`);
+    const refL=getDb().ref(rp('wolfLeader'));
     const hL=snap=>{const v=snap.val();setWolfLeader(v);wolfLeaderRef.current=v;};
     refL.on('value',hL);
-    const refS=getDb().ref(`rooms/${roomCode}/wolfSuggestions`);
+    const refS=getDb().ref(rp('wolfSuggestions'));
     const hS=snap=>{setWolfSuggestions(snap.val()||{});};
     refS.on('value',hS);
     return()=>{refL.off('value',hL);refS.off('value',hS);};
@@ -1735,7 +1794,7 @@ function App(){
   // ── PLAYER: ascolta se è leader e i propri suggerimenti ──────────────────
   useEffect(()=>{
     if(!roomCode||roomRole!=='player')return;
-    const refL=getDb().ref(`rooms/${roomCode}/wolfLeader`);
+    const refL=getDb().ref(rp('wolfLeader'));
     const hL=snap=>{wolfLeaderRef.current=snap.val();};
     refL.on('value',hL);
     return()=>refL.off('value',hL);
@@ -1744,7 +1803,7 @@ function App(){
   // ── HOST: ascolta quanti player hanno confermato il ruolo ────────────────
   useEffect(()=>{
     if(!roomCode||gameMode!=='multiplayer'||roomRole!=='host')return;
-    const ref=getDb().ref(`rooms/${roomCode}/roleReady`);
+    const ref=getDb().ref(rp('roleReady'));
     const h=snap=>{setMpReadyCount(Object.keys(snap.val()||{}).length);};
     ref.on('value',h);
     return()=>ref.off('value',h);
@@ -1753,22 +1812,25 @@ function App(){
   // ── PLAYER: ascolta allPlayers, stepMeta e nightReveal ───────────────────
   useEffect(()=>{
     if(!roomCode||roomRole!=='player')return;
-    const refAll=getDb().ref(`rooms/${roomCode}/allPlayers`);
+    const refAll=getDb().ref(rp('allPlayers'));
     const hAll=snap=>setMpAllPlayers(snap.val()||[]);
     refAll.on('value',hAll);
-    const refMeta=getDb().ref(`rooms/${roomCode}/stepMeta`);
+    const refMeta=getDb().ref(rp('stepMeta'));
     const hMeta=snap=>setMpStepMeta(snap.val()||{});
     refMeta.on('value',hMeta);
     const refReveal=getDb().ref(`rooms/${roomCode}/nightReveal/${myIdRef.current}`);
     const hReveal=snap=>setMpNightReveal(snap.val()||null);
     refReveal.on('value',hReveal);
-    return()=>{refAll.off('value',hAll);refMeta.off('value',hMeta);refReveal.off('value',hReveal);};
+    const refChat=getDb().ref(rp('wolfChat'));
+    const hChat=snap=>{const v=snap.val();setMpWolfChat(v?Object.values(v).sort((a,b)=>a.ts-b.ts):[]);};
+    refChat.on('value',hChat);
+    return()=>{refAll.off('value',hAll);refMeta.off('value',hMeta);refReveal.off('value',hReveal);refChat.off('value',hChat);}; 
   },[roomCode,roomRole]);
 
   // ── PLAYER: ascolta apertura votazione ───────────────────────────────────
   useEffect(()=>{
     if(!roomCode||roomRole!=='player')return;
-    const ref=getDb().ref(`rooms/${roomCode}/voting/open`);
+    const ref=getDb().ref(rp('voting/open'));
     const h=snap=>{
       const open=!!snap.val();
       setMpVoteOpen(open);
@@ -1781,11 +1843,41 @@ function App(){
   // ── PLAYER: ascolta se è silenziato ──────────────────────────────────────
   useEffect(()=>{
     if(!roomCode||roomRole!=='player'||!myRole)return;
-    const ref=getDb().ref(`rooms/${roomCode}/silencedPlayer`);
+    const ref=getDb().ref(rp('silencedPlayer'));
     const h=snap=>{setMpIsSilenced(snap.val()===myRole.name);};
     ref.on('value',h);
     return()=>ref.off('value',h);
   },[roomCode,roomRole,myRole]);
+
+  // ── HELPERS INTERNI ────────────────────────────────────────────────────────
+  // Risolve il ruolo effettivo di un giocatore (mutaforma/condor ereditano ruolo copiato)
+  const effRole=(p)=>(p.role==='mutaforma'&&mutRole)?mutRole:(p.role==='condor'&&conRole)?conRole:p.role;
+  // Firebase room path shorthand
+  const rp=(sub)=>`rooms/${roomCode}/${sub}`;
+  // Aggiorna Firebase e stato locale per wolfLeader
+  const setLeader=(name)=>{setWolfLeader(name);wolfLeaderRef.current=name;if(roomCode)getDb().ref(rp('wolfLeader')).set(name);};
+
+  // ── Genera testo recap condivisibile ─────────────────────────────────────
+  const generateRecap=(ps=players,w=win,mR=mutRole,cR=conRole)=>{
+    const winLabels={lupi:'🐺 I Lupi hanno vinto',villici:'🏘️ Il Villaggio ha vinto',ordine:"⚖️ L'Ordine ha vinto",criceto:'🐹 Il Criceto Mannaro ha vinto',suicida:'💀 Il Suicida ha vinto'};
+    const lines=[`🌙 LUPUS — ${vName}`,`${winLabels[w]||'Partita conclusa'}`,``];
+    ps.forEach(p=>{
+      const rk=(p.role==='mutaforma'&&mR)?mR:(p.role==='condor'&&cR)?cR:p.role;
+      const R=ROLES[rk]||{};
+      const pts=getPoints(p,w,mR,cR);
+      lines.push(`${p.alive?'✅':'💀'} ${p.name} — ${R.emoji||'❓'} ${R.name||rk}${pts>0?' (+'+pts+'pt)':''}`);
+    });
+    if(gameLog.length>0){
+      lines.push(``,'📖 Notti giocate: '+gameLog.length);
+      gameLog.forEach(g=>{
+        const deaths=[];
+        if(g.deaths)Object.entries(g.deaths).forEach(([i,cause])=>{const p=ps[parseInt(i)];if(p)deaths.push(`${p.name} (${cause==='vote'?'voto':cause})`);});
+        if(g.voteVictim!=null&&ps[g.voteVictim])deaths.push(`${ps[g.voteVictim].name} (voto)`);
+        if(deaths.length)lines.push(`  Notte ${g.round}: 💀 ${deaths.join(', ')}`);
+      });
+    }
+    return lines.join('\n');
+  };
 
   const addP=()=>{const n=inp.trim();if(!n||names.length>=20||names.includes(n))return;setNames(p=>[...p,n]);setInp('');};
 
@@ -1807,7 +1899,7 @@ function App(){
     setGameLog([]);
     if(gameMode==='multiplayer'&&roomCode){
       fbWriteRoles(roomCode,ps,lobbyPlayerMap);
-      fbSet(`rooms/${roomCode}/phase`,'roleReveal');
+      fbSet(rp('phase'),'roleReveal');
       setSc('multiRoleReveal');
     }else{
       setSc('roleReveal');
@@ -1829,9 +1921,12 @@ function App(){
         gameOver:null,playerRoles:null,nightActions:null,nightLog:null,
         voting:null,dawnEvents:null,currentStep:null,
         alivePlayers:null,playerAlive:null,silencedPlayer:null,playerNotif:null,phase:null,
+        wolfLeader:null,wolfSuggestions:null,wolfElection:null,roleReady:null,allPlayers:null,stepMeta:null,
       });
     }
-    clearGame();setPlayers([]);setWin(null);setSindacoIdx(null);setSindacoTmp(null);setOrdineMode(false);scoresSavedRef.current=false;setGameLog([]);setModalitaSpeciale(null);setModalitaOpen(false);setSc('rolePick');
+    clearGame();setPlayers([]);setWin(null);setSindacoIdx(null);setSindacoTmp(null);setOrdineMode(false);scoresSavedRef.current=false;setGameLog([]);setModalitaSpeciale(null);setModalitaOpen(false);
+    setWolfLeader(null);wolfLeaderRef.current=null;setWolfElecting(false);setWolfSuggestions({});setMpRoleReady(false);setMpReadyCount(0);
+    setSc('rolePick');
   };
 
   const nextReveal=()=>{if(ri+1<players.length){setRi(r=>r+1);setRv(false);}else startNight(players,false,false);};
@@ -1861,26 +1956,26 @@ function App(){
         if(bigWolves.length===1){
           // 1 solo grande → lui è leader
           const newLeader=bigWolves[0].name;
-          getDb().ref(`rooms/${roomCode}/wolfLeader`).set(newLeader);
-          setWolfLeader(newLeader);wolfLeaderRef.current=newLeader;
-          setWolfElecting(false);
+          setLeader(newLeader);setWolfElecting(false);
         } else if(bigWolves.length>1&&!alphaJustActivated){
           // più grandi, prima notte o leader morto → elezione
-          getDb().ref(`rooms/${roomCode}/wolfLeader`).remove();
           setWolfLeader(null);wolfLeaderRef.current=null;
+          if(roomCode)getDb().ref(rp('wolfLeader')).remove();
           setWolfElecting(true);
-          getDb().ref(`rooms/${roomCode}/wolfElection`).remove();
+          if(roomCode)getDb().ref(rp('wolfElection')).remove();
         } else if(alphaJustActivated&&bigWolves.length>0){
           // mannaro attivato: il grande preesistente rimane leader (primo della lista)
           const newLeader=bigWolves.find(p=>p.name!==activatedName)?.name||bigWolves[0].name;
-          getDb().ref(`rooms/${roomCode}/wolfLeader`).set(newLeader);
+          getDb().ref(rp('wolfLeader')).set(newLeader);
           setWolfLeader(newLeader);wolfLeaderRef.current=newLeader;
           setWolfElecting(false);
         }
       } else {
         setWolfElecting(false);
       }
-      getDb().ref(`rooms/${roomCode}/wolfSuggestions`).remove();
+      getDb().ref(rp('wolfSuggestions')).remove();
+      getDb().ref(rp('wolfChat')).remove();
+      setWolfChat([]);
     }
     const first=NIGHT_STEPS.find(s=>stepHasPlayer(s,fr))||'lupi';
     setNs(first);setSc('night');
@@ -1902,7 +1997,7 @@ function App(){
   const confSeer=()=>{
     if(vc===null)return;
     const p=players[vc];
-    const eR=(p.role==='mutaforma'&&mutRole)?mutRole:(p.role==='condor'&&conRole)?conRole:p.role;
+    const eR=effRole(p);
     const seen=ROLES[eR]?.seerSees||'villico';
     if(eR==='criceto')setSeerKill(vc);
     setVr({idx:vc,seen,role:eR});
@@ -1922,7 +2017,7 @@ function App(){
   const confNeg=()=>{
     if(negC===null)return;
     const p=players[negC];
-    const eR=(p.role==='mutaforma'&&mutRole)?mutRole:(p.role==='condor'&&conRole)?conRole:p.role;
+    const eR=effRole(p);
     setNegR({idx:negC,role:eR});
     if(gameMode==='multiplayer'){
       const nPlayer=players.find(x=>x.role==='negromante'&&x.alive);
@@ -1976,7 +2071,7 @@ function App(){
     const aT=ov.aT!==undefined?ov.aT:alchT;
     const aTs=ov.aTs!==undefined?ov.aTs:alchTs;
     const guardT=np.findIndex(p=>p.protected);
-    const effRoleOf=(p)=>(p.role==='mutaforma'&&mutRole)?mutRole:(p.role==='condor'&&conRole)?conRole:p.role;
+    const effRoleOf=(p)=>effRole(p);
 
     // block set (arciere)
     const blocked=arcT!==null&&arcT!==undefined?new Set([arcT]):new Set();
@@ -2127,7 +2222,7 @@ function App(){
     let np=players.map((p,i)=>i===vi?{...p,alive:false}:p);
     const vRole=players[vi].role;
     const vEffRole=(vRole==='mutaforma'&&mutRole)?mutRole:(vRole==='condor'&&conRole)?conRole:vRole;
-    const effRoleOf2=(p)=>(p.role==='mutaforma'&&mutRole)?mutRole:(p.role==='condor'&&conRole)?conRole:p.role;
+    const effRoleOf2=(p)=>effRole(p);
     if(vRole==='suicida'){
       const sName=players[vi].name;
       if(sName){
@@ -2222,7 +2317,7 @@ function App(){
 
   // ── NightWrap component ────────────────────────────────────────────────────
   const NW=({color,emoji,title,children})=>(
-    <div className="app night" style={{'--ni-col':color}}><MuteBtn/><div className="astro moon"/>
+    <div className="app night" style={{'--ni-col':color}}><ConnBanner/><MuteBtn/><div className="astro moon"/>
     <div style={{position:'fixed',inset:0,background:`radial-gradient(ellipse 60% 45% at 50% 20%,${color}18 0%,transparent 65%)`,pointerEvents:'none',zIndex:0}}/>
     {diceEv&&(
       <div className="dev-bg" onClick={()=>setDiceEv(null)}>
@@ -2245,6 +2340,18 @@ function App(){
           <button className="dbtn" onClick={()=>setDiceEv(RANDOM_EVENTS[Math.floor(Math.random()*RANDOM_EVENTS.length)])}>🎲 Dado</button>
         </div>
       </div>
+      {(()=>{
+        const _pct=turnTimeout>0?Math.round((turnTimeLeft/turnTimeout)*100):100;
+        const _tc=_pct>50?'#27ae60':_pct>25?'#f39c12':'#e74c3c';
+        const _fmt=s=>`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+        return turnTimeout>0?(
+          <div className="ttimer">
+            <span className="ttimer-label">⏱ TURNO</span>
+            <div className="ttimer-bar-wrap"><div className="ttimer-bar" style={{width:`${_pct}%`,background:_tc}}/></div>
+            <span className="ttimer-val" style={{color:_tc}}>{_fmt(turnTimeLeft)}</span>
+          </div>
+        ):null;
+      })()}
       <div className="night-hdr"><span className="ni-em">{emoji}</span><div className="ni-title">{title}</div></div>
       {(()=>{
         // Progress dots: only steps with active players tonight
@@ -2388,6 +2495,13 @@ function App(){
   };
 
   // ── MUTE BUTTON (always visible) ───────────────────────────────────────────
+  const ConnBanner=()=>(!fbConnected&&gameMode==='multiplayer')?(
+    <div className="conn-banner">
+      <span>⚠️</span>
+      <span>Connessione instabile — riconnessione in corso...</span>
+    </div>
+  ):null;
+
   const MuteBtn=()=>(
     <button className="mute-btn" onClick={()=>setMuted(m=>!m)} title={muted?'Attiva audio':'Disattiva audio'}>
       {muted?'🔇':'🔊'}
@@ -2557,6 +2671,20 @@ function App(){
           disabled={!playerName.trim()||joinLoading} onClick={doJoin}>
           {joinLoading?'Connessione...':'Entra nella Stanza 🚪'}
         </button>
+        <button className="btn btn-outline" style={{width:'100%',padding:10,marginTop:8,fontSize:'.7rem',letterSpacing:'.08em'}}
+          disabled={!playerName.trim()||joinLoading}
+          onClick={async()=>{
+            if(!playerName.trim()||joinLoading)return;
+            setJoinError('');setJoinLoading(true);
+            try{
+              await fbJoinRoom(joinInput,myIdRef.current,playerName.trim(),true);
+              setRoomCode(joinInput);setRoomRole('player');setGameMode('multiplayer');
+              setIsObserver(true);setSc('lobby');
+            }catch(err){setJoinError(err.message||'Errore.');}
+            setJoinLoading(false);
+          }}>
+          👁️ Entra come Spettatore
+        </button>
       </div></div>
     );
   }
@@ -2641,6 +2769,55 @@ function App(){
 
     // Storico notti per il log
     const nightLogEntries=Object.values(mpNightLog||{}).sort((a,b)=>(a.round||0)-(b.round||0));
+
+    // ── OBSERVER VIEW ──────────────────────────────────────────────────────
+    if(isObserver) return(
+      <div className={`app ${isNight?'night':'day'}`}><ConnBanner/><MuteBtn/><div className={`astro ${isNight?'moon':'sun'}`}/>
+      <div className="screen fade" style={{maxWidth:400,paddingTop:16}}>
+        <div style={{textAlign:'center',marginBottom:16}}>
+          <span style={{fontSize:'2rem',display:'block',marginBottom:6}}>👁️</span>
+          <div style={{fontFamily:'Cinzel,serif',fontSize:'.72rem',color:'#6a5a40',letterSpacing:'.18em',marginBottom:4}}>MODALITÀ SPETTATORE</div>
+          <div style={{fontFamily:'Cinzel,serif',fontSize:'.8rem',color:phaseColor}}>{isNight?'🌙 È Notte':isDay?'☀️ È Giorno':isOver?'🏁 Partita Terminata':'⏳ In attesa...'}</div>
+        </div>
+        {isDay&&mpDawn.length>0&&(
+          <div style={{background:'rgba(0,0,0,.25)',border:'1px solid rgba(201,162,39,.15)',borderRadius:12,padding:'12px 16px',marginBottom:14}}>
+            <p style={{fontFamily:'Cinzel,serif',fontSize:'.68rem',color:'#7a6040',letterSpacing:'.12em',marginBottom:10}}>ANNUNCI DELL'ALBA</p>
+            {mpDawn.map((ev,i)=>(
+              <div key={i} style={{display:'flex',alignItems:'flex-start',gap:8,padding:'5px 0',borderBottom:i<mpDawn.length-1?'1px solid rgba(201,162,39,.07)':'none'}}>
+                <span style={{fontSize:'.9rem',flexShrink:0}}>{ev.t==='death'?'💀':ev.t==='revive'?'✝️':'📢'}</span>
+                <span style={{fontSize:'.82rem',color:'#c4a882',lineHeight:1.6}}>{ev.tx}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        {mpAllPlayers.length>0&&(
+          <div style={{background:'rgba(0,0,0,.2)',border:'1px solid rgba(201,162,39,.1)',borderRadius:12,padding:'12px 14px',marginBottom:14}}>
+            <p style={{fontFamily:'Cinzel,serif',fontSize:'.65rem',color:'#6a5030',letterSpacing:'.12em',marginBottom:8}}>GIOCATORI</p>
+            <div style={{display:'flex',flexWrap:'wrap',gap:5}}>
+              {mpAllPlayers.map((p,i)=>(
+                <span key={i} style={{fontSize:'.75rem',padding:'4px 10px',borderRadius:14,background:p.alive?'rgba(46,204,113,.1)':'rgba(0,0,0,.3)',border:`1px solid ${p.alive?'rgba(46,204,113,.25)':'rgba(255,255,255,.05)'}`,color:p.alive?'#7acf8a':'#3a3030',textDecoration:p.alive?'none':'line-through',fontFamily:'Cinzel,serif'}}>{p.name}</span>
+              ))}
+            </div>
+          </div>
+        )}
+        {isNight&&mpCurStep&&<div style={{textAlign:'center',padding:'10px 0',color:'#3a4a7a',fontFamily:'Cinzel,serif',fontSize:'.75rem',letterSpacing:'.1em'}}>🌙 I personaggi agiscono in segreto...</div>}
+        {(isOver||mpGameOver)&&mpGameOver&&(
+          <div style={{marginTop:16}}>
+            <div style={{textAlign:'center',marginBottom:14}}>
+              <span style={{fontSize:'2rem'}}>{mpGameOver.winnerLabel?.split(' ')[0]||'🏁'}</span>
+              <div style={{fontFamily:'Cinzel Decorative,serif',color:mpGameOver.winnerColor||'#c9a227',fontSize:'1rem',marginTop:6}}>{mpGameOver.winnerLabel}</div>
+            </div>
+            {(mpGameOver.players||[]).map((p,i)=>(
+              <div key={i} style={{display:'flex',alignItems:'center',gap:8,padding:'7px 10px',borderRadius:8,background:p.alive?'rgba(46,204,113,.06)':'rgba(0,0,0,.2)',border:`1px solid ${p.alive?'rgba(46,204,113,.15)':'rgba(255,255,255,.04)'}`,marginBottom:5}}>
+                <span style={{fontSize:'1.1rem'}}>{p.emoji||'❓'}</span>
+                <span style={{fontFamily:'Cinzel,serif',fontSize:'.82rem',color:p.alive?'#c4d090':'#4a3830',flex:1,textDecoration:p.alive?'none':'line-through'}}>{p.name}</span>
+                <span style={{fontSize:'.72rem',color:p.color||'#8a7040',fontFamily:'Cinzel,serif'}}>{p.roleName}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div></div>
+    );
 
     return(
       <div className="app night"><MuteBtn/><div className="astro moon"/>
@@ -2790,7 +2967,7 @@ function App(){
                 </div>
                 <button className="btn btn-gold" style={{width:'100%',padding:12}} disabled={mpSelTarget===null}
                   onClick={async()=>{
-                    await fbSet(`rooms/${roomCode}/nightActions/lupi`,{targetIdx:mpSelTarget});
+                    await fbSet(rp('nightActions/lupi'),{targetIdx:mpSelTarget});
                     setMpActionSent(true);
                   }}>⚔️ Conferma Vittima</button>
               </>
@@ -2840,6 +3017,37 @@ function App(){
               </>
             )}
 
+            {/* Chat branco — per tutti i lupi durante il loro turno */}
+            {isWolfTurn&&amWolf&&(
+              <div style={{marginBottom:10}}>
+                {mpWolfChat.length>0&&(
+                  <div style={{background:'rgba(40,0,0,.4)',border:'1px solid rgba(180,40,40,.2)',borderRadius:'10px 10px 0 0',padding:'8px 10px',maxHeight:100,overflowY:'auto'}}>
+                    {mpWolfChat.map((m,i)=>(
+                      <div key={i} style={{fontSize:'.75rem',color:'#c09070',marginBottom:2}}>
+                        <span style={{color:m.name===myRole?.name?'#c9a227':'#e07050',fontFamily:'Cinzel,serif',fontSize:'.7rem'}}>{m.name}: </span>{m.text}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div style={{display:'flex',gap:6,borderRadius:mpWolfChat.length>0?'0 0 10px 10px':'10px',overflow:'hidden',border:'1px solid rgba(180,40,40,.2)',borderTop:mpWolfChat.length>0?'none':'1px solid rgba(180,40,40,.2)'}}>
+                  <input type="text" value={wolfChatInput} onChange={e=>setWolfChatInput(e.target.value.slice(0,60))}
+                    onKeyDown={async e=>{
+                      if(e.key==='Enter'&&wolfChatInput.trim()&&roomCode){
+                        await getDb().ref(rp('wolfChat')).push({name:myRole?.name||'?',text:wolfChatInput.trim(),ts:Date.now()});
+                        setWolfChatInput('');
+                      }
+                    }}
+                    placeholder="Messaggio al branco... (max 60 car)"
+                    style={{flex:1,background:'rgba(60,0,0,.4)',border:'none',borderRight:'1px solid rgba(180,40,40,.2)',padding:'8px 10px',color:'#c4a882',fontFamily:'EB Garamond,serif',fontSize:'.82rem',outline:'none'}}/>
+                  <button style={{background:'rgba(80,10,10,.6)',border:'none',padding:'8px 12px',cursor:'pointer',color:'#e07050',fontSize:'.9rem'}}
+                    onClick={async()=>{
+                      if(!wolfChatInput.trim()||!roomCode)return;
+                      await getDb().ref(rp('wolfChat')).push({name:myRole?.name||'?',text:wolfChatInput.trim(),ts:Date.now()});
+                      setWolfChatInput('');
+                    }}>→</button>
+                </div>
+              </div>
+            )}
             {mpActionSent&&(
               <div style={{textAlign:'center',padding:'8px 0'}}>
                 <span style={{color:'#27ae60',fontSize:'.9rem'}}>✓ </span>
@@ -2964,6 +3172,19 @@ function App(){
                     </div>
                   </div>
                 )}
+                <button style={{width:'100%',marginTop:14,padding:'10px',borderRadius:10,border:'1px solid rgba(201,162,39,.25)',background:recapCopied?'rgba(46,204,113,.12)':'rgba(201,162,39,.06)',color:recapCopied?'#2ecc71':'#8a7040',fontFamily:'Cinzel,serif',fontSize:'.72rem',letterSpacing:'.1em',cursor:'pointer',transition:'all .2s'}}
+                  onClick={()=>{
+                    if(!mpGameOver)return;
+                    const winLabels={lupi:'🐺 I Lupi hanno vinto',villici:'🏘️ Il Villaggio ha vinto',ordine:"⚖️ L'Ordine ha vinto",criceto:'🐹 Il Criceto ha vinto',suicida:'💀 Il Suicida ha vinto'};
+                    const lines=[`🌙 LUPUS`,`${winLabels[mpGameOver.win]||'Partita conclusa'}`,``];
+                    (mpGameOver.players||[]).forEach(p=>{lines.push(`${p.alive?'✅':'💀'} ${p.name} — ${p.emoji||''} ${p.roleName||''}`)});
+                    const txt=lines.join('\n');
+                    if(navigator.clipboard){navigator.clipboard.writeText(txt);}
+                    else{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);}
+                    setRecapCopied(true);setTimeout(()=>setRecapCopied(false),2500);
+                  }}>
+                  {recapCopied?'✓ Copiato!':'📋 Copia Recap'}
+                </button>
               </div>
             </div>
           ):(
@@ -3409,7 +3630,7 @@ function App(){
     const totalPlayers=players.length;
     const allReady=mpReadyCount>=totalPlayers;
     const handleStartNight=()=>{
-      getDb().ref(`rooms/${roomCode}/roleReady`).remove();
+      getDb().ref(rp('roleReady')).remove();
       startNight(players,false,false);
     };
     return(
@@ -3596,9 +3817,8 @@ function App(){
                     {Object.keys(votes).length>0&&(()=>{
                       const winner=Object.entries(votes).sort((a,b)=>b[1]-a[1])[0][0];
                       return(<button className="btn btn-gold" style={{width:'100%',fontSize:'.82rem'}} onClick={()=>{
-                        getDb().ref(`rooms/${roomCode}/wolfLeader`).set(winner);
-                        setWolfLeader(winner);wolfLeaderRef.current=winner;setWolfElecting(false);
-                        getDb().ref(`rooms/${roomCode}/wolfElection`).remove();
+                        setLeader(winner);setWolfElecting(false);
+                        getDb().ref(rp('wolfElection')).remove();
                       }}>✓ {winner} è il Leader</button>);
                     })()}
                   </>);
@@ -3618,8 +3838,19 @@ function App(){
                 {wolfLeader&&<p style={{fontSize:'.7rem',color:'#6a4040',fontStyle:'italic',marginTop:6}}>Leader: <strong style={{color:'#e74c3c'}}>{wolfLeader}</strong> — la scelta finale è sua</p>}
               </div>
             )}
+            {/* Chat lupi lato host — sola lettura */}
+            {gameMode==='multiplayer'&&wolfChat.length>0&&(
+              <div style={{background:'rgba(40,0,0,.4)',border:'1px solid rgba(180,40,40,.2)',borderRadius:10,padding:'8px 12px',marginBottom:10,maxHeight:120,overflowY:'auto'}}>
+                <p style={{fontFamily:'Cinzel,serif',fontSize:'.6rem',color:'#6a3030',letterSpacing:'.12em',marginBottom:5}}>💬 CHAT BRANCO</p>
+                {wolfChat.map((m,i)=>(
+                  <div key={i} style={{fontSize:'.78rem',color:'#c09070',marginBottom:3}}>
+                    <span style={{color:'#e07050',fontFamily:'Cinzel,serif',fontSize:'.72rem'}}>{m.name}: </span>{m.text}
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="nlbl">Chi attaccano i Lupi?</div>
-            <PList players={alive.filter(p=>{const ek=(p.role==='mutaforma'&&mutRole)?mutRole:(p.role==='condor'&&conRole)?conRole:p.role;return!ROLES[ek].wolfTeam&&!ROLES[ek].winsWithWolves&&ek!=='cucciolo';})} sel={wc} onSel={setWc}/>
+            <PList players={alive.filter(p=>{const ek=effRole(p);return!ROLES[ek].wolfTeam&&!ROLES[ek].winsWithWolves&&ek!=='cucciolo';})} sel={wc} onSel={setWc}/>
             <button className="btn btn-gold mb8" onClick={()=>confWolves(false)} disabled={wc===null}>Conferma Vittima</button>
             <button className="btn btn-outline" onClick={()=>confWolves(true)}>Nessuna vittima</button></>
           )}
@@ -4124,6 +4355,16 @@ function App(){
         </div>
       )}
       <div className="screen fade">
+        {/* Timer selector */}
+        <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:10,flexWrap:'wrap'}}>
+          <span style={{fontFamily:'Cinzel,serif',fontSize:'.62rem',color:'#5a4a28',letterSpacing:'.1em'}}>⏱ TIMER TURNO:</span>
+          {[[0,'Off'],[60,'1m'],[180,'3m'],[300,'5m']].map(([val,lbl])=>(
+            <button key={val} onClick={()=>setTurnTimeout(val)}
+              style={{padding:'4px 12px',borderRadius:14,border:`1px solid ${turnTimeout===val?'rgba(201,162,39,.6)':'rgba(201,162,39,.18)'}`,background:turnTimeout===val?'rgba(201,162,39,.15)':'transparent',color:turnTimeout===val?'#c9a227':'#5a4a28',fontFamily:'Cinzel,serif',fontSize:'.65rem',cursor:'pointer',letterSpacing:'.06em'}}>
+              {lbl}
+            </button>
+          ))}
+        </div>
         <div className="dice-row">
           <span className="pill" style={{background:'rgba(200,120,20,.12)',borderColor:'rgba(200,120,20,.28)',color:'#d4821a'}}>☀️ Giorno {round}</span>
           <button className="dbtn" onClick={rollDice}>🎲 Dado</button>
@@ -4333,7 +4574,7 @@ function App(){
     const ttl=isSui?'Il Suicida Vince!':isC?'Il Criceto Mannaro Vince!':isL?'I Lupi Vincono!':isO?"L'Ordine Vince!":isV?'Il Vampiro Regna!':'Il Villaggio Vince!';
     const sub=isSui?'Voleva solo essere condannato. Finalmente qualcuno lo ha ascoltato.':isC?'La piccola creatura solitaria ha sopravvissuto a tutto.':isL?`I lupi hanno preso il controllo di ${vName}.`:isO?`Le forze mistiche dell'Ordine hanno prevalso su ${vName}.`:isV?`Il Vampiro ha corrotto abbastanza anime. ${vName} è nelle sue mani.`:`${vName} ha sconfitto i lupi e può dormire in pace!`;
     const winNote=p=>{
-      const ek=(p.role==='mutaforma'&&mutRole)?mutRole:(p.role==='condor'&&conRole)?conRole:p.role;
+      const ek=effRole(p);
       const er=ROLES[ek];
       if(win==='suicida'&&ek==='suicida'&&!p.alive)return'🏆 Vince';
       if(ek==='corvo'&&p.alive)return'🏆 Sopravvissuto';
@@ -4374,7 +4615,7 @@ function App(){
           const won=pts>0;
           return(
             <div key={p.id} className={`pts-earned${won?' winner':''}`}>
-              {(()=>{const ek=(p.role==='mutaforma'&&mutRole)?mutRole:(p.role==='condor'&&conRole)?conRole:p.role;const er=ROLES[ek];return(
+              {(()=>{const ek=effRole(p);const er=ROLES[ek];return(
               <div style={{display:'flex',alignItems:'center',gap:8}}>
                 <span style={{fontSize:'1rem'}}>{er.emoji}</span>
                 <span style={{textDecoration:!p.alive?'line-through':'none',opacity:!p.alive?.7:1}}>{p.name}</span>
@@ -4389,7 +4630,7 @@ function App(){
 
         <div className="div"/>
         <div className="lbl mb8">Ruoli Rivelati</div>
-        {players.map(p=>{const n=winNote(p);const ek2=(p.role==='mutaforma'&&mutRole)?mutRole:(p.role==='condor'&&conRole)?conRole:p.role;return(
+        {players.map(p=>{const n=winNote(p);const ek2=effRole(p);return(
           <div key={p.id} className={`fr${!p.alive?' fdead':''}`}>
             <span>{ROLES[ek2].emoji}</span>
             <span className="fn" style={{textDecoration:!p.alive?'line-through':'none'}}>{p.name}{sindacoIdx>=0&&players[sindacoIdx]?.id===p.id?'  🏛️':''}</span>
@@ -4401,6 +4642,15 @@ function App(){
           <button className="btn btn-gold" style={{flex:1}} onClick={replayGame}>🔁 Rigioca</button>
           <button className="btn btn-outline" style={{flex:1}} onClick={newGame}>🏠 Nuova Partita</button>
         </div>
+        <button style={{width:'100%',marginTop:8,padding:'10px',borderRadius:10,border:'1px solid rgba(201,162,39,.25)',background:recapCopied?'rgba(46,204,113,.12)':'rgba(201,162,39,.06)',color:recapCopied?'#2ecc71':'#8a7040',fontFamily:'Cinzel,serif',fontSize:'.72rem',letterSpacing:'.1em',cursor:'pointer',transition:'all .2s'}}
+          onClick={()=>{
+            const txt=generateRecap();
+            if(navigator.clipboard){navigator.clipboard.writeText(txt);}
+            else{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);}
+            setRecapCopied(true);setTimeout(()=>setRecapCopied(false),2500);
+          }}>
+          {recapCopied?'✓ Copiato negli appunti!':'📋 Copia Recap Partita'}
+        </button>
 
         {/* ── LOG NOTTURNO: TABELLA MATRICE ── */}
         {gameLog.length>0&&(
@@ -4440,7 +4690,7 @@ function App(){
                   </thead>
                   <tbody>
                     {players.map((p,pi)=>{
-                      const ek=(p.role==='mutaforma'&&mutRole)?mutRole:(p.role==='condor'&&conRole)?conRole:p.role;
+                      const ek=effRole(p);
                       const R2=ROLES[ek]||ROLES.villico;
                       const di=deathInfo[pi];
                       return(
