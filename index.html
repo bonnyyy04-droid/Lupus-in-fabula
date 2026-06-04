@@ -1290,6 +1290,7 @@ function App(){
   const [mpWolfSuggest,setMpWolfSuggest]=useState(null);  // suggerimento inviato dal player
   const [wolfElecting,setWolfElecting]=useState(false);   // prima notte: elezione leader
   const wolfLeaderRef=useRef(null);
+  const [mpWolfLeaderName,setMpWolfLeaderName]=useState(null); // stato reattivo wolfLeader lato player
   const [fbConnected,setFbConnected]=useState(true);     // Firebase connected status
   const [wolfChat,setWolfChat]=useState([]);         // messaggi chat lupi (host)
   const [mpWolfChat,setMpWolfChat]=useState([]);     // messaggi chat lupi (player)
@@ -1516,7 +1517,7 @@ function App(){
       if(s==='replay'){
         setMyRole(null);setMpGameOver(null);setMpPhase(null);setMpDawn([]);
         setMpCurStep(null);setMpAlive([]);setMpActionSent(false);setMpIsAlive(true);
-        setMpRoleReady(false);setMpWolfSuggest(null);
+        setMpRoleReady(false);setMpWolfSuggest(null);setMpWolfLeaderName(null);
         setMpVoteOpen(false);setMpVoteTarget(null);setMpVotedTarget(null);
         setMpIsSilenced(false);setMpNotif(null);setMpNightLog({});
         setSc('playerWait');
@@ -1563,10 +1564,10 @@ function App(){
     }
   },[sc,roomCode,gameMode]);
 
-  // ── HOST: timeout turno notte ────────────────────────────────────────────
+  // ── HOST: timer fase di giorno (discussione) ─────────────────────────────
   useEffect(()=>{
     if(turnTimerRef.current)clearInterval(turnTimerRef.current);
-    if(!turnTimeout||sc!=='night'||!ns)return;
+    if(!turnTimeout||sc!=='day')return;
     setTurnTimeLeft(turnTimeout);
     turnTimerRef.current=setInterval(()=>{
       setTurnTimeLeft(t=>{
@@ -1575,7 +1576,7 @@ function App(){
       });
     },1000);
     return()=>clearInterval(turnTimerRef.current);
-  },[ns,sc,turnTimeout]);
+  },[sc,turnTimeout]);
 
   // ── HOST: sincronizza eventi alba su Firebase ─────────────────────────────
   useEffect(()=>{
@@ -1590,7 +1591,7 @@ function App(){
   useEffect(()=>{
     if(!roomCode||gameMode!=='multiplayer'||sc!=='night'||!ns)return;
     const alive=players.map((p,i)=>({name:p.name,idx:i})).filter(p=>players[p.idx]?.alive);
-    const all=players.map((p,i)=>({name:p.name,idx:i,alive:p.alive}));
+    const all=players.map((p,i)=>({name:p.name,idx:i,alive:p.alive,role:p.role}));
     const meta={canSelf:ns==='guardia'&&!guardSelfUsed};
     fbSyncStep(roomCode,ns,alive,all,meta);
   },[ns,sc,roomCode,gameMode]);
@@ -1795,7 +1796,7 @@ function App(){
   useEffect(()=>{
     if(!roomCode||roomRole!=='player')return;
     const refL=getDb().ref(rp('wolfLeader'));
-    const hL=snap=>{wolfLeaderRef.current=snap.val();};
+    const hL=snap=>{const v=snap.val();wolfLeaderRef.current=v;setMpWolfLeaderName(v);};
     refL.on('value',hL);
     return()=>refL.off('value',hL);
   },[roomCode,roomRole]);
@@ -2336,22 +2337,13 @@ function App(){
       <div className="dice-row">
         <span className="pill">🌙 Notte {round}</span>
         <div style={{display:'flex',gap:6}}>
+          {gameMode==='multiplayer'&&roomCode&&(
+            <span onClick={()=>navigator.clipboard?.writeText(roomCode)} title="Clicca per copiare" style={{fontFamily:'Cinzel,serif',fontWeight:900,fontSize:'.92rem',letterSpacing:'.22em',color:'#c9a227',padding:'4px 12px',borderRadius:14,background:'rgba(201,162,39,.1)',border:'1px solid rgba(201,162,39,.28)',cursor:'pointer',userSelect:'none'}}>{roomCode}</span>
+          )}
           {canGoBack()&&<button className="dbtn" style={{color:'#a09070',borderColor:'rgba(160,140,90,.3)'}} onClick={goBackNightStep}>← Indietro</button>}
           <button className="dbtn" onClick={()=>setDiceEv(RANDOM_EVENTS[Math.floor(Math.random()*RANDOM_EVENTS.length)])}>🎲 Dado</button>
         </div>
       </div>
-      {(()=>{
-        const _pct=turnTimeout>0?Math.round((turnTimeLeft/turnTimeout)*100):100;
-        const _tc=_pct>50?'#27ae60':_pct>25?'#f39c12':'#e74c3c';
-        const _fmt=s=>`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
-        return turnTimeout>0?(
-          <div className="ttimer">
-            <span className="ttimer-label">⏱ TURNO</span>
-            <div className="ttimer-bar-wrap"><div className="ttimer-bar" style={{width:`${_pct}%`,background:_tc}}/></div>
-            <span className="ttimer-val" style={{color:_tc}}>{_fmt(turnTimeLeft)}</span>
-          </div>
-        ):null;
-      })()}
       <div className="night-hdr"><span className="ni-em">{emoji}</span><div className="ni-title">{title}</div></div>
       {(()=>{
         // Progress dots: only steps with active players tonight
@@ -2915,9 +2907,9 @@ function App(){
         {/* Night action UI */}
         {isNight&&mpIsAlive&&myRole&&mpCurStep&&isMyTurn(myRole.role,mpCurStep)&&(()=>{
           const isWolfTurn=mpCurStep==='lupi';
-          const amLeader=isWolfTurn&&myRole.name===wolfLeaderRef.current;
+          const amLeader=isWolfTurn&&myRole.name===mpWolfLeaderName;
           const amWolf=isWolfTurn&&ROLES[myRole.role]?.wolfTeam;
-          const isElecting=isWolfTurn&&amWolf&&!wolfLeaderRef.current;
+          const isElecting=isWolfTurn&&amWolf&&!mpWolfLeaderName;
 
           // Player lista (esclude se stesso e lupi per attacchi)
           const actionTargets=mpAllPlayers.length>0
@@ -2977,7 +2969,7 @@ function App(){
             {isWolfTurn&&amWolf&&!amLeader&&!isElecting&&!mpActionSent&&(
               <>
                 <p style={{fontSize:'.82rem',color:'#c4a882',marginBottom:8,fontStyle:'italic',lineHeight:1.5}}>
-                  {wolfLeaderRef.current?`Il leader è ${wolfLeaderRef.current} — manda il tuo suggerimento:`:'Suggerisci una vittima al leader:'}
+                  {mpWolfLeaderName?`Il leader è ${mpWolfLeaderName} — manda il tuo suggerimento:`:'Suggerisci una vittima al leader:'}
                 </p>
                 <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:12,maxHeight:200,overflowY:'auto'}}>
                   {actionTargets.map(p=>(
@@ -3221,6 +3213,14 @@ function App(){
         )}
 
         <p style={{color:'#3a2a10',fontSize:'.7rem',fontStyle:'italic',textAlign:'center',marginBottom:14}}>🤫 Non mostrare questo schermo agli altri</p>
+
+        {roomCode&&(
+          <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,marginBottom:14,padding:'8px 14px',background:'rgba(201,162,39,.05)',border:'1px solid rgba(201,162,39,.15)',borderRadius:10}} onClick={()=>navigator.clipboard?.writeText(roomCode)} title="Clicca per copiare">
+            <span style={{fontFamily:'Cinzel,serif',fontSize:'.62rem',letterSpacing:'.14em',color:'#5a4a20',textTransform:'uppercase'}}>Stanza</span>
+            <span style={{fontFamily:'Cinzel,serif',fontWeight:900,fontSize:'1.1rem',letterSpacing:'.3em',color:'#c9a227',cursor:'pointer'}}>{roomCode}</span>
+            <span style={{fontSize:'.6rem',color:'#3a2a10',fontStyle:'italic'}}>tieni nota</span>
+          </div>
+        )}
 
         <button className="btn btn-outline" style={{fontSize:'.75rem',width:'100%'}}
           onClick={()=>{fbLeaveRoom(roomCode,myIdRef.current);newGame();}}>
@@ -4365,9 +4365,26 @@ function App(){
             </button>
           ))}
         </div>
+        {(()=>{
+          const _pct=turnTimeout>0&&turnTimeLeft>0?Math.round((turnTimeLeft/turnTimeout)*100):0;
+          const _tc=_pct>50?'#27ae60':_pct>25?'#f39c12':'#e74c3c';
+          const _fmt=s=>`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+          return turnTimeout>0&&turnTimeLeft>0?(
+            <div className="ttimer">
+              <span className="ttimer-label">⏱ DISCUSSIONE</span>
+              <div className="ttimer-bar-wrap"><div className="ttimer-bar" style={{width:`${_pct}%`,background:_tc}}/></div>
+              <span className="ttimer-val" style={{color:_tc}}>{_fmt(turnTimeLeft)}</span>
+            </div>
+          ):null;
+        })()}
         <div className="dice-row">
           <span className="pill" style={{background:'rgba(200,120,20,.12)',borderColor:'rgba(200,120,20,.28)',color:'#d4821a'}}>☀️ Giorno {round}</span>
-          <button className="dbtn" onClick={rollDice}>🎲 Dado</button>
+          <div style={{display:'flex',gap:6,alignItems:'center'}}>
+            {gameMode==='multiplayer'&&roomCode&&(
+              <span onClick={()=>navigator.clipboard?.writeText(roomCode)} title="Clicca per copiare" style={{fontFamily:'Cinzel,serif',fontWeight:900,fontSize:'.92rem',letterSpacing:'.22em',color:'#c9a227',padding:'4px 12px',borderRadius:14,background:'rgba(201,162,39,.1)',border:'1px solid rgba(201,162,39,.28)',cursor:'pointer',userSelect:'none'}}>{roomCode}</span>
+            )}
+            <button className="dbtn" onClick={rollDice}>🎲 Dado</button>
+          </div>
         </div>
         <div style={{textAlign:'center',marginBottom:20}}>
           <span style={{fontSize:'2.8rem',display:'block',marginBottom:6,filter:'drop-shadow(0 0 20px rgba(210,120,10,.35))'}}>☀️</span>
