@@ -1232,6 +1232,10 @@ function App(){
   const [avvRm,setAvvRm]=useState(null);
 
   const [de,setDe]=useState([]);
+  const [wolvesConfirmed,setWolvesConfirmed]=useState(false); // undo lupi
+  const [ballottaggio,setBallottaggio]=useState(null); // {cA: idx, cB: idx} | null
+  const [ballVotes,setBallVotes]=useState({}); // {playerIdx: candidateIdx} votes during runoff
+  const [ballPickingB,setBallPickingB]=useState(false); // picking second tied candidate
   const [suicidaWonInfo,setSuicidaWonInfo]=useState(null);
   const [vi,setVi]=useState(null);
   const [win,setWin]=useState(null);
@@ -1932,7 +1936,7 @@ function App(){
 
   const nextReveal=()=>{if(ri+1<players.length){setRi(r=>r+1);setRv(false);}else startNight(players,false,false);};
 
-  const resetNight=()=>{setGc(null);setWc(null);setVc(null);setVr(null);setMc(null);setAc(null);setCusC(null);setNegC(null);setNegR(null);setPirC(null);setAccC(null);setAccR(null);setAlchAct(null);setAlchT(null);setAlchTs([]);setMutC(null);setConC(null);setCorC(null);setSeerKill(null);setFunamboloCoin(null);setVampC(null);setAraldoCands([]);setSuicidaWonInfo(null);setMimicSel(null);setMimicPhase('select');setMimicData(null);setMutShowReveal(false);setConShowReveal(false);setLupoAlphaActivatedName(null);};
+  const resetNight=()=>{setGc(null);setWc(null);setVc(null);setVr(null);setMc(null);setAc(null);setCusC(null);setNegC(null);setNegR(null);setPirC(null);setAccC(null);setAccR(null);setAlchAct(null);setAlchT(null);setAlchTs([]);setMutC(null);setConC(null);setCorC(null);setSeerKill(null);setFunamboloCoin(null);setVampC(null);setAraldoCands([]);setSuicidaWonInfo(null);setMimicSel(null);setMimicPhase('select');setMimicData(null);setMutShowReveal(false);setConShowReveal(false);setLupoAlphaActivatedName(null);setWolvesConfirmed(false);};
 
   const startNight=(ps,ca,cf)=>{
     let fr=ps.map(p=>({...p,protected:false}));
@@ -1994,7 +1998,22 @@ function App(){
   const skipArc=()=>{setAc(null);advance('arciere',players,{arcT:null});};
   const confCus=()=>{if(cusC===null)return;setSilenced(cusC);advance('custode',players);};
   const skipCus=()=>{advance('custode',players);};
-  const confWolves=(none=false)=>{const t=none?null:wc;advance('lupi',players,{wt:t});};
+  const [pendingWolfTarget,setPendingWolfTarget]=useState(null); // null=not confirmed yet, 'none'=no victim, number=victim idx
+  const confWolves=(none=false)=>{
+    const t=none?'none':(wc!==null?wc:null);
+    if(t===null)return;
+    setPendingWolfTarget(t);
+    setWolvesConfirmed(true);
+  };
+  const undoWolves=()=>{
+    setPendingWolfTarget(null);
+    setWolvesConfirmed(false);
+    setWc(null);
+  };
+  const proceedFromWolves=()=>{
+    const t=pendingWolfTarget==='none'?null:pendingWolfTarget;
+    advance('lupi',players,{wt:t});
+  };
   const confSeer=()=>{
     if(vc===null)return;
     const p=players[vc];
@@ -2245,7 +2264,7 @@ function App(){
       np=np.map(p=>p.role==='cappuccetto'?{...p,alive:true}:p);
       setCappKilled(false);
     }
-    setOrfanoEff(false);setSilenced(null);setAvvRm(null);
+    setOrfanoEff(false);setSilenced(null);setAvvRm(null);setBallottaggio(null);setBallVotes(null);setBallPickingB(false);
     setGameLog(prev=>{if(!prev.length)return prev;const a=[...prev];a[a.length-1]={...a[a.length-1],voteVictim:vi};return a;});
     setPlayers(np);
     const w=checkWin(np,ordineMode,vampPrede,mutRole,conRole);
@@ -2259,7 +2278,7 @@ function App(){
     }
   };
 
-  const skipVote=()=>{setOrfanoEff(false);setSilenced(null);setAvvRm(null);setRound(r=>r+1);startNight(players,cAlone,cFirst);};
+  const skipVote=()=>{setOrfanoEff(false);setSilenced(null);setAvvRm(null);setBallottaggio(null);setBallVotes({});setBallPickingB(false);setRound(r=>r+1);startNight(players,cAlone,cFirst);};
 
   // ── DERIVED ────────────────────────────────────────────────────────────────
   const alive=players.map((p,i)=>({...p,_i:i})).filter(p=>p.alive);
@@ -2272,46 +2291,36 @@ function App(){
   };
 
   // ── NIGHT BACK ───────────────────────────────────────────────────────────────
+  const resetStep=(step)=>{
+    if(step==='guardia'){setGc(null);setPlayers(ps=>ps.map(p=>({...p,protected:false})));}
+    if(step==='meretrice')setMc(null);
+    if(step==='lupi')setWc(null);
+    if(step==='veggente'){setVc(null);setVr(null);}
+    if(step==='arciere')setAc(null);
+    if(step==='custode')setCusC(null);
+    if(step==='negromante'){setNegC(null);setNegR(null);}
+    if(step==='accusatore'){setAccC(null);setAccR(null);}
+    if(step==='piromane')setPirC(null);
+    if(step==='alchimista'){setAlchAct(null);setAlchT(null);setAlchTs([]);setAlchUsed(false);}
+    if(step==='araldo')setAraldoCands([]);
+    if(step==='funambolo')setFunamboloCoin(null);
+    if(step==='mutaforma'){setMutC(null);setMutShowReveal(false);setMimicSel(null);setMimicData(null);setMimicPhase('select');}
+    if(step==='condor'){setConC(null);setConShowReveal(false);setMimicSel(null);setMimicData(null);setMimicPhase('select');}
+    if(step==='corvo')setCorC(null);
+    if(step==='vampiro'){setVampC(null);}
+  };
   const goBackNightStep=()=>{
-    // Smart back: if in a sub-phase of current step, reset to start of current step first
-    if(ns==='veggente'&&vr!==null){setVc(null);setVr(null);return;}
-    if(ns==='negromante'&&negR!==null){setNegC(null);setNegR(null);return;}
-    if(ns==='accusatore'&&accR!==null){setAccC(null);setAccR(null);return;}
-    if((ns==='mutaforma'||ns==='condor')&&mimicPhase==='result'){setMimicSel(null);setMimicData(null);setMimicPhase('select');return;}
-    if(ns==='mutaforma'&&mutShowReveal){setMutShowReveal(false);setMutC(null);return;}
-    if(ns==='condor'&&conShowReveal){setConShowReveal(false);setConC(null);return;}
-    if(ns==='alchimista'&&alchAct!==null&&alchT===null&&alchTs.length===0){setAlchAct(null);setAlchUsed(false);return;}
-    // Go to previous step
+    // Always go directly to previous step (reset current step first if needed)
+    resetStep(ns);
     const available=NIGHT_STEPS.filter(s=>stepHasPlayer(s,players));
     const idx=available.indexOf(ns);
     if(idx<=0)return;
     const prev=available[idx-1];
+    resetStep(prev);
     setNs(prev);
     setShowStepHint(false);
-    if(prev==='guardia'){setGc(null);setPlayers(ps=>ps.map(p=>({...p,protected:false})));}
-    if(prev==='meretrice')setMc(null);
-    if(prev==='lupi')setWc(null);
-    if(prev==='veggente'){setVc(null);setVr(null);}
-    if(prev==='arciere')setAc(null);
-    if(prev==='custode')setCusC(null);
-    if(prev==='negromante'){setNegC(null);setNegR(null);}
-    if(prev==='accusatore'){setAccC(null);setAccR(null);}
-    if(prev==='piromane')setPirC(null);
-    if(prev==='alchimista'){setAlchAct(null);setAlchT(null);setAlchTs([]);setAlchUsed(false);}
-    if(prev==='araldo')setAraldoCands([]);
-    if(prev==='funambolo')setFunamboloCoin(null);
-    if(prev==='mutaforma'){setMutC(null);setMutShowReveal(false);setMimicSel(null);setMimicData(null);setMimicPhase('select');}
-    if(prev==='condor'){setConC(null);setConShowReveal(false);setMimicSel(null);setMimicData(null);setMimicPhase('select');}
-    if(prev==='corvo')setCorC(null);
   };
   const canGoBack=()=>{
-    if(ns==='veggente'&&vr!==null)return true;
-    if(ns==='negromante'&&negR!==null)return true;
-    if(ns==='accusatore'&&accR!==null)return true;
-    if((ns==='mutaforma'||ns==='condor')&&mimicPhase==='result')return true;
-    if(ns==='mutaforma'&&mutShowReveal)return true;
-    if(ns==='condor'&&conShowReveal)return true;
-    if(ns==='alchimista'&&alchAct!==null&&alchT===null&&alchTs.length===0)return true;
     const available=NIGHT_STEPS.filter(s=>stepHasPlayer(s,players));
     return available.indexOf(ns)>0;
   };
@@ -3484,25 +3493,94 @@ function App(){
         {(()=>{
           const soloKeys=['suicida','criceto','piromane','corvo','misantropo','vampiro','orfano','funambolo'];
           const ordineKeys=['veggente','negromante','alchimista','custode','araldo','condor','mutaforma','accusatore'];
+          const wolfKeys=['lupo','cucciolo','lupoAlpha'];
           const tSolo=soloKeys.reduce((s,k)=>s+(dist[k]||0),0);
           const tOrd=ordineKeys.reduce((s,k)=>s+(dist[k]||0),0);
           const tVill=Math.max(0,villici);
           const tAll=tw+tSolo+tOrd+tVill;
           if(tAll===0)return null;
-          return(<div style={{marginBottom:14}}>
-            <div style={{display:'flex',height:8,borderRadius:4,overflow:'hidden',marginBottom:8}}>
-              {tw>0&&<div style={{flex:tw,background:'#c0392b',opacity:.8}}/>}
-              {tVill>0&&<div style={{flex:tVill,background:'#27ae60',opacity:.7}}/>}
-              {tOrd>0&&<div style={{flex:tOrd,background:'#1abc9c',opacity:.7}}/>}
-              {tSolo>0&&<div style={{flex:tSolo,background:'#9b59b6',opacity:.7}}/>}
+
+          // ── PUNTEGGI FORZA FAZIONE ────────────────────────────────────────
+          // Ogni ruolo ha un peso che rappresenta il suo "valore" tattico
+          const ROLE_POWER={
+            lupo:3.5,cucciolo:2.0,lupoAlpha:2.5,
+            villico:1.0,guardia:2.5,gesu:2.0,romeo:1.5,giulietta:1.5,cappuccetto:1.8,contaminato:1.2,orfano:1.2,
+            veggente:3.0,negromante:2.5,alchimista:3.0,custode:2.5,araldo:2.0,condor:3.5,mutaforma:3.5,accusatore:2.5,avvocato:1.8,
+            suicida:1.5,criceto:2.5,piromane:2.2,corvo:2.0,misantropo:2.0,vampiro:4.0,funambolo:1.5,
+          };
+          // Forza lupi: ogni lupo pesa di più con branco piccolo (sinergia)
+          const wolfPower=wolfKeys.reduce((s,k)=>{
+            const cnt=dist[k]||0;
+            const base=ROLE_POWER[k]||3;
+            // branco da 2+ ha sinergia +0.5 per lupo
+            const synergy=(tw>=2)?0.5:0;
+            return s+cnt*(base+synergy);
+          },0);
+          // Forza villaggio: pure villici + ruoli con potere
+          const villPower=tVill*(ROLE_POWER['villico']||1);
+          const ordPower=ordineKeys.reduce((s,k)=>s+(dist[k]||0)*(ROLE_POWER[k]||2),0);
+          const soloPower=soloKeys.reduce((s,k)=>s+(dist[k]||0)*(ROLE_POWER[k]||2),0);
+          const villageTotal=villPower+ordPower; // ordine combatte con villaggio contro i lupi
+          const total=wolfPower+villageTotal+soloPower||1;
+
+          // ── INDICATORE NUMERICO ───────────────────────────────────────────
+          const wolfScore=Math.round((wolfPower/total)*100);
+          const villScore=Math.round((villageTotal/total)*100);
+          const soloScore=Math.round((soloPower/total)*100);
+          const balance=villScore-wolfScore; // positivo = villaggio favorito
+
+          // ── WARNINGS ─────────────────────────────────────────────────────
+          const warnings=[];
+          if(wolfScore>55)warnings.push({icon:'🐺',txt:'I Lupi sono molto forti — il villaggio avrà vita dura.',col:'#e74c3c'});
+          if(wolfScore<30&&tw>0)warnings.push({icon:'🏘️',txt:'Il villaggio ha un netto vantaggio — considera di aggiungere un Lupo.',col:'#2ecc71'});
+          if(tSolo>=3)warnings.push({icon:'🎭',txt:`${tSolo} ruoli solisti: la partita può diventare imprevedibile.`,col:'#9b59b6'});
+          if((dist['vampiro']||0)>0&&tw>0)warnings.push({icon:'🧛',txt:'Il Vampiro può cambiare gli equilibri a metà partita.',col:'#6c3483'});
+          if((dist['corvo']||0)+(dist['custiode']||0)+(dist['veggente']||0)+(dist['accusatore']||0)>=(tAll*0.4))warnings.push({icon:'🔮',txt:'Molti ruoli informativi: il villaggio ha alta visibilità.',col:'#3498db'});
+          if(tAll>0&&tw===1&&tVill+tOrd+tSolo>=7)warnings.push({icon:'⚖️',txt:'Solo 1 Lupo con molti giocatori: molto difficile per il branco.',col:'#f39c12'});
+
+          // ── SUGGERIMENTO EQUILIBRIO ───────────────────────────────────────
+          let balLabel,balColor;
+          if(balance>30){balLabel='Villaggio favorito';balColor='#2ecc71';}
+          else if(balance>12){balLabel='Equilibrio lieve vantaggio villaggio';balColor='#82c870';}
+          else if(balance>=-12){balLabel='Partita equilibrata';balColor='#c9a227';}
+          else if(balance>=-30){balLabel='Equilibrio lieve vantaggio lupi';balColor='#e87040';}
+          else{balLabel='Lupi favoriti';balColor='#e74c3c';}
+
+          return(
+            <div style={{marginBottom:14,background:'rgba(0,0,0,.25)',border:'1px solid rgba(201,162,39,.14)',borderRadius:12,padding:'14px 14px 12px'}}>
+              {/* ── Barra fazioni ── */}
+              <div style={{display:'flex',height:8,borderRadius:4,overflow:'hidden',marginBottom:8}}>
+                {tw>0&&<div style={{flex:wolfPower,background:'#c0392b',opacity:.85}}/>}
+                {tVill>0&&<div style={{flex:villPower,background:'#27ae60',opacity:.75}}/>}
+                {tOrd>0&&<div style={{flex:ordPower,background:'#1abc9c',opacity:.75}}/>}
+                {tSolo>0&&<div style={{flex:soloPower,background:'#9b59b6',opacity:.75}}/>}
+              </div>
+              {/* ── Score numerici ── */}
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:6,marginBottom:10}}>
+                {[
+                  {label:'🐺 Lupi',score:wolfScore,col:'#e74c3c',show:tw>0},
+                  {label:'🏘️ Villaggio',score:villScore,col:'#2ecc71',show:villageTotal>0},
+                  {label:'🎭 Solisti',score:soloScore,col:'#9b59b6',show:tSolo>0},
+                ].filter(x=>x.show).map(({label,score,col})=>(
+                  <div key={label} style={{textAlign:'center',padding:'7px 4px',borderRadius:8,background:'rgba(0,0,0,.2)',border:`1px solid ${col}22`}}>
+                    <div style={{fontFamily:'Cinzel,serif',fontSize:'1.1rem',color:col,fontWeight:700,lineHeight:1}}>{score}</div>
+                    <div style={{fontSize:'.56rem',color:col,opacity:.7,letterSpacing:'.04em',marginTop:2}}>FORZA %</div>
+                    <div style={{fontSize:'.65rem',color:'#6a5a40',marginTop:2,fontFamily:'Cinzel,serif'}}>{label}</div>
+                  </div>
+                ))}
+              </div>
+              {/* ── Etichetta equilibrio ── */}
+              <div style={{textAlign:'center',fontFamily:'Cinzel,serif',fontSize:'.72rem',color:balColor,letterSpacing:'.08em',marginBottom:warnings.length?10:0,padding:'4px 0',borderTop:'1px solid rgba(255,255,255,.05)',paddingTop:8}}>
+                {balColor==='#c9a227'?'⚖️':balance>12?'🏘️':'🐺'} {balLabel}
+              </div>
+              {/* ── Warnings ── */}
+              {warnings.map((w,i)=>(
+                <div key={i} style={{display:'flex',gap:7,alignItems:'flex-start',padding:'5px 8px',borderRadius:7,background:`${w.col}12`,border:`1px solid ${w.col}33`,marginTop:5,fontSize:'.75rem',color:w.col,lineHeight:1.45}}>
+                  <span style={{flexShrink:0}}>{w.icon}</span><span>{w.txt}</span>
+                </div>
+              ))}
             </div>
-            <div style={{display:'flex',flexWrap:'wrap',gap:'6px 12px',fontSize:'.75rem',fontFamily:'Cinzel,serif',letterSpacing:'.06em'}}>
-              {tw>0&&<span style={{color:'#e74c3c'}}>🐺 {tw} {tw===1?'Lupo':'Lupi'}</span>}
-              {tVill>0&&<span style={{color:'#2ecc71'}}>🧑‍🌾 {tVill} Villici</span>}
-              {tOrd>0&&<span style={{color:'#1abc9c'}}>⚖️ {tOrd} Ordine</span>}
-              {tSolo>0&&<span style={{color:'#9b59b6'}}>🎭 {tSolo} Solisti</span>}
-            </div>
-          </div>);
+          );
         })()}
         {valid&&<p style={{color:'#2ecc71',fontSize:'.84rem',fontStyle:'italic',marginBottom:12,textAlign:'center'}}>✓ Configurazione valida</p>}
 
@@ -3794,6 +3872,19 @@ function App(){
           ):cucBlock?(
             <><div className="instr">🐶 Il Cucciolo ha perso il suo branco. Questa notte non riesce ad agire — dalla prossima potrà uccidere.</div>
             <button className="btn btn-gold" onClick={()=>confWolves(true)}>Notte senza vittima →</button></>
+          ):wolvesConfirmed?(
+            <div style={{animation:'fadeUp .3s ease'}}>
+              <div style={{background:'rgba(231,76,60,.08)',border:'1px solid rgba(231,76,60,.3)',borderRadius:14,padding:'18px 16px',marginBottom:14,textAlign:'center'}}>
+                <div style={{fontSize:'1.6rem',marginBottom:8}}>🐺</div>
+                <div style={{fontFamily:'Cinzel,serif',fontSize:'.82rem',color:'#c9a227',letterSpacing:'.08em',marginBottom:6}}>VITTIMA CONFERMATA</div>
+                <div style={{fontSize:'1.05rem',color:'#e0c080',fontWeight:700,marginBottom:4}}>
+                  {pendingWolfTarget==='none'?'Nessuna vittima stanotte':players[pendingWolfTarget]?.name||'—'}
+                </div>
+                {pendingWolfTarget!=='none'&&<div style={{fontSize:'.75rem',color:'#8a5a4a',fontStyle:'italic'}}>Solo il Narratore vede questo</div>}
+              </div>
+              <button className="btn btn-gold mb8" onClick={proceedFromWolves}>Avanza all'alba →</button>
+              <button className="btn btn-outline" style={{color:'#c0704a',borderColor:'rgba(192,112,74,.4)',fontSize:'.82rem'}} onClick={undoWolves}>↩ Annulla — cambia vittima</button>
+            </div>
           ):(
             <><div className="instr">{cucHere?'Il Cucciolo si è trasformato. Indica la vittima.':'I Lupi si riconoscono e scelgono la vittima in silenzio.'}</div>
             {lupoAlphaActivatedName&&<div style={{fontSize:'.82rem',color:'#e74c3c',fontWeight:600,marginBottom:10,padding:'8px 12px',background:'rgba(231,76,60,.1)',borderRadius:8,border:'1px solid rgba(231,76,60,.3)'}}>🐺 <strong>{lupoAlphaActivatedName}</strong> il Lupo Mannaro si è trasformato stanotte — è ora un Lupo Grande. Chiamatelo nel turno del branco!</div>}
@@ -4523,6 +4614,98 @@ function App(){
             {avvRm!==null&&<p style={{fontSize:'.8rem',color:'#f39c12',fontStyle:'italic',marginBottom:8}}>-1 voto a {players[avvRm].name}</p>}
           </div>
         )}
+
+        {/* ── BALLOTTAGGIO ── */}
+        {ballottaggio?(()=>{
+          const {cA,cB}=ballottaggio;
+          const pA=players[cA],pB=players[cB];
+          if(!pA||!pB)return null;
+          const ballVoters=alive.filter(p=>p._i!==cA&&p._i!==cB&&(silenced===null||p._i!==silenced));
+          const totalBallVotes=Object.values(ballVotes||{}).length;
+          const votesForA=Object.values(ballVotes||{}).filter(v=>v===cA).length;
+          const votesForB=Object.values(ballVotes||{}).filter(v=>v===cB).length;
+          const sindacoBonus=sindacoIdx>=0&&players[sindacoIdx]?.alive;
+          const sindacoIsA=sindacoIdx===cA,sindacoIsB=sindacoIdx===cB;
+          const totA=votesForA+(sindacoIsA?0:0)+(sindacoIdx>=0&&ballVotes&&ballVotes[sindacoIdx]===cA?1:0);
+          const totB=votesForB+(sindacoIsB?0:0)+(sindacoIdx>=0&&ballVotes&&ballVotes[sindacoIdx]===cB?1:0);
+          // sindaco vote counts double
+          const effA=votesForA+(sindacoIdx>=0&&ballVotes&&ballVotes[sindacoIdx]===cA?1:0);
+          const effB=votesForB+(sindacoIdx>=0&&ballVotes&&ballVotes[sindacoIdx]===cB?1:0);
+          const canDecide=totalBallVotes>=ballVoters.length||(totalBallVotes>0);
+          return(
+            <div style={{background:'rgba(192,57,43,.07)',border:'2px solid rgba(192,57,43,.4)',borderRadius:14,padding:'16px',marginBottom:12,animation:'fadeUp .3s ease'}}>
+              <div style={{fontFamily:'Cinzel,serif',fontSize:'.75rem',color:'#e74c3c',letterSpacing:'.15em',marginBottom:12,textAlign:'center'}}>⚖️ BALLOTTAGGIO — PARITA AI VOTI</div>
+              <p style={{fontSize:'.82rem',color:'#8a6040',fontStyle:'italic',marginBottom:12,textAlign:'center'}}>I due candidati alla pari rivotano. <strong>Solo i due in ballottaggio non votano.</strong></p>
+              <div style={{display:'flex',gap:10,marginBottom:14}}>
+                {[{idx:cA,name:pA.name,votes:effA},{idx:cB,name:pB.name,votes:effB}].map(({idx,name,votes})=>(
+                  <div key={idx} style={{flex:1,padding:'12px 10px',borderRadius:10,background:'rgba(0,0,0,.25)',border:'1px solid rgba(192,57,43,.3)',textAlign:'center'}}>
+                    <div style={{fontFamily:'Cinzel,serif',fontSize:'.9rem',color:'#e0c080',marginBottom:4}}>{name}</div>
+                    <div style={{fontSize:'1.5rem',fontWeight:700,color:'#e74c3c'}}>{votes}</div>
+                    <div style={{fontSize:'.65rem',color:'#5a4030',marginTop:2}}>voti</div>
+                    {sindacoIdx>=0&&players[sindacoIdx]?.alive&&sindacoIdx!==cA&&sindacoIdx!==cB&&ballVotes&&ballVotes[sindacoIdx]===idx&&(
+                      <div style={{fontSize:'.65rem',color:'#c9a227',marginTop:4}}>🏛️ +1 (Sindaco)</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <div className="nlbl" style={{marginBottom:8}}>Registra i voti del ballottaggio</div>
+              {ballVoters.map(p=>{
+                const chose=ballVotes&&ballVotes[p._i];
+                const isSind=sindacoIdx===p._i;
+                return(
+                  <div key={p._i} style={{display:'flex',alignItems:'center',gap:8,marginBottom:6,padding:'6px 10px',borderRadius:8,background:'rgba(0,0,0,.18)',border:`1px solid ${chose?'rgba(192,57,43,.35)':'rgba(255,255,255,.06)'}`}}>
+                    <span style={{flex:1,fontFamily:'Cinzel,serif',fontSize:'.82rem',color:chose?'#e0c080':'#6a5040'}}>
+                      {isSind?'🏛️ ':''}{p.name}{isSind?<span style={{fontSize:'.65rem',color:'#c9a227'}}> (voto doppio)</span>:''}
+                    </span>
+                    <button onClick={()=>setBallVotes(bv=>({...bv,[p._i]:cA}))}
+                      style={{padding:'4px 12px',borderRadius:8,border:`1px solid ${chose===cA?'rgba(231,76,60,.6)':'rgba(255,255,255,.1)'}`,background:chose===cA?'rgba(231,76,60,.2)':'transparent',color:chose===cA?'#e74c3c':'#5a4030',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:'.72rem'}}>
+                      {pA.name}
+                    </button>
+                    <button onClick={()=>setBallVotes(bv=>({...bv,[p._i]:cB}))}
+                      style={{padding:'4px 12px',borderRadius:8,border:`1px solid ${chose===cB?'rgba(231,76,60,.6)':'rgba(255,255,255,.1)'}`,background:chose===cB?'rgba(231,76,60,.2)':'transparent',color:chose===cB?'#e74c3c':'#5a4030',cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:'.72rem'}}>
+                      {pB.name}
+                    </button>
+                  </div>
+                );
+              })}
+              <div style={{marginTop:12,display:'flex',gap:8,flexDirection:'column'}}>
+                {(()=>{
+                  if(!canDecide)return null;
+                  // compute effective votes with sindaco double
+                  const bvMap=ballVotes||{};
+                  let scoreA=0,scoreB=0;
+                  ballVoters.forEach(p=>{
+                    const v=bvMap[p._i];
+                    if(v===undefined)return;
+                    const mul=(sindacoIdx>=0&&p._i===sindacoIdx)?2:1;
+                    if(v===cA)scoreA+=mul;
+                    else if(v===cB)scoreB+=mul;
+                  });
+                  if(scoreA===0&&scoreB===0)return null;
+                  if(scoreA>scoreB){
+                    return(<button className="btn btn-red" onClick={()=>{setVi(cA);setBallottaggio(null);setBallVotes({});setElimConfirm(true);}}>
+                      ✓ Elimina {pA.name} ({scoreA} voti)
+                    </button>);
+                  } else if(scoreB>scoreA){
+                    return(<button className="btn btn-red" onClick={()=>{setVi(cB);setBallottaggio(null);setBallVotes({});setElimConfirm(true);}}>
+                      ✓ Elimina {pB.name} ({scoreB} voti)
+                    </button>);
+                  } else {
+                    return(<>
+                      <div style={{fontSize:'.8rem',color:'#8a5040',fontStyle:'italic',textAlign:'center',padding:'6px 0'}}>⚠️ Ancora parità! Il Narratore decide.</div>
+                      <div style={{display:'flex',gap:8}}>
+                        <button className="btn btn-red" style={{flex:1,fontSize:'.82rem'}} onClick={()=>{setVi(cA);setBallottaggio(null);setBallVotes({});setElimConfirm(true);}}>Elimina {pA.name}</button>
+                        <button className="btn btn-red" style={{flex:1,fontSize:'.82rem'}} onClick={()=>{setVi(cB);setBallottaggio(null);setBallVotes({});setElimConfirm(true);}}>Elimina {pB.name}</button>
+                      </div>
+                    </>);
+                  }
+                })()}
+                <button className="btn btn-outline" style={{fontSize:'.78rem',color:'#6a4030',borderColor:'rgba(100,60,40,.3)'}} onClick={()=>{setBallottaggio(null);setBallVotes({});}}>↩ Annulla ballottaggio</button>
+              </div>
+            </div>
+          );
+        })():(
+          <>
         <PList players={alive.filter(p=>{
           if(silenced!==null&&p._i===silenced)return false;
           if(araldoUsed&&araldoCands.length>=2)return araldoCands.includes(p._i)&&(players[araldoCands[0]]?.alive||players[araldoCands[1]]?.alive);
@@ -4541,7 +4724,22 @@ function App(){
             </div>
           </div>
         )}
+        <button className="btn btn-outline mb8" onClick={()=>{
+          setElimConfirm(false);
+          if(vi!==null){setBallPickingB(true);}
+        }} disabled={vi===null} style={{fontSize:'.82rem',color:'#d4821a',borderColor:'rgba(212,130,26,.4)'}}>
+          ⚖️ Parità — Ballottaggio con {vi!==null?players[vi]?.name:'...'}
+        </button>
+        {ballPickingB&&vi!==null&&(
+          <div style={{background:'rgba(212,130,26,.08)',border:'1px solid rgba(212,130,26,.3)',borderRadius:10,padding:'12px 14px',marginBottom:10,animation:'fadeUp .2s ease'}}>
+            <div style={{fontFamily:'Cinzel,serif',fontSize:'.72rem',color:'#d4821a',letterSpacing:'.1em',marginBottom:8}}>Chi è il SECONDO candidato in parità?</div>
+            <PList players={alive.filter(p=>p._i!==vi&&(silenced===null||p._i!==silenced))} sel={null} onSel={i=>{setBallottaggio({cA:vi,cB:i});setBallPickingB(false);setBallVotes({});setVi(null);}}/>
+            <button className="btn btn-outline" style={{marginTop:8,fontSize:'.75rem',color:'#6a4030'}} onClick={()=>setBallPickingB(false)}>Annulla</button>
+          </div>
+        )}
         <button className="btn btn-outline" onClick={()=>{setElimConfirm(false);skipVote();}}>Nessuna eliminazione</button>
+          </>
+        )}
         <div className="div"/>
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
           <div className="lbl" style={{marginBottom:0}}>Stato Giocatori</div>
