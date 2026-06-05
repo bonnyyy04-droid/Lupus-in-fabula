@@ -3052,10 +3052,9 @@ function App(){
           const actionTargets=mpAllPlayers.length>0
             ? mpAllPlayers.filter(p=>p.alive&&p.name!==myRole.name&&(isWolfTurn?!ROLES[p.role||'villico']?.wolfTeam:true))
             : mpAlive.filter(p=>p.name!==myRole.name);
-          // bigWolfTargets: tutti i lupi vivi escluso se stesso (lupo, cucciolo, lupoAlpha)
+          // bigWolfTargets: tutti i lupi grandi vivi incluso se stesso (si può autovotare)
           const bigWolfTargets=mpAllPlayers.filter(p=>
             p.alive &&
-            p.name!==myRole.name &&
             (p.role==='lupo'||p.role==='cucciolo'||p.role==='lupoAlpha')
           );
 
