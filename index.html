@@ -4716,10 +4716,15 @@ function App(){
 
         {/* ── VOTO DIGITALE MULTIPLAYER ── */}
         {gameMode==='multiplayer'&&(()=>{
-          const winner=Object.entries(liveVotes).sort((a,b)=>b[1]-a[1])[0];
+          const sorted=Object.entries(liveVotes).sort((a,b)=>b[1]-a[1]);
+          const topCount=sorted.length>0?sorted[0][1]:0;
+          const topEntries=sorted.filter(([,c])=>c===topCount);
+          const isTie=topEntries.length>1;
+          const winner=!isTie&&sorted[0]?sorted[0]:null;
           const winnerIdx=winner?parseInt(winner[0]):null;
           const winnerName=winnerIdx!=null?players[winnerIdx]?.name:null;
           const totalVotes=Object.values(liveVotes).reduce((s,n)=>s+n,0);
+          const tiedIdxs=isTie?topEntries.map(([i])=>parseInt(i)):[];
           return(
             <div style={{background:'rgba(41,128,185,.06)',border:'1px solid rgba(41,128,185,.22)',borderRadius:14,padding:'14px 16px',marginBottom:16}}>
               <p style={{fontFamily:'Cinzel,serif',fontSize:'.7rem',color:'#3498db',letterSpacing:'.12em',marginBottom:10}}>📱 VOTAZIONE DIGITALE</p>
@@ -4740,19 +4745,34 @@ function App(){
                     if(!p.alive)return null;
                     const count=liveVotes[idx]||0;
                     if(count===0)return null;
-                    const isLeading=idx===winnerIdx;
+                    const isLeading=!isTie&&idx===winnerIdx;
+                    const isTied=isTie&&tiedIdxs.includes(idx);
                     return(
-                      <div key={idx} style={{display:'flex',alignItems:'center',gap:10,padding:'7px 10px',borderRadius:8,marginBottom:5,background:isLeading?'rgba(201,162,39,.1)':'rgba(255,255,255,.02)',border:`1px solid ${isLeading?'rgba(201,162,39,.3)':'rgba(255,255,255,.05)'}`}}>
-                        <span style={{fontFamily:'Cinzel,serif',fontSize:'.88rem',color:isLeading?'#c9a227':'#8a7060',flex:1}}>{p.name}</span>
+                      <div key={idx} style={{display:'flex',alignItems:'center',gap:10,padding:'7px 10px',borderRadius:8,marginBottom:5,background:isTied?'rgba(212,130,26,.1)':isLeading?'rgba(201,162,39,.1)':'rgba(255,255,255,.02)',border:`1px solid ${isTied?'rgba(212,130,26,.4)':isLeading?'rgba(201,162,39,.3)':'rgba(255,255,255,.05)'}`}}>
+                        <span style={{fontFamily:'Cinzel,serif',fontSize:'.88rem',color:isTied?'#d4821a':isLeading?'#c9a227':'#8a7060',flex:1}}>{p.name}{isTied?<span style={{fontSize:'.65rem',color:'#d4821a',marginLeft:6}}>parità</span>:''}</span>
                         <span style={{fontSize:'.85rem'}}>{Array(count).fill('🗳️').join('')}</span>
-                        <span style={{fontFamily:'Cinzel,serif',fontWeight:700,color:isLeading?'#c9a227':'#6a5a40',fontSize:'.9rem'}}>{count}</span>
+                        <span style={{fontFamily:'Cinzel,serif',fontWeight:700,color:isTied?'#d4821a':isLeading?'#c9a227':'#6a5a40',fontSize:'.9rem'}}>{count}</span>
                       </div>
                     );
                   })}
                   {totalVotes===0&&<p style={{color:'#3a4a5a',fontSize:'.8rem',fontStyle:'italic',textAlign:'center',padding:'8px 0'}}>In attesa dei voti...</p>}
-                  <div style={{display:'flex',gap:8,marginTop:12}}>
-                    {winnerName&&(
-                      <button className="btn btn-red" style={{flex:2,padding:10,fontSize:'.85rem'}}
+                  <div style={{display:'flex',gap:8,marginTop:12,flexDirection:'column'}}>
+                    {isTie&&tiedIdxs.length>=2&&(
+                      <button className="btn btn-outline" style={{width:'100%',padding:10,fontSize:'.85rem',color:'#d4821a',borderColor:'rgba(212,130,26,.5)'}}
+                        onClick={()=>{
+                          fbCloseVote(roomCode);
+                          // Avvia ballottaggio tra i primi due in parità
+                          const [cA,cB]=tiedIdxs;
+                          setBallottaggio({cA,cB});
+                          setBallVotes({});
+                          setBallPickingB(false);
+                          if(roomCode&&gameMode==='multiplayer') fbOpenBallot(roomCode,cA,cB,players);
+                        }}>
+                        ⚖️ Parità — Avvia Ballottaggio ({tiedIdxs.map(i=>players[i]?.name).join(' vs ')})
+                      </button>
+                    )}
+                    {!isTie&&winnerName&&(
+                      <button className="btn btn-red" style={{width:'100%',padding:10,fontSize:'.85rem'}}
                         onClick={()=>{
                           fbCloseVote(roomCode);
                           setVi(winnerIdx);
@@ -4761,7 +4781,7 @@ function App(){
                         Elimina {winnerName} ({winner[1]} voti)
                       </button>
                     )}
-                    <button className="btn btn-outline" style={{flex:1,padding:10,fontSize:'.82rem'}}
+                    <button className="btn btn-outline" style={{padding:10,fontSize:'.82rem'}}
                       onClick={()=>{fbCloseVote(roomCode);}}>
                       Chiudi
                     </button>
