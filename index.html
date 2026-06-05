@@ -1099,6 +1099,8 @@ const fbClearStep=code=>{if(code)try{getDb().ref(`rooms/${code}/currentStep`).re
 const fbOpenVote=(code,alivePlayers)=>{if(!code)return;getDb().ref(`rooms/${code}/voting`).set({open:true,votes:null,alivePlayers});};
 const fbCloseVote=code=>{if(code)getDb().ref(`rooms/${code}/voting/open`).set(false);};
 const fbSubmitVote=(code,fbId,targetIdx)=>{if(!code||!fbId)return;return getDb().ref(`rooms/${code}/voting/votes/${fbId}`).set(targetIdx);};
+const fbOpenBallot=(code,cA,cB,players)=>{if(!code)return;getDb().ref(`rooms/${code}/ballot`).set({open:true,cA,cB,nameA:players[cA]?.name||'?',nameB:players[cB]?.name||'?',votes:null});};
+const fbCloseBallot=code=>{if(code)getDb().ref(`rooms/${code}/ballot`).remove();};
 const fbSyncGameOver=(code,recap)=>{if(code)try{fbSet(`rooms/${code}/gameOver`,recap);}catch(e){}};
 const isMyTurn=(role,step)=>{if(!role||!step)return false;if(step==='lupi')return !!ROLES[role]?.wolfTeam;return role===step;};
 
@@ -1373,6 +1375,8 @@ function App(){
   const [mpVoteOpen,setMpVoteOpen]=useState(false);
   const [mpVoteTarget,setMpVoteTarget]=useState(null);    // selezionato (non ancora inviato)
   const [mpVotedTarget,setMpVotedTarget]=useState(null);  // voto confermato
+  const [mpBallot,setMpBallot]=useState(null);            // {open,cA,cB,nameA,nameB} ballottaggio
+  const [mpBallotVoted,setMpBallotVoted]=useState(false); // ha già votato al ballottaggio
   const [mpIsSilenced,setMpIsSilenced]=useState(false);
   const [mpGameOver,setMpGameOver]=useState(null);       // recap finale ricevuto da Firebase
   const [mpNotif,setMpNotif]=useState(null);             // notifica speciale (es. trasformazione lupo)
@@ -1844,7 +1848,28 @@ function App(){
     return()=>ref.off('value',h);
   },[roomCode,roomRole]);
 
-  // ── MULTIPLAYER: monitora connessione Firebase ────────────────────────────
+  // ── HOST: ascolta voti ballottaggio digitali ─────────────────────────────
+  useEffect(()=>{
+    if(!roomCode||gameMode!=='multiplayer'||!ballottaggio)return;
+    const ref=getDb().ref(rp('ballot/votes'));
+    const h=snap=>{
+      const data=snap.val()||{};
+      // Converti {fbId: cIdx} → {playerIdx: cIdx} usando lobbyPlayerMap inverso
+      const invMap={};
+      Object.entries(lobbyPlayerMap).forEach(([name,fbId])=>{
+        const p=players.find(pl=>pl.name===name);
+        if(p!==undefined)invMap[fbId]=players.indexOf(p);
+      });
+      const mapped={};
+      Object.entries(data).forEach(([fbId,cIdx])=>{
+        const pIdx=invMap[fbId];
+        if(pIdx!==undefined)mapped[pIdx]=cIdx;
+      });
+      setBallVotes(prev=>({...prev,...mapped}));
+    };
+    ref.on('value',h);
+    return()=>ref.off('value',h);
+  },[roomCode,gameMode,ballottaggio,lobbyPlayerMap,players]);
   useEffect(()=>{
     if(gameMode!=='multiplayer')return;
     const ref=getDb().ref('.info/connected');
@@ -1918,6 +1943,19 @@ function App(){
       const open=!!snap.val();
       setMpVoteOpen(open);
       if(!open){setMpVoteTarget(null);setMpVotedTarget(null);}
+    };
+    ref.on('value',h);
+    return()=>ref.off('value',h);
+  },[roomCode,roomRole]);
+
+  // ── PLAYER: ascolta ballottaggio ──────────────────────────────────────────
+  useEffect(()=>{
+    if(!roomCode||roomRole!=='player')return;
+    const ref=getDb().ref(rp('ballot'));
+    const h=snap=>{
+      const v=snap.val();
+      setMpBallot(v&&v.open?v:null);
+      if(!v||!v.open){setMpBallotVoted(false);}
     };
     ref.on('value',h);
     return()=>ref.off('value',h);
@@ -3014,7 +3052,12 @@ function App(){
           const actionTargets=mpAllPlayers.length>0
             ? mpAllPlayers.filter(p=>p.alive&&p.name!==myRole.name&&(isWolfTurn?!ROLES[p.role||'villico']?.wolfTeam:true))
             : mpAlive.filter(p=>p.name!==myRole.name);
-          const bigWolfTargets=mpAllPlayers.filter(p=>p.alive&&p.role==='lupo'&&p.name!==myRole.name);
+          // bigWolfTargets: tutti i lupi vivi escluso se stesso (lupo, cucciolo, lupoAlpha)
+          const bigWolfTargets=mpAllPlayers.filter(p=>
+            p.alive &&
+            p.name!==myRole.name &&
+            (p.role==='lupo'||p.role==='cucciolo'||p.role==='lupoAlpha')
+          );
 
           return(
           <div style={{background:amWolf?'rgba(120,20,20,.35)':'rgba(30,50,90,.4)',border:`1px solid ${amWolf?'rgba(200,50,50,.4)':'rgba(60,100,180,.4)'}`,borderRadius:14,padding:'14px 16px',marginBottom:16}}>
@@ -3204,6 +3247,46 @@ function App(){
             <span style={{color:'#6a6a6a',fontSize:'.82rem',fontStyle:'italic'}}>🤐 Sei silenziato — non puoi votare oggi</span>
           </div>
         )}
+
+        {/* Ballottaggio player UI */}
+        {isDay&&mpBallot&&mpBallot.open&&mpIsAlive&&(()=>{
+          const isCandidate=myRole&&(mpBallot.nameA===myRole.name||mpBallot.nameB===myRole.name);
+          const isSilenced=mpIsSilenced;
+          return(
+            <div style={{background:'rgba(192,57,43,.07)',border:'2px solid rgba(192,57,43,.4)',borderRadius:14,padding:'16px',marginBottom:16,animation:'fadeUp .3s ease'}}>
+              <div style={{fontFamily:'Cinzel,serif',fontSize:'.72rem',color:'#e74c3c',letterSpacing:'.15em',marginBottom:10,textAlign:'center'}}>⚖️ BALLOTTAGGIO</div>
+              <p style={{fontSize:'.82rem',color:'#8a6040',fontStyle:'italic',marginBottom:14,textAlign:'center',lineHeight:1.5}}>
+                Parita ai voti tra <strong style={{color:'#e0c080'}}>{mpBallot.nameA}</strong> e <strong style={{color:'#e0c080'}}>{mpBallot.nameB}</strong>.<br/>
+                {isCandidate?'Sei in ballottaggio — non puoi votare.':isSilenced?'Sei silenziato — non puoi votare.':'Vota uno dei due:'}
+              </p>
+              {!isCandidate&&!isSilenced&&!mpBallotVoted&&(
+                <div style={{display:'flex',gap:10,marginBottom:12}}>
+                  {[{name:mpBallot.nameA,cIdx:mpBallot.cA},{name:mpBallot.nameB,cIdx:mpBallot.cB}].map(({name,cIdx})=>(
+                    <button key={cIdx} className="btn btn-red" style={{flex:1,padding:'12px 8px',fontSize:'.82rem'}}
+                      onClick={async()=>{
+                        await getDb().ref(`rooms/${roomCode}/ballot/votes/${myIdRef.current}`).set(cIdx);
+                        setMpBallotVoted(true);
+                      }}>
+                      {name}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {mpBallotVoted&&(
+                <div style={{textAlign:'center',padding:'8px 0'}}>
+                  <p style={{color:'#27ae60',fontSize:'.85rem'}}>✓ Voto inviato — in attesa del risultato</p>
+                </div>
+              )}
+              {(isCandidate||isSilenced)&&(
+                <div style={{textAlign:'center',padding:'8px 0'}}>
+                  <p style={{color:'#6a4040',fontSize:'.82rem',fontStyle:'italic'}}>
+                    {isCandidate?'⚖️ Attendi il risultato del ballottaggio':'🤐 Non puoi votare — attendi il risultato'}
+                  </p>
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Day - vote not open yet */}
         {isDay&&mpIsAlive&&!mpVoteOpen&&(
@@ -4772,25 +4855,26 @@ function App(){
                     else if(v===cB)scoreB+=mul;
                   });
                   if(scoreA===0&&scoreB===0)return null;
+                  const closeBallot=()=>{setBallottaggio(null);setBallVotes({});if(roomCode&&gameMode==='multiplayer')fbCloseBallot(roomCode);};
                   if(scoreA>scoreB){
-                    return(<button className="btn btn-red" onClick={()=>{setVi(cA);setBallottaggio(null);setBallVotes({});setElimConfirm(true);}}>
+                    return(<button className="btn btn-red" onClick={()=>{setVi(cA);closeBallot();setElimConfirm(true);}}>
                       ✓ Elimina {pA.name} ({scoreA} voti)
                     </button>);
                   } else if(scoreB>scoreA){
-                    return(<button className="btn btn-red" onClick={()=>{setVi(cB);setBallottaggio(null);setBallVotes({});setElimConfirm(true);}}>
+                    return(<button className="btn btn-red" onClick={()=>{setVi(cB);closeBallot();setElimConfirm(true);}}>
                       ✓ Elimina {pB.name} ({scoreB} voti)
                     </button>);
                   } else {
                     return(<>
                       <div style={{fontSize:'.8rem',color:'#8a5040',fontStyle:'italic',textAlign:'center',padding:'6px 0'}}>⚠️ Ancora parità! Il Narratore decide.</div>
                       <div style={{display:'flex',gap:8}}>
-                        <button className="btn btn-red" style={{flex:1,fontSize:'.82rem'}} onClick={()=>{setVi(cA);setBallottaggio(null);setBallVotes({});setElimConfirm(true);}}>Elimina {pA.name}</button>
-                        <button className="btn btn-red" style={{flex:1,fontSize:'.82rem'}} onClick={()=>{setVi(cB);setBallottaggio(null);setBallVotes({});setElimConfirm(true);}}>Elimina {pB.name}</button>
+                        <button className="btn btn-red" style={{flex:1,fontSize:'.82rem'}} onClick={()=>{setVi(cA);closeBallot();setElimConfirm(true);}}>Elimina {pA.name}</button>
+                        <button className="btn btn-red" style={{flex:1,fontSize:'.82rem'}} onClick={()=>{setVi(cB);closeBallot();setElimConfirm(true);}}>Elimina {pB.name}</button>
                       </div>
                     </>);
                   }
                 })()}
-                <button className="btn btn-outline" style={{fontSize:'.78rem',color:'#6a4030',borderColor:'rgba(100,60,40,.3)'}} onClick={()=>{setBallottaggio(null);setBallVotes({});}}>↩ Annulla ballottaggio</button>
+                <button className="btn btn-outline" style={{fontSize:'.78rem',color:'#6a4030',borderColor:'rgba(100,60,40,.3)'}} onClick={()=>{setBallottaggio(null);setBallVotes({});if(roomCode&&gameMode==='multiplayer')fbCloseBallot(roomCode);}}>↩ Annulla ballottaggio</button>
               </div>
             </div>
           );
@@ -4823,7 +4907,17 @@ function App(){
         {ballPickingB&&vi!==null&&(
           <div style={{background:'rgba(212,130,26,.08)',border:'1px solid rgba(212,130,26,.3)',borderRadius:10,padding:'12px 14px',marginBottom:10,animation:'fadeUp .2s ease'}}>
             <div style={{fontFamily:'Cinzel,serif',fontSize:'.72rem',color:'#d4821a',letterSpacing:'.1em',marginBottom:8}}>Chi è il SECONDO candidato in parità?</div>
-            <PList players={alive.filter(p=>p._i!==vi&&(silenced===null||p._i!==silenced))} sel={null} onSel={i=>{setBallottaggio({cA:vi,cB:i});setBallPickingB(false);setBallVotes({});setVi(null);}}/>
+            <PList players={alive.filter(p=>p._i!==vi&&(silenced===null||p._i!==silenced))} sel={null} onSel={i=>{
+              setBallottaggio({cA:vi,cB:i});
+              setBallPickingB(false);
+              setBallVotes({});
+              setVi(null);
+              // Sync ballottaggio ai player in multiplayer
+              if(roomCode&&gameMode==='multiplayer'){
+                fbCloseBallot(roomCode); // chiudi eventuale precedente
+                fbOpenBallot(roomCode,vi,i,players);
+              }
+            }}/>
             <button className="btn btn-outline" style={{marginTop:8,fontSize:'.75rem',color:'#6a4030'}} onClick={()=>setBallPickingB(false)}>Annulla</button>
           </div>
         )}
