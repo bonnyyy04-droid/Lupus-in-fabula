@@ -1903,10 +1903,20 @@ function App(){
   useEffect(()=>{
     if(!roomCode||roomRole!=='player')return;
     const refL=getDb().ref(rp('wolfLeader'));
-    const hL=snap=>{const v=snap.val();wolfLeaderRef.current=v;setMpWolfLeaderName(v);};
+    const hL=snap=>{
+      const v=snap.val();
+      const prev=wolfLeaderRef.current;
+      wolfLeaderRef.current=v;
+      setMpWolfLeaderName(v);
+      // Se il leader era null e ora è questo player → era in elezione, ora deve scegliere la vittima
+      if(!prev&&v&&myRole&&v===myRole.name){
+        setMpActionSent(false);
+        setMpSelTarget(null);
+      }
+    };
     refL.on('value',hL);
     return()=>refL.off('value',hL);
-  },[roomCode,roomRole]);
+  },[roomCode,roomRole,myRole]);
 
   // ── HOST: ascolta quanti player hanno confermato il ruolo ────────────────
   useEffect(()=>{
@@ -2073,19 +2083,24 @@ function App(){
       const curLeader=wolfLeaderRef.current;
       const leaderAlive=curLeader&&fr.some(p=>p.alive&&p.name===curLeader);
       if(!leaderAlive){
-        // alpha appena attivato: resta leader preesistente (già grande); altrimenti:
-        if(bigWolves.length===1){
-          // 1 solo grande → lui è leader
+        if(bigWolves.length===0){
+          // Solo cucciolo → diventa automaticamente leader
+          const cub=cubs[0];
+          if(cub){setLeader(cub.name);setWolfElecting(false);}
+          else{setWolfLeader(null);wolfLeaderRef.current=null;getDb().ref(rp('wolfLeader')).remove();setWolfElecting(false);}
+        } else if(bigWolves.length===1){
+          // 1 solo grande → lui è leader automaticamente
           const newLeader=bigWolves[0].name;
           setLeader(newLeader);setWolfElecting(false);
         } else if(bigWolves.length>1&&!alphaJustActivated){
-          // più grandi, prima notte o leader morto → elezione
+          // più grandi, prima notte o leader morto → nuova elezione
           setWolfLeader(null);wolfLeaderRef.current=null;
           if(roomCode)getDb().ref(rp('wolfLeader')).remove();
+          if(roomCode)getDb().ref(rp('wolfSuggestions')).remove();
           setWolfElecting(true);
           if(roomCode)getDb().ref(rp('wolfElection')).remove();
         } else if(alphaJustActivated&&bigWolves.length>0){
-          // mannaro attivato: il grande preesistente rimane leader (primo della lista)
+          // mannaro attivato: il grande preesistente rimane leader
           const newLeader=bigWolves.find(p=>p.name!==activatedName)?.name||bigWolves[0].name;
           getDb().ref(rp('wolfLeader')).set(newLeader);
           setWolfLeader(newLeader);wolfLeaderRef.current=newLeader;
@@ -4069,20 +4084,33 @@ function App(){
                   const votes={};
                   Object.values(wolfSuggestions).forEach(s=>{if(s.leaderVote)votes[s.leaderVote]=(votes[s.leaderVote]||0)+1;});
                   const bigWolvesAlive=players.filter(p=>p.alive&&p.role==='lupo');
+                  const sorted=Object.entries(votes).sort((a,b)=>b[1]-a[1]);
+                  const topCount=sorted.length>0?sorted[0][1]:0;
+                  const topNames=sorted.filter(([,c])=>c===topCount).map(([n])=>n);
+                  const isTie=topNames.length>1;
                   return(<>
                     <div style={{display:'flex',flexDirection:'column',gap:5,marginBottom:10}}>
-                      {bigWolvesAlive.map((p,i)=><div key={i} style={{display:'flex',justifyContent:'space-between',padding:'6px 10px',borderRadius:8,background:'rgba(0,0,0,.2)',border:'1px solid rgba(231,76,60,.2)'}}>
+                      {bigWolvesAlive.map((p,i)=><div key={i} style={{display:'flex',justifyContent:'space-between',padding:'6px 10px',borderRadius:8,background:'rgba(0,0,0,.2)',border:`1px solid ${topNames.includes(p.name)&&sorted.length>0?'rgba(231,76,60,.4)':'rgba(231,76,60,.2)'}`}}>
                         <span style={{fontFamily:'Cinzel,serif',fontSize:'.8rem',color:'#c9a227'}}>{p.name}</span>
                         <span style={{color:'#e74c3c',fontWeight:700}}>{votes[p.name]||0} voti</span>
                       </div>)}
                     </div>
-                    {Object.keys(votes).length>0&&(()=>{
-                      const winner=Object.entries(votes).sort((a,b)=>b[1]-a[1])[0][0];
-                      return(<button className="btn btn-gold" style={{width:'100%',fontSize:'.82rem'}} onClick={()=>{
-                        setLeader(winner);setWolfElecting(false);
-                        getDb().ref(rp('wolfElection')).remove();
-                      }}>✓ {winner} è il Leader</button>);
-                    })()}
+                    {sorted.length>0&&(
+                      isTie?(
+                        <div>
+                          <p style={{fontSize:'.75rem',color:'#d4821a',fontStyle:'italic',marginBottom:8}}>⚖️ Parità tra: {topNames.join(', ')} — i lupi rivotano.</p>
+                          <button className="btn btn-outline" style={{width:'100%',fontSize:'.82rem',color:'#d4821a',borderColor:'rgba(212,130,26,.4)'}} onClick={()=>{
+                            getDb().ref(rp('wolfSuggestions')).remove();
+                            setWolfSuggestions({});
+                          }}>↩ Azzera voti — nuova elezione</button>
+                        </div>
+                      ):(
+                        <button className="btn btn-gold" style={{width:'100%',fontSize:'.82rem'}} onClick={()=>{
+                          setLeader(sorted[0][0]);setWolfElecting(false);
+                          getDb().ref(rp('wolfElection')).remove();
+                        }}>✓ {sorted[0][0]} è il Leader</button>
+                      )
+                    )}
                   </>);
                 })()}
               </div>
