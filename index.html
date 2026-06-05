@@ -13,6 +13,7 @@
   crossorigin onerror="window._loadErr=true"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 firebase.initializeApp({
@@ -24,6 +25,46 @@ firebase.initializeApp({
   messagingSenderId:"693826386316",
   appId:"1:693826386316:web:239257665f82e726ac7ea9"
 });
+
+// ── ANONYMOUS AUTH ────────────────────────────────────────────────────────────
+// Firma anonima all'avvio: l'utente non vede nulla, ma Firebase assegna un UID
+// stabile per sessione che le Security Rules possono verificare.
+// L'UID viene memorizzato in window._fbUid non appena disponibile e sostituisce
+// il vecchio id random da localStorage per tutte le operazioni multiplayer.
+window._fbUid = null;
+window._fbAuthReady = false;
+window._fbAuthCallbacks = [];
+
+firebase.auth().onAuthStateChanged(function(user) {
+  if (user) {
+    window._fbUid = user.uid;
+    window._fbAuthReady = true;
+    window._fbAuthCallbacks.forEach(function(cb){ cb(user.uid); });
+    window._fbAuthCallbacks = [];
+  }
+});
+
+// signInAnonymously con retry: se fallisce (rete assente) riprova dopo 3s
+(function trySignIn(attempt) {
+  firebase.auth().signInAnonymously().catch(function(err) {
+    console.warn('[Auth] signInAnonymously fallito (tentativo ' + attempt + '):', err.code);
+    if (attempt < 5) setTimeout(function(){ trySignIn(attempt + 1); }, 3000);
+    else {
+      // Fallback: usa il vecchio id localStorage — le Security Rules rifiuteranno
+      // le scritture ma il gioco locale continua a funzionare.
+      console.warn('[Auth] Fallback su id locale. Modalità offline limitata.');
+      window._fbAuthReady = true;
+      window._fbAuthCallbacks.forEach(function(cb){ cb(null); });
+      window._fbAuthCallbacks = [];
+    }
+  });
+})(1);
+
+// Utility: esegui cb(uid) quando l'auth è pronta, o subito se già pronta
+window.onFbAuth = function(cb) {
+  if (window._fbAuthReady) { cb(window._fbUid); }
+  else { window._fbAuthCallbacks.push(cb); }
+};
 </script>
 <script>
 // Fallback message if CDN scripts don't load within 9s
@@ -1002,20 +1043,31 @@ const clearGame=()=>{try{localStorage.removeItem(SK);}catch(e){}};
 
 // ── MULTIPLAYER HELPERS ────────────────────────────────────────────────────────
 const PLAYER_KEY='lupus_pid_v1';
-const getMyId=()=>{try{let id=localStorage.getItem(PLAYER_KEY);if(!id){id=Math.random().toString(36).slice(2,10);localStorage.setItem(PLAYER_KEY,id);}return id;}catch(e){return Math.random().toString(36).slice(2,10);}};
+const getMyId=()=>{
+  // Usa l'UID Firebase se disponibile (auth anonima), altrimenti fallback locale
+  if(window._fbUid)return window._fbUid;
+  try{
+    let id=localStorage.getItem(PLAYER_KEY);
+    if(!id){id=Math.random().toString(36).slice(2,10);localStorage.setItem(PLAYER_KEY,id);}
+    return id;
+  }catch(e){return Math.random().toString(36).slice(2,10);}
+};
 const genCode=()=>{const ch='ABCDEFGHJKLMNPQRSTUVWXYZ';return Array.from({length:4},()=>ch[Math.floor(Math.random()*ch.length)]).join('');};
 const getDb=()=>window.firebase.database();
 const fbSet=async(path,val)=>getDb().ref(path).set(val);
 const fbGet=async(path)=>{const s=await getDb().ref(path).once('value');return s.val();};
 const fbCreateRoom=async(code,hostId,mode)=>{
-  await fbSet(`rooms/${code}`,{mode,hostId,status:'lobby',
+  // hostUid = Firebase UID dell'host (usato dalle Security Rules)
+  await fbSet(`rooms/${code}`,{mode,hostId,hostUid:hostId,status:'lobby',
     createdAt:window.firebase.database.ServerValue.TIMESTAMP,players:{}});
 };
 const fbJoinRoom=async(code,playerId,playerName,asObserver=false)=>{
   const room=await fbGet(`rooms/${code}`);
   if(!room)throw new Error('Stanza non trovata.');
   if(room.status==='gameOver')throw new Error('Partita già terminata.');
-  await fbSet(`rooms/${code}/players/${playerId}`,{name:playerName,connected:true,observer:asObserver||false});
+  // Salva anche uid esplicito nel record player: serve alle Security Rules
+  // per verificare "sei già registrato come player in questa stanza"
+  await fbSet(`rooms/${code}/players/${playerId}`,{name:playerName,connected:true,observer:asObserver||false,uid:playerId});
   return room;
 };
 const fbStartGame=async(code)=>fbSet(`rooms/${code}/status`,'playing');
@@ -1296,6 +1348,7 @@ function App(){
   const wolfLeaderRef=useRef(null);
   const [mpWolfLeaderName,setMpWolfLeaderName]=useState(null); // stato reattivo wolfLeader lato player
   const [fbConnected,setFbConnected]=useState(true);     // Firebase connected status
+  const [fbAuthReady,setFbAuthReady]=useState(!!window._fbAuthReady); // auth anonima pronta
   const [wolfChat,setWolfChat]=useState([]);         // messaggi chat lupi (host)
   const [mpWolfChat,setMpWolfChat]=useState([]);     // messaggi chat lupi (player)
   const [wolfChatInput,setWolfChatInput]=useState(''); // input chat lupo player
@@ -1490,6 +1543,22 @@ function App(){
     alchAct,alchT,alchTs,mutC,conC,corC,seerKill,cAlone,cFirst,pirUsed,alchUsed,
     araldoUsed,accLast,gesuDeath,cappKilled,alphaTransf,mutRole,conRole,corvoVotes,
     orfanoEff,silenced,de,vi,win,funamboloCoin,vampPrede,araldoCands,guardSelfUsed]);
+
+  // ── AUTH ANONIMA: aggiorna UID e stato React quando Firebase autentica ────
+  useEffect(()=>{
+    const unsubscribe=window.firebase.auth().onAuthStateChanged(user=>{
+      if(user){
+        myIdRef.current=user.uid;
+        setFbAuthReady(true);
+      }
+    });
+    // Se già pronto al mount, sincronizza subito
+    if(window._fbAuthReady&&window._fbUid){
+      myIdRef.current=window._fbUid;
+      setFbAuthReady(true);
+    }
+    return()=>unsubscribe();
+  },[]);
 
   // ── AUTO-JOIN FROM URL ─────────────────────────────────────────────────────
   useEffect(()=>{
@@ -2600,13 +2669,17 @@ function App(){
           onClick={async()=>{
             if(joinLoading)return;
             setJoinError('');setJoinLoading(true);
-            try{
-              const code=genCode();
-              await fbCreateRoom(code,myIdRef.current,'multiplayer');
-              setRoomCode(code);setRoomRole('host');setGameMode('multiplayer');
-              setSc('lobby');
-            }catch(e){setJoinError('Errore di connessione. Verifica internet.');}
-            setJoinLoading(false);
+            window.onFbAuth(async(uid)=>{
+              // Aggiorna myIdRef con l'UID Firebase prima di creare la stanza
+              if(uid)myIdRef.current=uid;
+              try{
+                const code=genCode();
+                await fbCreateRoom(code,myIdRef.current,'multiplayer');
+                setRoomCode(code);setRoomRole('host');setGameMode('multiplayer');
+                setSc('lobby');
+              }catch(e){setJoinError('Errore di connessione. Verifica internet.');}
+              setJoinLoading(false);
+            });
           }}
           onMouseEnter={e=>!joinLoading&&(e.currentTarget.style.borderColor='rgba(41,128,185,.5)')}
           onMouseLeave={e=>e.currentTarget.style.borderColor='rgba(41,128,185,.22)'}>
@@ -2640,6 +2713,12 @@ function App(){
 
         {joinError&&<p style={{color:'#e74c3c',fontSize:'.8rem',marginTop:10,textAlign:'center',fontStyle:'italic'}}>{joinError}</p>}
         {joinLoading&&<p style={{color:'#5a8a7a',fontSize:'.8rem',marginTop:6,textAlign:'center',fontStyle:'italic'}}>Connessione a Firebase...</p>}
+        {!fbAuthReady&&!joinLoading&&(
+          <p style={{color:'#8a6a30',fontSize:'.75rem',marginTop:8,textAlign:'center',fontStyle:'italic',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+            <span style={{display:'inline-block',width:8,height:8,borderRadius:'50%',background:'#c9a227',animation:'pulse 1.2s ease infinite'}}/>
+            Autenticazione in corso…
+          </p>
+        )}
       </div></div>
     );
   }
@@ -2649,12 +2728,15 @@ function App(){
     const doJoin=async()=>{
       if(!playerName.trim()||joinLoading)return;
       setJoinError('');setJoinLoading(true);
-      try{
-        await fbJoinRoom(joinInput,myIdRef.current,playerName.trim());
-        setRoomCode(joinInput);setRoomRole('player');setGameMode('multiplayer');
-        setSc('lobby');
-      }catch(err){setJoinError(err.message||'Errore durante la connessione.');}
-      setJoinLoading(false);
+      window.onFbAuth(async(uid)=>{
+        if(uid)myIdRef.current=uid;
+        try{
+          await fbJoinRoom(joinInput,myIdRef.current,playerName.trim());
+          setRoomCode(joinInput);setRoomRole('player');setGameMode('multiplayer');
+          setSc('lobby');
+        }catch(err){setJoinError(err.message||'Errore durante la connessione.');}
+        setJoinLoading(false);
+      });
     };
     return(
       <div className="app night"><MuteBtn/><div className="astro moon"/>
