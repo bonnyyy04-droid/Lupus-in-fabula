@@ -60,10 +60,19 @@ firebase.auth().onAuthStateChanged(function(user) {
   });
 })(1);
 
-// Utility: esegui cb(uid) quando l'auth è pronta, o subito se già pronta
-window.onFbAuth = function(cb) {
-  if (window._fbAuthReady) { cb(window._fbUid); }
-  else { window._fbAuthCallbacks.push(cb); }
+// ── waitForAuth: attende l'UID Firebase con timeout 8s ───────────────────────
+// Più robusto di onFbAuth perché usa onAuthStateChanged direttamente
+// e non dipende dal timing di window._fbAuthReady
+window.waitForAuth = function() {
+  return new Promise(function(resolve) {
+    var user = firebase.auth().currentUser;
+    if (user) { resolve(user.uid); return; }
+    var unsub = firebase.auth().onAuthStateChanged(function(u) {
+      if (u) { unsub(); resolve(u.uid); }
+    });
+    // Timeout 8s: fallback a null (Security Rules bloccheranno ma non crasherà)
+    setTimeout(function() { unsub(); resolve(null); }, 8000);
+  });
 };
 </script>
 <script>
@@ -2669,17 +2678,15 @@ function App(){
           onClick={async()=>{
             if(joinLoading)return;
             setJoinError('');setJoinLoading(true);
-            window.onFbAuth(async(uid)=>{
-              // Aggiorna myIdRef con l'UID Firebase prima di creare la stanza
+            try{
+              const uid=await window.waitForAuth();
               if(uid)myIdRef.current=uid;
-              try{
-                const code=genCode();
-                await fbCreateRoom(code,myIdRef.current,'multiplayer');
-                setRoomCode(code);setRoomRole('host');setGameMode('multiplayer');
-                setSc('lobby');
-              }catch(e){setJoinError('Errore di connessione. Verifica internet.');}
-              setJoinLoading(false);
-            });
+              const code=genCode();
+              await fbCreateRoom(code,myIdRef.current,'multiplayer');
+              setRoomCode(code);setRoomRole('host');setGameMode('multiplayer');
+              setSc('lobby');
+            }catch(e){setJoinError('Errore di connessione. Verifica internet.');}
+            setJoinLoading(false);
           }}
           onMouseEnter={e=>!joinLoading&&(e.currentTarget.style.borderColor='rgba(41,128,185,.5)')}
           onMouseLeave={e=>e.currentTarget.style.borderColor='rgba(41,128,185,.22)'}>
@@ -2728,15 +2735,14 @@ function App(){
     const doJoin=async()=>{
       if(!playerName.trim()||joinLoading)return;
       setJoinError('');setJoinLoading(true);
-      window.onFbAuth(async(uid)=>{
+      try{
+        const uid=await window.waitForAuth();
         if(uid)myIdRef.current=uid;
-        try{
-          await fbJoinRoom(joinInput,myIdRef.current,playerName.trim());
-          setRoomCode(joinInput);setRoomRole('player');setGameMode('multiplayer');
-          setSc('lobby');
-        }catch(err){setJoinError(err.message||'Errore durante la connessione.');}
-        setJoinLoading(false);
-      });
+        await fbJoinRoom(joinInput,myIdRef.current,playerName.trim());
+        setRoomCode(joinInput);setRoomRole('player');setGameMode('multiplayer');
+        setSc('lobby');
+      }catch(err){setJoinError(err.message||'Errore durante la connessione.');}
+      setJoinLoading(false);
     };
     return(
       <div className="app night"><MuteBtn/><div className="astro moon"/>
@@ -2760,6 +2766,8 @@ function App(){
             if(!playerName.trim()||joinLoading)return;
             setJoinError('');setJoinLoading(true);
             try{
+              const uid=await window.waitForAuth();
+              if(uid)myIdRef.current=uid;
               await fbJoinRoom(joinInput,myIdRef.current,playerName.trim(),true);
               setRoomCode(joinInput);setRoomRole('player');setGameMode('multiplayer');
               setIsObserver(true);setSc('lobby');
