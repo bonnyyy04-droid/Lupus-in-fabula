@@ -3052,11 +3052,10 @@ function App(){
           const actionTargets=mpAllPlayers.length>0
             ? mpAllPlayers.filter(p=>p.alive&&p.name!==myRole.name&&(isWolfTurn?!ROLES[p.role||'villico']?.wolfTeam:true))
             : mpAlive.filter(p=>p.name!==myRole.name);
-          // bigWolfTargets: tutti i lupi grandi vivi incluso se stesso (si può autovotare)
-          const bigWolfTargets=mpAllPlayers.filter(p=>
-            p.alive &&
-            (p.role==='lupo'||p.role==='cucciolo'||p.role==='lupoAlpha')
-          );
+          // bigWolfTargets: solo i lupi grandi (role==='lupo') incluso se stesso.
+          // Il mannaro non attivato ha ancora role='lupoAlpha' → escluso.
+          // Il cucciolo non è ancora grande → escluso.
+          const bigWolfTargets=mpAllPlayers.filter(p=>p.alive&&p.role==='lupo');
 
           return(
           <div style={{background:amWolf?'rgba(120,20,20,.35)':'rgba(30,50,90,.4)',border:`1px solid ${amWolf?'rgba(200,50,50,.4)':'rgba(60,100,180,.4)'}`,borderRadius:14,padding:'14px 16px',marginBottom:16}}>
