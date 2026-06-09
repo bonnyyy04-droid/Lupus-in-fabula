@@ -2077,6 +2077,12 @@ function App(){
     setGameLog([]);
     if(gameMode==='multiplayer'&&roomCode){
       fbWriteRoles(roomCode,ps,lobbyPlayerMap);
+      if(narratorPlays&&playerName.trim()){
+        // L'host gioca: imposta myRole direttamente dall'array ps (il listener
+        // Firebase non scatta perché roomRole==='host', non 'player')
+        const hostPlayer=ps.find(p=>p.name===playerName.trim());
+        if(hostPlayer)setMyRole({role:hostPlayer.role,name:hostPlayer.name});
+      }
       if(narratorPlays)getDb().ref(`rooms/${roomCode}/noNarrator`).set(true);
       fbSet(rp('phase'),'roleReveal');
       setSc('multiRoleReveal');
@@ -2093,7 +2099,7 @@ function App(){
     setOrdineMode(false);setSindacoIdx(null);setSindacoTmp(null);
     setVampPrede([]);setAraldoCands([]);scoresSavedRef.current=false;setGameLog([]);setModalitaSpeciale(null);setModalitaOpen(false);
     setNarratorPlays(false);setAutoActedCount(0);setAutoTotalCount(0);setHostNightSel(null);setHostNightActed(false);
-    setMpAutoPhase(null);setMpAutoActed(false);setMpAutoCounter({done:0,total:0});
+    setMpAutoPhase(null);setMpAutoActed(false);setMpAutoCounter({done:0,total:0});setMyRole(null);
     if(autoTimer90Ref.current){clearInterval(autoTimer90Ref.current);autoTimer90Ref.current=null;}
     setSc('home');
   };
