@@ -1397,6 +1397,10 @@ function App(){
   const [turnTimeLeft,setTurnTimeLeft]=useState(0);      // secondi rimanenti
   const turnTimerRef=useRef(null);
   const [gameLog,setGameLog]=useState([]);               // [{round,actions:{pidx:{target,type,seerRole}},deaths:{pidx:cause},voteVictim}]
+  // ── AI NARRATOR ───────────────────────────────────────────────────────────
+  const [aiNarration,setAiNarration]=useState(null);     // testo narrazione AI (host)
+  const [aiNarLoading,setAiNarLoading]=useState(false);  // in generazione
+  const [mpAiNarration,setMpAiNarration]=useState(null); // narrazione AI ricevuta (player)
 
   // ── FIRST-TIME GUIDE ──────────────────────────────────────────────────────
   const GUIDE_KEY='lupus_guide_v1';
@@ -2018,6 +2022,15 @@ function App(){
     return()=>ref.off('value',h);
   },[roomCode,roomRole]);
 
+  // ── PLAYER: ascolta narrazione AI (modalità senza narratore) ──────────────
+  useEffect(()=>{
+    if(!roomCode||roomRole!=='player')return;
+    const ref=getDb().ref(`rooms/${roomCode}/aiNarration`);
+    const h=snap=>{setMpAiNarration(snap.val()||null);};
+    ref.on('value',h);
+    return()=>ref.off('value',h);
+  },[roomCode,roomRole]);
+
   // ── PLAYER: ascolta se è silenziato ──────────────────────────────────────
   useEffect(()=>{
     if(!roomCode||roomRole!=='player'||!myRole)return;
@@ -2099,7 +2112,7 @@ function App(){
     setOrdineMode(false);setSindacoIdx(null);setSindacoTmp(null);
     setVampPrede([]);setAraldoCands([]);scoresSavedRef.current=false;setGameLog([]);setModalitaSpeciale(null);setModalitaOpen(false);
     setNarratorPlays(false);setAutoActedCount(0);setAutoTotalCount(0);setHostNightSel(null);setHostNightActed(false);
-    setMpAutoPhase(null);setMpAutoActed(false);setMpAutoCounter({done:0,total:0});setMyRole(null);
+    setMpAutoPhase(null);setMpAutoActed(false);setMpAutoCounter({done:0,total:0});setMyRole(null);setAiNarration(null);setMpAiNarration(null);
     if(autoTimer90Ref.current){clearInterval(autoTimer90Ref.current);autoTimer90Ref.current=null;}
     setSc('home');
   };
@@ -2123,7 +2136,7 @@ function App(){
 
   const nextReveal=()=>{if(ri+1<players.length){setRi(r=>r+1);setRv(false);}else startNight(players,false,false);};
 
-  const resetNight=()=>{setGc(null);setWc(null);setVc(null);setVr(null);setMc(null);setAc(null);setCusC(null);setNegC(null);setNegR(null);setPirC(null);setAccC(null);setAccR(null);setAlchAct(null);setAlchT(null);setAlchTs([]);setMutC(null);setConC(null);setCorC(null);setSeerKill(null);setFunamboloCoin(null);setVampC(null);setAraldoCands([]);setSuicidaWonInfo(null);setMimicSel(null);setMimicPhase('select');setMimicData(null);setMutShowReveal(false);setConShowReveal(false);setLupoAlphaActivatedName(null);setWolvesConfirmed(false);};
+  const resetNight=()=>{setGc(null);setWc(null);setVc(null);setVr(null);setMc(null);setAc(null);setCusC(null);setNegC(null);setNegR(null);setPirC(null);setAccC(null);setAccR(null);setAlchAct(null);setAlchT(null);setAlchTs([]);setMutC(null);setConC(null);setCorC(null);setSeerKill(null);setFunamboloCoin(null);setVampC(null);setAraldoCands([]);setSuicidaWonInfo(null);setMimicSel(null);setMimicPhase('select');setMimicData(null);setMutShowReveal(false);setConShowReveal(false);setLupoAlphaActivatedName(null);setWolvesConfirmed(false);setAiNarration(null);setAiNarLoading(false);};
 
   const startNight=(ps,ca,cf)=>{
     let fr=ps.map(p=>({...p,protected:false}));
@@ -2177,6 +2190,7 @@ function App(){
     const first=NIGHT_STEPS.find(s=>stepHasPlayer(s,fr))||'lupi';
     setNs(first);setSc('night');
     if(gameMode==='multiplayer'&&narratorPlays&&roomCode){
+      getDb().ref(`rooms/${roomCode}/aiNarration`).remove();
       setTimeout(()=>startAutoNight(fr),300);
     }
   };
@@ -2279,7 +2293,8 @@ function App(){
       accRes={idx:accT,isWolf:isW};setAccR(accRes);setAccLast(round);
     }
     getDb().ref(`rooms/${roomCode}/autoNight`).remove();
-    resolve(curP,{wt:wolfT,mt:merT,arcT,pt:pirT,accRes,aAct:aAlchAct,aT:aAlchT,aTs:aAlchTs});
+    const resolvedEvs=resolve(curP,{wt:wolfT,mt:merT,arcT,pt:pirT,accRes,aAct:aAlchAct,aT:aAlchT,aTs:aAlchTs});
+    generateAiNarration(resolvedEvs||[],round);
   };
 
   useEffect(()=>{triggerAutoResolveRef.current=resolveAutoNight;});
@@ -2289,6 +2304,44 @@ function App(){
     const rem=NIGHT_STEPS.slice(NIGHT_STEPS.indexOf(doneStep)+1);
     const nxt=rem.find(s=>stepHasPlayer(s,ps));
     if(nxt){setNs(nxt);}else{resolve(ps,ov);}
+  };
+
+  // ── AI NARRATOR ──────────────────────────────────────────────────────────────
+  const generateAiNarration=async(evs,roundNum)=>{
+    if(!narratorPlays||!evs||evs.length===0)return;
+    setAiNarLoading(true);
+    try{
+      // Costruisci sommario degli eventi pubblici (solo fatti visibili a tutti)
+      const publicEvts=evs.map(e=>{
+        if(e.t==='death')return e.tx.replace('💀 ','').replace(" è stato trovato morto all'alba."," è morto durante la notte");
+        if(e.t==='revive')return e.tx.replace(/^[✝️✨]+\s*/,'').replace('!','');
+        if(e.t==='protected')return 'Qualcuno era protetto — gli attacchi della notte non hanno colpito nessuno';
+        if(e.t==='peaceful')return 'La notte è trascorsa in silenzio, senza vittime';
+        return null;
+      }).filter(Boolean).join('; ');
+
+      const resp=await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          model:'claude-sonnet-4-20250514',
+          max_tokens:1000,
+          messages:[{role:'user',content:`Sei il narratore del gioco da tavolo Lupus in Fabula, ambientato in un villaggio medievale tormentato dai lupi mannari.
+Villaggio: "${vName}". È l'alba del Giorno ${roundNum}.
+
+Scrivi un breve annuncio atmosferico (massimo 3 frasi, in italiano, tono medievale gotico suggestivo) che il narratore leggerebbe ad alta voce ai giocatori all'alba.
+Annuncia solo questi eventi pubblici: ${publicEvts}.
+Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Niente emoji. Solo prosa drammatica e coinvolgente. Inizia direttamente con la narrazione, senza preamboli.`}]
+        })
+      });
+      const data=await resp.json();
+      const text=data.content?.[0]?.text?.trim()||null;
+      if(text){
+        setAiNarration(text);
+        if(roomCode&&narratorPlays)getDb().ref(`rooms/${roomCode}/aiNarration`).set(text);
+      }
+    }catch(e){console.warn('[AI Narrator]',e);}
+    setAiNarLoading(false);
   };
 
   // ── NIGHT CONFIRMS ──
@@ -2533,6 +2586,7 @@ function App(){
     const w=checkWin(np,ordineMode,vampPrede,mutRole,conRole);
     if(w){setWin(w);setSc('gameOver');}
     else{setVi(null);setSc('day');}
+    return evs;
   };
 
   // ── VOTE ────────────────────────────────────────────────────────────────────
@@ -3250,6 +3304,15 @@ function App(){
                 <span style={{fontSize:'.82rem',color:'#c4a882',lineHeight:1.6}}>{ev.tx}</span>
               </div>
             ))}
+          </div>
+        )}
+        {/* AI Narrator: annuncio narrativo dell'alba (solo modalità senza narratore) */}
+        {isDay&&narratorPlays&&mpAiNarration&&(
+          <div style={{background:'rgba(100,60,10,.08)',border:'1px solid rgba(180,110,20,.25)',borderRadius:12,padding:'14px 16px',marginBottom:16}}>
+            <div style={{fontFamily:'Cinzel,serif',fontSize:'.58rem',letterSpacing:'.2em',color:'#8a6020',marginBottom:8,textTransform:'uppercase',display:'flex',alignItems:'center',gap:5}}>
+              <span>🖊️</span><span>La Voce del Villaggio</span>
+            </div>
+            <p style={{color:'#d4b878',fontStyle:'italic',lineHeight:1.85,fontSize:'.9rem',margin:0}}>{mpAiNarration}</p>
           </div>
         )}
 
@@ -5088,6 +5151,22 @@ function App(){
             </div>
           )}
         </div>
+        {/* ── AI NARRATOR: annuncio alba (solo modalità senza narratore) ── */}
+        {narratorPlays&&(aiNarLoading||aiNarration)&&(
+          <div style={{background:'rgba(100,60,10,.08)',border:'1px solid rgba(180,110,20,.25)',borderRadius:12,padding:'16px 18px',marginBottom:16}}>
+            <div style={{fontFamily:'Cinzel,serif',fontSize:'.6rem',letterSpacing:'.2em',color:'#8a6020',marginBottom:10,textTransform:'uppercase',display:'flex',alignItems:'center',gap:6}}>
+              <span>🖊️</span><span>La Voce del Villaggio</span>
+            </div>
+            {aiNarLoading?(
+              <div style={{display:'flex',alignItems:'center',gap:8,color:'#7a5a30',fontStyle:'italic',fontSize:'.88rem'}}>
+                <span style={{display:'inline-block',width:7,height:7,borderRadius:'50%',background:'#c9a227',animation:'pulse 1.2s ease infinite'}}/>
+                Il narratore sta componendo l'annuncio…
+              </div>
+            ):(
+              <p style={{color:'#d4b878',fontStyle:'italic',lineHeight:1.9,fontSize:'.95rem',margin:0}}>{aiNarration}</p>
+            )}
+          </div>
+        )}
         <div className="lbl mb8">Cosa è successo stanotte</div>
         {de.map((e,i)=><div key={i} className={`ev ev-${e.t}`}>{e.tx}</div>)}
         {silName&&<div className="ev ev-info">🤫 <strong>{silName}</strong> è silenziato — non può parlare né votare oggi.</div>}
