@@ -1902,6 +1902,15 @@ function App(){
     return()=>ref.off('value',h);
   },[roomCode,gameMode]);
 
+  // ── AUTO MODE: leggi flag noNarrator da Firebase (player e host) ──────────
+  useEffect(()=>{
+    if(!roomCode)return;
+    const ref=getDb().ref(`rooms/${roomCode}/noNarrator`);
+    const h=snap=>{if(snap.val()===true)setNarratorPlays(true);};
+    ref.on('value',h);
+    return()=>ref.off('value',h);
+  },[roomCode]);
+
   // ── AUTO MODE: leggi noNarrator da Firebase ───────────────────────────────
   useEffect(()=>{
     if(!roomCode)return;
@@ -1925,6 +1934,24 @@ function App(){
     if(!roomCode||roomRole!=='player')return;
     const ref=getDb().ref(`rooms/${roomCode}/autoNight/phase`);
     const h=snap=>{const v=snap.val();setMpAutoPhase(v);if(!v){setMpAutoActed(false);}};
+    ref.on('value',h);
+    return()=>ref.off('value',h);
+  },[roomCode,roomRole]);
+
+  // ── AUTO MODE: counter Firebase → aggiorna autoActedCount/Total (host) ────
+  useEffect(()=>{
+    if(!roomCode||!narratorPlays)return;
+    const ref=getDb().ref(`rooms/${roomCode}/autoNight/counter`);
+    const h=snap=>{const v=snap.val()||{done:0,total:0};setAutoActedCount(v.done||0);setAutoTotalCount(v.total||0);setMpAutoCounter({done:v.done||0,total:v.total||0});};
+    ref.on('value',h);
+    return()=>ref.off('value',h);
+  },[roomCode,narratorPlays]);
+
+  // ── AUTO MODE: phase Firebase → reset mpAutoActed sul player ─────────────
+  useEffect(()=>{
+    if(!roomCode||roomRole!=='player')return;
+    const ref=getDb().ref(`rooms/${roomCode}/autoNight/phase`);
+    const h=snap=>{const v=snap.val();setMpAutoPhase(v);if(!v){setMpAutoActed(false);setMpSelTarget(null);}};
     ref.on('value',h);
     return()=>ref.off('value',h);
   },[roomCode,roomRole]);
@@ -2112,7 +2139,8 @@ function App(){
     setOrdineMode(false);setSindacoIdx(null);setSindacoTmp(null);
     setVampPrede([]);setAraldoCands([]);scoresSavedRef.current=false;setGameLog([]);setModalitaSpeciale(null);setModalitaOpen(false);
     setNarratorPlays(false);setAutoActedCount(0);setAutoTotalCount(0);setHostNightSel(null);setHostNightActed(false);
-    setMpAutoPhase(null);setMpAutoActed(false);setMpAutoCounter({done:0,total:0});setMyRole(null);setAiNarration(null);setMpAiNarration(null);
+    setMpAutoPhase(null);setMpAutoActed(false);setMpAutoCounter({done:0,total:0});
+    setAiNarration(null);setMpAiNarration(null);setAiNarLoading(false);setMyRole(null);setAiNarration(null);setMpAiNarration(null);
     if(autoTimer90Ref.current){clearInterval(autoTimer90Ref.current);autoTimer90Ref.current=null;}
     setSc('home');
   };
@@ -4256,6 +4284,12 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
       <div className="screen fade">
         <h1 className="title" style={{fontSize:'1.3rem',marginBottom:4}}>Ruoli Assegnati</h1>
         <p className="subtitle" style={{marginBottom:20}}>{vName}</p>
+        {narratorPlays&&(
+          <div style={{background:'rgba(142,68,173,.1)',border:'1px solid rgba(142,68,173,.35)',borderRadius:12,padding:'12px 16px',marginBottom:16,textAlign:'center'}}>
+            <div style={{fontFamily:'Cinzel,serif',fontSize:'.65rem',color:'#c39bd3',letterSpacing:'.14em',marginBottom:4}}>🎭 MODALITÀ SENZA NARRATORE</div>
+            <p style={{fontSize:'.76rem',color:'#8a6a9a',lineHeight:1.6,fontStyle:'italic',margin:0}}>Stanotte ogni personaggio agirà in autonomia dal proprio telefono. Aspetta che tutti abbiano agito prima di scoprire l'esito.</p>
+          </div>
+        )}
         <div style={{background:'rgba(201,162,39,.06)',border:'1px solid rgba(201,162,39,.18)',borderRadius:14,padding:'20px 18px',marginBottom:20,textAlign:'center'}}>
           <div style={{fontSize:'2.5rem',marginBottom:10}}>📱</div>
           <p style={{fontFamily:'Cinzel,serif',fontSize:'.82rem',color:'#c8a05a',marginBottom:6}}>Ogni giocatore sta leggendo il proprio ruolo</p>
