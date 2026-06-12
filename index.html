@@ -112,6 +112,27 @@ body{background:var(--n-bg);color:var(--text);font-family:'EB Garamond',serif;fo
   radial-gradient(ellipse 65% 30% at 80% 0%,rgba(30,70,160,.14) 0%,transparent 60%),
   radial-gradient(ellipse 30% 40% at 10% 100%,rgba(50,15,110,.1) 0%,transparent 55%);
   pointer-events:none;z-index:0}
+/* ── STELLE NOTTURNE ── */
+.app.night::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    radial-gradient(1.5px 1.5px at 8% 12%,rgba(255,250,235,.9),transparent 60%),
+    radial-gradient(1px 1px at 22% 28%,rgba(220,230,255,.7),transparent 60%),
+    radial-gradient(1px 1px at 34% 8%,rgba(255,250,235,.8),transparent 60%),
+    radial-gradient(1.5px 1.5px at 47% 19%,rgba(200,215,255,.6),transparent 60%),
+    radial-gradient(1px 1px at 58% 6%,rgba(255,250,235,.75),transparent 60%),
+    radial-gradient(1px 1px at 12% 42%,rgba(220,230,255,.5),transparent 60%),
+    radial-gradient(1.5px 1.5px at 91% 33%,rgba(255,250,235,.7),transparent 60%),
+    radial-gradient(1px 1px at 70% 24%,rgba(255,245,225,.65),transparent 60%),
+    radial-gradient(1px 1px at 40% 36%,rgba(220,230,255,.45),transparent 60%),
+    radial-gradient(1.5px 1.5px at 27% 15%,rgba(255,250,235,.55),transparent 60%),
+    radial-gradient(1px 1px at 63% 14%,rgba(200,215,255,.6),transparent 60%),
+    radial-gradient(1px 1px at 84% 9%,rgba(255,250,235,.7),transparent 60%),
+    radial-gradient(1px 1px at 5% 26%,rgba(255,245,225,.5),transparent 60%),
+    radial-gradient(1.5px 1.5px at 76% 41%,rgba(220,230,255,.4),transparent 60%),
+    radial-gradient(1px 1px at 52% 31%,rgba(255,250,235,.5),transparent 60%),
+    radial-gradient(1px 1px at 96% 21%,rgba(255,250,235,.6),transparent 60%);
+  animation:starTwinkle 6.5s ease-in-out infinite}
+@keyframes starTwinkle{0%,100%{opacity:.4}35%{opacity:.95}60%{opacity:.6}80%{opacity:.85}}
 .app.day::before{content:'';position:fixed;inset:0;background:
   radial-gradient(ellipse 70% 35% at 50% 0%,rgba(180,90,15,.2) 0%,transparent 55%),
   radial-gradient(ellipse 35% 25% at 95% 85%,rgba(100,35,5,.1) 0%,transparent 50%);
@@ -454,8 +475,8 @@ const ROLES = {
   suicida:     {name:'Suicida',              emoji:'🪦',wolfTeam:false,winsWithWolves:false,soloTeam:true, seerSees:'villico',survivesWolf:false,color:'#636e72',bg:'rgba(99,110,114,.10)',  desc:'Nessun potere. Vinci solo se vieni eliminato tramite votazione di giorno.'},
   mutaforma:   {name:'Mutaforma',            emoji:'👤',wolfTeam:false,winsWithWolves:false,soloTeam:true, seerSees:'villico',survivesWolf:false,color:'#bdc3c7',bg:'rgba(189,195,199,.10)', desc:'Dalla seconda notte copi i poteri di un giocatore vivo. Vinci con la fazione del ruolo copiato.'},
   condor:      {name:'Condor',               emoji:'🦅',wolfTeam:false,winsWithWolves:false,soloTeam:true, seerSees:'villico',survivesWolf:false,color:'#d35400',bg:'rgba(211,84,0,.13)',    desc:'Dalla seconda notte copi i poteri di un giocatore morto. Vinci con la fazione del ruolo copiato.'},
-  corvo:       {name:'Corvo',                emoji:'🪶',wolfTeam:false,winsWithWolves:false,soloTeam:true, seerSees:'villico',survivesWolf:false,color:'#2c3e50',bg:'rgba(44,62,80,.13)',    desc:'Ogni notte aggiungi un voto nascosto contro un giocatore. Vinci se sei vivo alla fine della partita.'},
-  vampiro:     {name:'Vampiro',              emoji:'🧛',wolfTeam:false,winsWithWolves:false,soloTeam:true, seerSees:'lupo',   survivesWolf:false,color:'#6c3483',bg:'rgba(108,52,131,.13)',   desc:'Ogni notte morde un giocatore vivo che diventa sua Preda (fedele in segreto). Vince quando lui + le Prede in vita superano gli altri. Il Veggente lo vede come Lupo.'},
+  corvo:       {name:'Corvo',                emoji:'🪶',wolfTeam:false,winsWithWolves:false,soloTeam:true, seerSees:'villico',survivesWolf:false,color:'#8395a7',bg:'rgba(131,149,167,.13)',    desc:'Ogni notte aggiungi un voto nascosto contro un giocatore. Vinci se sei vivo alla fine della partita.'},
+  vampiro:     {name:'Vampiro',              emoji:'🧛',wolfTeam:false,winsWithWolves:false,soloTeam:true, seerSees:'lupo',   survivesWolf:false,color:'#a569bd',bg:'rgba(165,105,189,.13)',   desc:'Ogni notte morde un giocatore vivo che diventa sua Preda (fedele in segreto). Vince quando lui + le Prede in vita superano gli altri. Il Veggente lo vede come Lupo.'},
 };
 
 // ─── LIBRO DATA ───────────────────────────────────────────────────────────────
@@ -466,7 +487,7 @@ const BOOK = [
   {key:'villico',cat:'villaggio',emoji:'🧑‍🌾',name:'Il Contadino',color:'#e67e22',faction:'Villaggio',fc:'#2ecc71',
    desc:'Nessuna magia, nessun potere. Solo mani callose e la fede che il bene possa ancora vincere.',
    ability:'Nessuna abilità speciale.',win:'I contadini'},
-  {key:'veggente',cat:'villaggio',emoji:'🔮',name:'Il Veggente',color:'#9b59b6',faction:'Villaggio',fc:'#2ecc71',
+  {key:'veggente',cat:'villaggio',emoji:'🔮',name:'Il Veggente',color:'#9b59b6',faction:'Villaggio / Ordine',fc:'#1abc9c',
    desc:'Non dorme come gli altri, parla con le ombre. I suoi occhi non vedono volti, ma verità.',
    ability:'Ogni notte può chiedere al Narratore se un giocatore è Lupo o Contadino.',win:'I contadini'},
   {key:'guardia',cat:'villaggio',emoji:'🛡️',name:'Il Bodyguard',color:'#2980b9',faction:'Villaggio',fc:'#2ecc71',
@@ -484,7 +505,7 @@ const BOOK = [
   {key:'incompreso',cat:'villaggio',emoji:'🥀',name:'L\'Incompreso',color:'#8e44ad',faction:'Villaggio',fc:'#2ecc71',
    desc:'Non ha colpe, ma nessuno gli crede.',
    ability:'Appare come Lupo se visionato dalla Veggente, ma è innocente.',win:'I contadini'},
-  {key:'negromante',cat:'villaggio',emoji:'💀',name:'Il Negromante',color:'#7f8c8d',faction:'Villaggio',fc:'#2ecc71',
+  {key:'negromante',cat:'villaggio',emoji:'💀',name:'Il Negromante',color:'#7f8c8d',faction:'Villaggio / Ordine',fc:'#1abc9c',
    desc:'Parla con i morti. Ogni cadavere è una fonte di sapere.',
    ability:'Ogni notte può chiedere al Narratore il ruolo di un giocatore morto.',win:'I contadini'},
   {key:'gesu',cat:'villaggio',emoji:'✝️',name:'Gesù',color:'#f1c40f',faction:'Villaggio',fc:'#2ecc71',
@@ -514,13 +535,13 @@ const BOOK = [
   {key:'funambolo',cat:'villaggio',emoji:'🎪',name:'Il Funambolo',color:'#16a085',faction:'Villaggio',fc:'#2ecc71',
    desc:'Ogni notte cammina sul filo tra la vita e la morte.',
    ability:'Il Narratore lancia in segreto una moneta: Testa=immune, Croce=muore comunque anche se protetto.',win:'I contadini'},
-  {key:'custode',cat:'villaggio',emoji:'🤫',name:'Il Custode del Silenzio',color:'#95a5a6',faction:'Villaggio',fc:'#2ecc71',
+  {key:'custode',cat:'villaggio',emoji:'🤫',name:'Il Custode del Silenzio',color:'#95a5a6',faction:'Villaggio / Ordine',fc:'#1abc9c',
    desc:'Cammina scalzo tra le case, incappucciato e muto.',
    ability:'Dalla seconda notte silenzia un giocatore: non potrà parlare né votare il giorno dopo.',win:'I contadini'},
-  {key:'araldo',cat:'villaggio',emoji:'📯',name:'L\'Araldo del Crepuscolo',color:'#d4ac0d',faction:'Villaggio',fc:'#2ecc71',
+  {key:'araldo',cat:'villaggio',emoji:'📯',name:'L\'Araldo del Crepuscolo',color:'#d4ac0d',faction:'Villaggio / Ordine',fc:'#1abc9c',
    desc:'Si annuncia solo al tramonto, porta con sé una scelta impossibile.',
    ability:'Una sola volta forza il villaggio a scegliere tra due candidati. Poi muore. Scade alla terza notte.',win:'I contadini'},
-  {key:'alchimista',cat:'villaggio',emoji:'⚗️',name:'L\'Alchimista',color:'#1abc9c',faction:'Villaggio',fc:'#2ecc71',
+  {key:'alchimista',cat:'villaggio',emoji:'⚗️',name:'L\'Alchimista',color:'#1abc9c',faction:'Villaggio / Ordine',fc:'#1abc9c',
    desc:'Nel cuore della notte, le sue ampolle ribollono.',
    ability:'Una sola volta: Pozione Rossa (resuscita 1 di 2 morti a caso) o Pozione Nera (avvelena un vivo).',win:'I contadini'},
   {key:'lupo',cat:'lupi',emoji:'🐺',name:'Il Lupo Grande',color:'#e74c3c',faction:'Lupi',fc:'#e74c3c',
@@ -547,10 +568,10 @@ const BOOK = [
   {key:'condor',cat:'neutri',emoji:'🦅',name:'Il Condor',color:'#d35400',faction:'Variabile',fc:'#d35400',
    desc:'Arriva sempre dopo il silenzio, quando i corpi sono freddi.',
    ability:'Dalla seconda notte copia i poteri di un giocatore morto.',win:'Vince con la fazione del ruolo preso'},
-  {key:'corvo',cat:'neutri',emoji:'🪶',name:'Il Corvo',color:'#2c3e50',faction:'Solitario',fc:'#2c3e50',
+  {key:'corvo',cat:'neutri',emoji:'🪶',name:'Il Corvo',color:'#8395a7',faction:'Solitario',fc:'#8395a7',
    desc:'Lo si sente gracchiare sui tetti la notte prima che scorra il sangue.',
    ability:'Ogni notte aggiunge un voto nascosto contro un giocatore.',win:'Sopravvivere fino alla fine'},
-  {key:'vampiro',cat:'neutri',emoji:'🧛',name:'Il Vampiro',color:'#6c3483',faction:'Solitario',fc:'#6c3483',
+  {key:'vampiro',cat:'neutri',emoji:'🧛',name:'Il Vampiro',color:'#a569bd',faction:'Solitario',fc:'#a569bd',
    desc:'Non cerca il sangue — cerca il controllo. Ogni notte sceglie una vittima e la piega alla sua volontà.',
    ability:'Morde un giocatore vivo ogni notte: diventa sua Preda segreta. Vince quando lui + le Prede in vita > tutti gli altri. Il Veggente lo vede come Lupo.',win:'Solo (maggioranza con le Prede)'},
 ];
@@ -1172,8 +1193,8 @@ function PList({players,sel,onSel,multi=false,disabledIds,badges}){
 function RoleModal({roleKey,onClose}){
   if(!roleKey||!ROLES[roleKey])return null;
   const r=ROLES[roleKey];
-  const tl=r.soloTeam?'⚖️ Fazione Solitaria':r.wolfTeam?'🐺 Squadra Lupi':r.winsWithWolves?'😒 Vince coi Lupi':'🏘️ Squadra Villaggio';
-  const tc=r.soloTeam?'#f39c12':r.wolfTeam||r.winsWithWolves?'#e74c3c':'#2ecc71';
+  const tl=r.soloTeam?'⚖️ Fazione Solitaria':r.wolfTeam?'🐺 Squadra Lupi':r.winsWithWolves?'😒 Vince coi Lupi':r.isOrdine?'🔮 Ordine / Villaggio':'🏘️ Squadra Villaggio';
+  const tc=r.soloTeam?'#f39c12':r.wolfTeam||r.winsWithWolves?'#e74c3c':r.isOrdine?'#1abc9c':'#2ecc71';
   return(
     <div className="modal-bg" onClick={onClose}>
       <div className="modal fade" onClick={e=>e.stopPropagation()}>
@@ -1497,6 +1518,26 @@ function App(){
     mutedRef.current=muted;
     if(bgRef.current)bgRef.current.volume=muted?0:0.35;
   },[muted]);
+
+  // ── WAKE LOCK: lo schermo resta acceso durante la partita ──────────────────
+  useEffect(()=>{
+    const active=['night','day','roleReveal','multiRoleReveal','playerWait'].includes(sc);
+    if(!active||!navigator.wakeLock)return;
+    let lock=null,released=false;
+    const acquire=()=>{navigator.wakeLock.request('screen').then(l=>{if(released)l.release().catch(()=>{});else lock=l;}).catch(()=>{});};
+    acquire();
+    const onVis=()=>{if(document.visibilityState==='visible')acquire();};
+    document.addEventListener('visibilitychange',onVis);
+    return()=>{released=true;document.removeEventListener('visibilitychange',onVis);if(lock)lock.release().catch(()=>{});};
+  },[sc]);
+
+  // ── HAPTICS: vibrazione su reveal ruolo e trasformazione ────────────────────
+  useEffect(()=>{
+    if(navigator.vibrate&&mpPhase==='roleReveal'&&myRole)navigator.vibrate([60,40,60]);
+  },[mpPhase,myRole]);
+  useEffect(()=>{
+    if(navigator.vibrate&&mpNotif?.type==='transform')navigator.vibrate([120,60,120,60,250]);
+  },[mpNotif]);
   useEffect(()=>{
     if(sc==='night'){
       playSfx('transition_night.mp3');
@@ -2335,40 +2376,68 @@ function App(){
   };
 
   // ── AI NARRATOR ──────────────────────────────────────────────────────────────
+  // Narrazione locale di riserva: usata quando manca la chiave API o la chiamata fallisce
+  const localNarration=(publicEvts,roundNum)=>{
+    const pick=a=>a[Math.floor(Math.random()*a.length)];
+    const intros=[
+      `L'alba del giorno ${roundNum} si leva pallida su ${vName}.`,
+      `Una nebbia fredda avvolge ${vName} mentre sorge il giorno ${roundNum}.`,
+      `Il gallo canta esitante: è l'alba del giorno ${roundNum} a ${vName}.`,
+      `Le campane di ${vName} suonano cupe nell'alba del giorno ${roundNum}.`,
+      `Il sole sorge a fatica su ${vName}, come se temesse ciò che dovrà illuminare.`,
+    ];
+    const closers=[
+      'Gli abitanti si radunano in piazza, gli occhi pieni di sospetto.',
+      'Nessuno osa parlare per primo: la paura cammina tra le case.',
+      'Il villaggio trattiene il respiro, in attesa di giustizia.',
+      'Qualcuno tra voi mente. E oggi il villaggio dovrà scoprirlo.',
+      'I vivi si contano in silenzio, e ognuno scruta il vicino.',
+    ];
+    return `${pick(intros)} ${publicEvts}. ${pick(closers)}`;
+  };
   const generateAiNarration=async(evs,roundNum)=>{
     if(!narratorPlays||!evs||evs.length===0)return;
     setAiNarLoading(true);
-    try{
-      // Costruisci sommario degli eventi pubblici (solo fatti visibili a tutti)
-      const publicEvts=evs.map(e=>{
-        if(e.t==='death')return e.tx.replace('💀 ','').replace(" è stato trovato morto all'alba."," è morto durante la notte");
-        if(e.t==='revive')return e.tx.replace(/^[✝️✨]+\s*/,'').replace('!','');
-        if(e.t==='protected')return 'Qualcuno era protetto — gli attacchi della notte non hanno colpito nessuno';
-        if(e.t==='peaceful')return 'La notte è trascorsa in silenzio, senza vittime';
-        return null;
-      }).filter(Boolean).join('; ');
-
-      const resp=await fetch('https://api.anthropic.com/v1/messages',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-          model:'claude-sonnet-4-20250514',
-          max_tokens:1000,
-          messages:[{role:'user',content:`Sei il narratore del gioco da tavolo Lupus in Fabula, ambientato in un villaggio medievale tormentato dai lupi mannari.
+    // Costruisci sommario degli eventi pubblici (solo fatti visibili a tutti)
+    const publicEvts=evs.map(e=>{
+      if(e.t==='death')return e.tx.replace('💀 ','').replace(" è stato trovato morto all'alba."," è morto durante la notte");
+      if(e.t==='revive')return e.tx.replace(/^[✝️✨]+\s*/,'').replace('!','');
+      if(e.t==='protected')return 'Qualcuno era protetto — gli attacchi della notte non hanno colpito nessuno';
+      if(e.t==='peaceful')return 'La notte è trascorsa in silenzio, senza vittime';
+      return null;
+    }).filter(Boolean).join('; ');
+    let text=null;
+    const apiKey=(localStorage.getItem('lupus_api_key')||'').trim();
+    if(apiKey&&publicEvts){
+      try{
+        const resp=await fetch('https://api.anthropic.com/v1/messages',{
+          method:'POST',
+          headers:{
+            'Content-Type':'application/json',
+            'x-api-key':apiKey,
+            'anthropic-version':'2023-06-01',
+            'anthropic-dangerous-direct-browser-access':'true'
+          },
+          body:JSON.stringify({
+            model:'claude-sonnet-4-6',
+            max_tokens:1000,
+            messages:[{role:'user',content:`Sei il narratore del gioco da tavolo Lupus in Fabula, ambientato in un villaggio medievale tormentato dai lupi mannari.
 Villaggio: "${vName}". È l'alba del Giorno ${roundNum}.
 
 Scrivi un breve annuncio atmosferico (massimo 3 frasi, in italiano, tono medievale gotico suggestivo) che il narratore leggerebbe ad alta voce ai giocatori all'alba.
 Annuncia solo questi eventi pubblici: ${publicEvts}.
 Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Niente emoji. Solo prosa drammatica e coinvolgente. Inizia direttamente con la narrazione, senza preamboli.`}]
-        })
-      });
-      const data=await resp.json();
-      const text=data.content?.[0]?.text?.trim()||null;
-      if(text){
-        setAiNarration(text);
-        if(roomCode&&narratorPlays)getDb().ref(`rooms/${roomCode}/aiNarration`).set(text);
-      }
-    }catch(e){console.warn('[AI Narrator]',e);}
+          })
+        });
+        const data=await resp.json();
+        text=data.content?.[0]?.text?.trim()||null;
+      }catch(e){console.warn('[AI Narrator]',e);}
+    }
+    if(!text&&publicEvts)text=localNarration(publicEvts,roundNum);
+    if(text){
+      setAiNarration(text);
+      if(roomCode&&narratorPlays)getDb().ref(`rooms/${roomCode}/aiNarration`).set(text);
+    }
     setAiNarLoading(false);
   };
 
@@ -2776,9 +2845,9 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
       <div className="div"/>
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
         <div className="lbl" style={{marginBottom:0}}>Stato Giocatori</div>
-        <button onClick={()=>setShowRoles(r=>!r)} style={{fontFamily:'Cinzel,serif',fontSize:'.62rem',letterSpacing:'.1em',textTransform:'uppercase',border:'1px solid rgba(200,160,90,.35)',borderRadius:20,padding:'4px 12px',background:showRoles?'rgba(200,160,90,.15)':'transparent',color:showRoles?'#c8a05a':'#6a5a40',cursor:'pointer',transition:'all .15s'}}>
+        {!(narratorPlays&&gameMode==='multiplayer')&&<button onClick={()=>setShowRoles(r=>!r)} style={{fontFamily:'Cinzel,serif',fontSize:'.62rem',letterSpacing:'.1em',textTransform:'uppercase',border:'1px solid rgba(200,160,90,.35)',borderRadius:20,padding:'4px 12px',background:showRoles?'rgba(200,160,90,.15)':'transparent',color:showRoles?'#c8a05a':'#6a5a40',cursor:'pointer',transition:'all .15s'}}>
           {showRoles?'👁 Nascondi':'👁 Ruoli'}
-        </button>
+        </button>}
       </div>
       <div className="player-grid">
         {players.map(p=>{
@@ -2786,13 +2855,14 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
           const effRk=(rawRk==='mutaforma'&&mutRole)?mutRole:(rawRk==='condor'&&conRole)?conRole:rawRk;
           const r=ROLES[effRk];
           const isMimic=(rawRk==='mutaforma'||rawRk==='condor')&&effRk!==rawRk;
+          const revealRole=(showRoles&&!(narratorPlays&&gameMode==='multiplayer'))||!p.alive;
           return(
             <div key={p.id} className={`p-tok ${p.alive?'alive':'dead'}`}>
               {sindacoIdx>=0&&players[sindacoIdx]?.id===p.id&&p.alive&&<span className="pt-sindaco">🏛️</span>}
               {!p.alive&&<span className="pt-dead-x">✕</span>}
-              <span className="pt-em">{showRoles||!p.alive?r.emoji:'👤'}</span>
+              <span className="pt-em">{revealRole?r.emoji:'👤'}</span>
               <span className="pt-name">{p.name}</span>
-              {(showRoles||!p.alive)&&<span className="pt-role" style={{color:r.color}}>{r.name}{isMimic&&<span style={{opacity:.45,fontSize:'.8em'}}> ({ROLES[rawRk].emoji})</span>}</span>}
+              {revealRole&&<span className="pt-role" style={{color:r.color}}>{r.name}{isMimic&&<span style={{opacity:.45,fontSize:'.8em'}}> ({ROLES[rawRk].emoji})</span>}</span>}
             </div>
           );
         })}
@@ -3017,6 +3087,17 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
             </div>
           </div>
         </div>
+
+        {/* Chiave API per la Voce del Villaggio (solo modalità senza narratore) */}
+        {narratorPlays&&(
+          <div style={{marginTop:-4,marginBottom:14,padding:'12px 16px',background:'rgba(155,89,182,.04)',border:'1px solid rgba(155,89,182,.16)',borderRadius:12}}>
+            <div style={{fontFamily:'Cinzel,serif',fontSize:'.6rem',letterSpacing:'.14em',color:'#8a6aa0',textTransform:'uppercase',marginBottom:7}}>🖊️ Voce del Villaggio — Chiave API (opzionale)</div>
+            <input type="password" placeholder="sk-ant-..." defaultValue={localStorage.getItem('lupus_api_key')||''}
+              onChange={e=>{const v=e.target.value.trim();if(v)localStorage.setItem('lupus_api_key',v);else localStorage.removeItem('lupus_api_key');}}
+              style={{width:'100%',background:'rgba(255,255,255,.04)',border:'1px solid rgba(155,89,182,.25)',borderRadius:8,padding:'10px 14px',color:'#ddd0b8',fontFamily:'EB Garamond,serif',fontSize:'.9rem',outline:'none',WebkitAppearance:'none'}}/>
+            <div style={{fontSize:'.66rem',color:'#5a4a6a',marginTop:6,fontStyle:'italic',lineHeight:1.5}}>Con una chiave API Anthropic gli annunci dell'alba sono generati dall'AI. Senza chiave, il gioco usa testi narrativi predefiniti. La chiave resta salvata solo su questo dispositivo.</div>
+          </div>
+        )}
 
         <div style={{...S.card,background:'rgba(39,174,96,.05)',border:'1px solid rgba(39,174,96,.2)',cursor:'default',flexDirection:'column',alignItems:'stretch'}}>
           <div style={{display:'flex',alignItems:'center',gap:14,marginBottom:14}}>
@@ -4535,7 +4616,7 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
       const wolvesBlocked=arcBlockedAlpha||arcBlockedLupo||arcBlockedCucSolo;
       return(
         <NW color="#e74c3c" emoji="🐺" title={cucHere?'Il Lupo Cucciolo si sveglia':'I Lupi si svegliano'}>
-          {wolvesBlocked?(
+          {wolvesBlocked&&!wolvesConfirmed?(
             <><div className="instr" style={{borderColor:'rgba(39,174,96,.3)',color:'#70a080'}}>🏹 L'Arciere ha bloccato {arcBlockedAlpha?'il Lupo Mannaro':arcBlockedLupo?'il Lupo Grande':'il Cucciolo'}. Nessun attacco questa notte.</div>
             <button className="btn btn-gold" onClick={()=>confWolves(true)}>Conferma — nessuna vittima →</button></>
           ):cucBlock?(
@@ -5472,24 +5553,25 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
         <div className="div"/>
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
           <div className="lbl" style={{marginBottom:0}}>Stato Giocatori</div>
-          <button onClick={()=>setShowRoles(r=>!r)} style={{fontFamily:'Cinzel,serif',fontSize:'.62rem',letterSpacing:'.1em',textTransform:'uppercase',border:'1px solid rgba(200,160,90,.35)',borderRadius:20,padding:'4px 12px',background:showRoles?'rgba(200,160,90,.15)':'transparent',color:showRoles?'#c8a05a':'#6a5a40',cursor:'pointer',transition:'all .15s'}}>
+          {!(narratorPlays&&gameMode==='multiplayer')&&<button onClick={()=>setShowRoles(r=>!r)} style={{fontFamily:'Cinzel,serif',fontSize:'.62rem',letterSpacing:'.1em',textTransform:'uppercase',border:'1px solid rgba(200,160,90,.35)',borderRadius:20,padding:'4px 12px',background:showRoles?'rgba(200,160,90,.15)':'transparent',color:showRoles?'#c8a05a':'#6a5a40',cursor:'pointer',transition:'all .15s'}}>
             {showRoles?'👁 Nascondi Ruoli':'👁 Mostra Ruoli'}
-          </button>
+          </button>}
         </div>
         <div className="player-grid">
           {players.map(p=>{
             const r=ROLES[p.role];
+            const revealRole=(showRoles&&!(narratorPlays&&gameMode==='multiplayer'))||!p.alive;
             return(
               <div key={p.id} className={`p-tok ${p.alive?'alive':'dead'}`}>
                 {sindacoIdx>=0&&players[sindacoIdx]?.id===p.id&&p.alive&&<span className="pt-sindaco">🏛️</span>}
                 {!p.alive&&<span className="pt-dead-x">✕</span>}
-                <span className="pt-em">{showRoles||!p.alive?r.emoji:'👤'}</span>
+                <span className="pt-em">{revealRole?r.emoji:'👤'}</span>
                 <span className="pt-name">{p.name}</span>
-                {(showRoles||!p.alive)&&<span className="pt-role" style={{color:r.color}}>{r.name}</span>}
-                {showRoles&&p.role==='lupoAlpha'&&alphaTransf&&<span style={{fontSize:'.52rem',color:'#e74c3c',display:'block',marginTop:2,fontFamily:'Cinzel,serif'}}>🐺 In trasformazione...</span>}
+                {revealRole&&<span className="pt-role" style={{color:r.color}}>{r.name}</span>}
+                {revealRole&&p.role==='lupoAlpha'&&alphaTransf&&<span style={{fontSize:'.52rem',color:'#e74c3c',display:'block',marginTop:2,fontFamily:'Cinzel,serif'}}>🐺 In trasformazione...</span>}
                 {ordineMode&&r.isOrdine&&p.alive&&<span style={{fontSize:'.55rem',fontFamily:'Cinzel,serif',color:'#1abc9c',display:'block',marginTop:2}}>Ordine</span>}
-                {(showRoles||!p.alive)&&p.role==='mutaforma'&&mutRole&&<span style={{fontSize:'.52rem',color:ROLES[mutRole]?.color,display:'block',marginTop:1,fontFamily:'Cinzel,serif'}}>🔄 {ROLES[mutRole]?.emoji}{ROLES[mutRole]?.name}</span>}
-                {(showRoles||!p.alive)&&p.role==='condor'&&conRole&&<span style={{fontSize:'.52rem',color:ROLES[conRole]?.color,display:'block',marginTop:1,fontFamily:'Cinzel,serif'}}>🦅 {ROLES[conRole]?.emoji}{ROLES[conRole]?.name}</span>}
+                {revealRole&&p.role==='mutaforma'&&mutRole&&<span style={{fontSize:'.52rem',color:ROLES[mutRole]?.color,display:'block',marginTop:1,fontFamily:'Cinzel,serif'}}>🔄 {ROLES[mutRole]?.emoji}{ROLES[mutRole]?.name}</span>}
+                {revealRole&&p.role==='condor'&&conRole&&<span style={{fontSize:'.52rem',color:ROLES[conRole]?.color,display:'block',marginTop:1,fontFamily:'Cinzel,serif'}}>🦅 {ROLES[conRole]?.emoji}{ROLES[conRole]?.name}</span>}
               </div>
             );
           })}
