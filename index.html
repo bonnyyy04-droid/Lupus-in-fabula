@@ -827,6 +827,29 @@ const TIPS=[
   {title:'Ruoli Funzionali 🎖️',text:'Il Sindaco ha voto doppio — eletto il primo giorno. Il Lupo Grande decide la vittima finale e non può essere un Cucciolo.'},
 ];
 
+// ─── LE QUATTRO SQUADRE (legenda riutilizzabile) ──────────────────────────────
+const FACTIONS=[
+  {emoji:'🏘️',name:'Villaggio',color:'#2ecc71',bg:'rgba(46,204,113,.09)',goal:'I contadini onesti. Da soli non hanno poteri, ma il loro voto di giorno decide chi muore. Vincono quando tutti i Lupi sono stati scoperti ed eliminati.'},
+  {emoji:'🐺',name:'Lupi',color:'#e74c3c',bg:'rgba(231,76,60,.09)',goal:'Il branco nascosto fra gli abitanti. Ogni notte si svegliano insieme e sbranano qualcuno. Vincono quando diventano tanti quanti gli altri giocatori rimasti.'},
+  {emoji:'🔮',name:'Ordine',color:'#1abc9c',bg:'rgba(26,188,156,.09)',goal:'I ruoli speciali del Villaggio (Veggente, Custode, Araldo…). Combattono i Lupi insieme ai contadini; nella Modalità Ordine però vincono solo se restano in maggioranza alla fine.'},
+  {emoji:'🎭',name:'Solisti',color:'#9b59b6',bg:'rgba(155,89,182,.09)',goal:'Giocano per sé stessi, contro tutti. Ognuno ha una propria condizione di vittoria: sopravvivere fino alla fine, farsi eliminare di proposito, dominare il villaggio…'},
+];
+function FactionLegend({compact=false}){
+  return(
+    <div style={{display:'flex',flexDirection:'column',gap:compact?7:9}}>
+      {FACTIONS.map(f=>(
+        <div key={f.name} style={{display:'flex',gap:11,alignItems:'flex-start',background:f.bg,border:`1px solid ${f.color}33`,borderRadius:11,padding:compact?'9px 12px':'11px 14px'}}>
+          <span style={{fontSize:compact?'1.3rem':'1.5rem',flexShrink:0,lineHeight:1}}>{f.emoji}</span>
+          <div>
+            <div style={{fontFamily:'Cinzel,serif',fontSize:compact?'.8rem':'.86rem',color:f.color,fontWeight:700,letterSpacing:'.04em',marginBottom:2}}>{f.name}</div>
+            <div style={{fontSize:compact?'.74rem':'.79rem',color:'#9a8870',lineHeight:1.5}}>{f.goal}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function LibroMagico({onClose,initialCat='tutti'}){
   const [cat,setCat]=useState(initialCat);
   const isRole=['tutti','speciale','villaggio','lupi','neutri'].includes(cat);
@@ -899,6 +922,9 @@ function LibroMagico({onClose,initialCat='tutti'}){
             <div className="book-intro"><span className="book-intro-icon">📋</span>
               <p className="book-intro-text">Le leggi del villaggio. Seguite alla lettera, sono la struttura che sostiene ogni partita.</p>
             </div>
+            <div className="bch" style={{marginTop:0,marginBottom:12}}>⚖️ Le Quattro Squadre</div>
+            <div style={{marginBottom:6}}><FactionLegend/></div>
+            <D/>
             {[
               {title:'❶ Preparazione',items:["Il Narratore distribuisce segretamente una carta personaggio a ciascun giocatore.","Ogni carta rappresenta un ruolo unico con abilità speciali e obiettivo di vittoria.","Nessuno rivela il proprio ruolo. La menzogna è parte del villaggio."]},
               {title:'❷ La Notte',items:["Tutti i giocatori chiudono gli occhi.","Il Narratore chiama i personaggi notturni, uno alla volta, a compiere le loro azioni in silenzio.","Una volta che ogni creatura ha agito, il villaggio si risveglia… e scopre chi non ha visto l'alba."]},
@@ -1424,7 +1450,7 @@ function App(){
   const [mpAiNarration,setMpAiNarration]=useState(null); // narrazione AI ricevuta (player)
 
   // ── FIRST-TIME GUIDE ──────────────────────────────────────────────────────
-  const GUIDE_KEY='lupus_guide_v1';
+  const GUIDE_KEY='lupus_guide_v2';
   const [showGuide,setShowGuide]=useState(()=>{
     try{return!localStorage.getItem(GUIDE_KEY);}catch(e){return false;}
   });
@@ -1434,18 +1460,22 @@ function App(){
     setShowGuide(false);
   };
   const GUIDE_STEPS=[
-    {emoji:'🐺',title:'Benvenuto in Lupus in Fabula',
-     body:'Questa app è il tuo alleato come Narratore.\n\nGuidi la partita passo dopo passo, gestisci le notti in silenzio e riveli i ruoli ai giocatori — senza sbagliare nulla.',
+    {emoji:'🐺',title:'Cos\'è Lupus in Fabula',
+     body:'Un gioco di bugie e deduzione fra amici.\n\nNel villaggio si nascondono dei Lupi. Ogni notte sbranano un abitante; ogni giorno il villaggio discute e vota chi mettere al rogo.\n\nLo scopo? Smascherare i Lupi prima che divorino tutti.',
+     note:'Bastano poche partite per prenderci la mano.'},
+    {emoji:'⚖️',title:'Le quattro squadre',
+     factions:true,
+     body:'Ogni giocatore riceve un ruolo segreto che lo assegna a una squadra. Da che parte stai?',
      note:null},
-    {emoji:'🎭',title:'Il tuo ruolo: il Narratore',
-     body:'Tu non giochi — racconti.\n\nDistribuisci i ruoli, chiami i personaggi di notte e annunci gli eventi di giorno. I giocatori si fidano di te.',
-     note:'Tieni il telefono solo tu durante la notte.'},
-    {emoji:'🌙',title:'Come funziona la notte',
-     body:"Ogni notte l'app ti guida passo dopo passo: prima l'Arciere, poi la Guardia, poi i Lupi, la Veggente e così via.\n\nOgni personaggio apre gli occhi in silenzio, compie la sua azione, poi si riaddormenta.",
-     note:"I giocatori non devono vedere lo schermo durante i turni notturni."},
-    {emoji:'☀️',title:'Come funziona il giorno',
-     body:"All'alba l'app mostra gli eventi della notte. Il villaggio discute, accusa e vota chi eliminare.\n\nTu annunci il risultato, poi si ricomincia con una nuova notte.",
-     note:'Sei pronto. Buona partita!'},
+    {emoji:'🌙',title:'La notte',
+     body:'Tutti chiudono gli occhi.\n\nUno alla volta, in silenzio, i ruoli speciali si svegliano e compiono la loro azione segreta. I Lupi scelgono insieme chi sbranare.\n\nPoi torna il giorno… e si scopre chi non si è svegliato.',
+     note:"Di notte non si parla e non si fanno gesti."},
+    {emoji:'☀️',title:'Il giorno',
+     body:'Il villaggio scopre chi è morto nella notte.\n\nPoi si discute: ci si accusa, ci si difende, si mente. Alla fine tutti votano: il più votato viene eliminato e si scopre il suo vero ruolo.\n\nQuindi cala di nuovo la notte.',
+     note:'I morti non possono più parlare né votare.'},
+    {emoji:'📱',title:'Come si gioca con l\'app',
+     body:'Una persona crea la partita e fa da Narratore (oppure gioca anche lei, in modalità senza narratore). Gli altri si uniscono con un codice dal proprio telefono.\n\nL\'app guida ogni passo: distribuisce i ruoli, scandisce la notte e racconta l\'alba. Tu pensa solo a giocare.',
+     note:'Sei pronto. Che la caccia abbia inizio!'},
   ];
   const GuideModal=()=>{
     const s=GUIDE_STEPS[guideStep];
@@ -1453,7 +1483,7 @@ function App(){
     return(
       <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.88)',zIndex:800,display:'flex',alignItems:'center',justifyContent:'center',padding:20,backdropFilter:'blur(6px)'}}
         onClick={closeGuide}>
-        <div style={{background:'#080e1c',border:'1px solid rgba(201,162,39,.28)',borderRadius:20,padding:'32px 24px 24px',maxWidth:360,width:'100%',position:'relative',animation:'fadeUp .3s ease'}}
+        <div style={{background:'#080e1c',border:'1px solid rgba(201,162,39,.28)',borderRadius:20,padding:'32px 24px 24px',maxWidth:s.factions?400:360,width:'100%',maxHeight:'90vh',overflowY:'auto',position:'relative',animation:'fadeUp .3s ease'}}
           onClick={e=>e.stopPropagation()}>
           <button onClick={closeGuide} style={{position:'absolute',top:14,right:16,background:'none',border:'none',color:'#4a3820',fontFamily:'Cinzel,serif',fontSize:'.65rem',letterSpacing:'.12em',textTransform:'uppercase',cursor:'pointer',padding:'4px 8px'}}>
             Salta ✕
@@ -1463,10 +1493,11 @@ function App(){
               <div key={i} style={{width:i===guideStep?22:7,height:7,borderRadius:4,background:i===guideStep?'#c9a227':i<guideStep?'rgba(201,162,39,.45)':'rgba(255,255,255,.1)',transition:'all .25s'}}/>
             ))}
           </div>
-          <div style={{textAlign:'center',marginBottom:20}}>
+          <div style={{textAlign:'center',marginBottom:s.factions?16:20}}>
             <span style={{fontSize:'3.6rem',display:'block',marginBottom:14,filter:'drop-shadow(0 0 18px rgba(201,162,39,.3))'}}>{s.emoji}</span>
             <div style={{fontFamily:'Cinzel,serif',fontSize:'1.05rem',color:'#c9a227',marginBottom:14,lineHeight:1.3,fontWeight:600}}>{s.title}</div>
-            <p style={{color:'#9a8870',lineHeight:1.8,fontSize:'.92rem',whiteSpace:'pre-line',fontStyle:'italic'}}>{s.body}</p>
+            {s.body&&<p style={{color:'#9a8870',lineHeight:1.8,fontSize:s.factions?'.85rem':'.92rem',whiteSpace:'pre-line',fontStyle:'italic',marginBottom:s.factions?16:0}}>{s.body}</p>}
+            {s.factions&&<div style={{textAlign:'left'}}><FactionLegend compact/></div>}
           </div>
           {s.note&&(
             <div style={{background:'rgba(201,162,39,.07)',border:'1px solid rgba(201,162,39,.18)',borderRadius:10,padding:'10px 14px',marginBottom:16,textAlign:'center'}}>
@@ -2077,6 +2108,19 @@ function App(){
     return()=>ref.off('value',h);
   },[roomCode,roomRole]);
 
+  // ── NARRATORE CHE GIOCA: ascolta apertura votazione come giocatore ────────
+  useEffect(()=>{
+    if(!roomCode||!narratorPlays||roomRole!=='host')return;
+    const ref=getDb().ref(rp('voting/open'));
+    const h=snap=>{
+      const open=!!snap.val();
+      setMpVoteOpen(open);
+      if(!open){setMpVoteTarget(null);setMpVotedTarget(null);}
+    };
+    ref.on('value',h);
+    return()=>ref.off('value',h);
+  },[roomCode,narratorPlays,roomRole]);
+
   // ── PLAYER: ascolta ballottaggio ──────────────────────────────────────────
   useEffect(()=>{
     if(!roomCode||roomRole!=='player')return;
@@ -2089,6 +2133,19 @@ function App(){
     ref.on('value',h);
     return()=>ref.off('value',h);
   },[roomCode,roomRole]);
+
+  // ── NARRATORE CHE GIOCA: ascolta ballottaggio come giocatore ─────────────
+  useEffect(()=>{
+    if(!roomCode||!narratorPlays||roomRole!=='host')return;
+    const ref=getDb().ref(rp('ballot'));
+    const h=snap=>{
+      const v=snap.val();
+      setMpBallot(v&&v.open?v:null);
+      if(!v||!v.open){setMpBallotVoted(false);}
+    };
+    ref.on('value',h);
+    return()=>ref.off('value',h);
+  },[roomCode,narratorPlays,roomRole]);
 
   // ── PLAYER: ascolta narrazione AI (modalità senza narratore) ──────────────
   useEffect(()=>{
@@ -3028,83 +3085,79 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
 
   // ── MODE PICK ──────────────────────────────────────────────────────────────
   if(sc==='modePick'){
-    const S={card:{display:'flex',alignItems:'center',gap:14,borderRadius:14,padding:'18px 20px',marginBottom:12,cursor:'pointer',transition:'border-color .2s'}};
+    const createRoom=async(asPlayer)=>{
+      if(joinLoading)return;
+      setJoinError('');setJoinLoading(true);
+      try{
+        const uid=await window.waitForAuth();
+        if(uid)myIdRef.current=uid;
+        const code=genCode();
+        await fbCreateRoom(code,myIdRef.current,'multiplayer',asPlayer);
+        setNarratorPlays(asPlayer);
+        setRoomCode(code);setRoomRole('host');setGameMode('multiplayer');
+        setSc('lobby');
+      }catch(e){setJoinError('Errore di connessione. Verifica internet.');}
+      setJoinLoading(false);
+    };
+    const mkCard=(color,emoji,title,desc,when,badge,onClick,disabled)=>(
+      <div onClick={disabled?undefined:onClick}
+        style={{background:`${color}10`,border:`1px solid ${color}33`,borderRadius:14,padding:'15px 16px',marginBottom:11,cursor:disabled?'not-allowed':'pointer',opacity:disabled?.55:1,transition:'border-color .2s'}}
+        onMouseEnter={e=>!disabled&&(e.currentTarget.style.borderColor=`${color}88`)}
+        onMouseLeave={e=>(e.currentTarget.style.borderColor=`${color}33`)}>
+        <div style={{display:'flex',alignItems:'flex-start',gap:13}}>
+          <span style={{fontSize:'2rem',flexShrink:0,marginTop:2}}>{emoji}</span>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',marginBottom:3}}>
+              <span style={{fontFamily:'Cinzel,serif',fontSize:'.92rem',color,fontWeight:700}}>{title}</span>
+              {badge&&<span style={{fontFamily:'Cinzel,serif',fontSize:'.54rem',letterSpacing:'.06em',textTransform:'uppercase',padding:'2px 7px',borderRadius:6,background:`${color}22`,border:`1px solid ${color}55`,color}}>{badge}</span>}
+            </div>
+            <div style={{fontSize:'.77rem',color:'#9a8870',lineHeight:1.5}}>{desc}</div>
+            <div style={{fontSize:'.7rem',color:'#6a5a40',fontStyle:'italic',marginTop:5}}>📍 {when}</div>
+          </div>
+        </div>
+      </div>
+    );
+    const divider=(label,col)=>(
+      <div style={{fontFamily:'Cinzel,serif',fontSize:'.64rem',letterSpacing:'.16em',textTransform:'uppercase',color:'#6a5a3a',margin:'4px 0 13px',display:'flex',alignItems:'center',gap:10}}>
+        <span style={{flex:1,height:1,background:`${col}26`}}/>{label}<span style={{flex:1,height:1,background:`${col}26`}}/>
+      </div>
+    );
     return(
       <div className="app night"><MuteBtn/><div className="astro moon"/>
       <div className="screen fade" style={{maxWidth:460}}>
         <button onClick={()=>setSc('home')} style={{background:'none',border:'1px solid rgba(200,160,90,.25)',borderRadius:8,padding:'5px 12px',color:'#7a6a50',fontFamily:'Cinzel,serif',fontSize:'.7rem',cursor:'pointer',letterSpacing:'.08em',marginBottom:22,alignSelf:'flex-start'}}>← Home</button>
-        <h1 className="title" style={{marginBottom:6}}>Modalità di Gioco</h1>
-        <p style={{color:'#6a5a40',fontSize:'.8rem',fontStyle:'italic',marginBottom:28,textAlign:'center'}}>Come vuoi giocare questa partita?</p>
+        <h1 className="title" style={{marginBottom:6}}>Come Vuoi Giocare?</h1>
+        <p style={{color:'#6a5a40',fontSize:'.8rem',fontStyle:'italic',marginBottom:24,textAlign:'center'}}>Scegli come gestire questa partita</p>
 
-        <div style={{...S.card,background:'rgba(201,162,39,.06)',border:'1px solid rgba(201,162,39,.2)'}}
-          onClick={()=>{setGameMode('narrator');setSc('setup');}}
-          onMouseEnter={e=>e.currentTarget.style.borderColor='rgba(201,162,39,.5)'}
-          onMouseLeave={e=>e.currentTarget.style.borderColor='rgba(201,162,39,.2)'}>
-          <span style={{fontSize:'2.2rem',flexShrink:0}}>🎭</span>
-          <div>
-            <div style={{fontFamily:'Cinzel,serif',fontSize:'.95rem',color:'#c9a227',fontWeight:700,marginBottom:3}}>Modalità Narratore</div>
-            <div style={{fontSize:'.78rem',color:'#6a5a40',lineHeight:1.5}}>Un Narratore gestisce la partita dal suo dispositivo. Modalità classica.</div>
-          </div>
-        </div>
+        {divider('Crea una partita','#c9a227')}
 
-        <div style={{...S.card,background:'rgba(41,128,185,.06)',border:'1px solid rgba(41,128,185,.22)',opacity:joinLoading?.6:1,cursor:joinLoading?'not-allowed':'pointer'}}
-          onClick={async()=>{
-            if(joinLoading)return;
-            setJoinError('');setJoinLoading(true);
-            try{
-              const uid=await window.waitForAuth();
-              if(uid)myIdRef.current=uid;
-              const code=genCode();
-              await fbCreateRoom(code,myIdRef.current,'multiplayer',narratorPlays);
-              setRoomCode(code);setRoomRole('host');setGameMode('multiplayer');
-              setSc('lobby');
-            }catch(e){setJoinError('Errore di connessione. Verifica internet.');}
-            setJoinLoading(false);
-          }}
-          onMouseEnter={e=>!joinLoading&&(e.currentTarget.style.borderColor='rgba(41,128,185,.5)')}
-          onMouseLeave={e=>e.currentTarget.style.borderColor='rgba(41,128,185,.22)'}>
-          <span style={{fontSize:'2.2rem',flexShrink:0}}>👥</span>
-          <div style={{flex:1}}>
-            <div style={{fontFamily:'Cinzel,serif',fontSize:'.95rem',color:'#3498db',fontWeight:700,marginBottom:3}}>Crea Stanza Multiplayer</div>
-            <div style={{fontSize:'.78rem',color:'#5a7a9a',lineHeight:1.5}}>Genera un codice — i giocatori si connettono dal loro telefono.</div>
-          </div>
-        </div>
+        {mkCard('#c9a227','🎭','Solo Narratore',
+          'Tu fai il narratore e gestisci tutto da questo telefono. Gli altri giocano con le carte in mano, senza app.',
+          'Siete tutti nella stessa stanza — basta un telefono.',
+          'Più semplice',
+          ()=>{setNarratorPlays(false);setGameMode('narrator');setSc('setup');},false)}
 
-        {/* Toggle: il creatore gioca come personaggio */}
-        <div onClick={()=>setNarratorPlays(v=>!v)}
-          style={{background:'rgba(155,89,182,.07)',border:`1px solid ${narratorPlays?'rgba(155,89,182,.5)':'rgba(155,89,182,.2)'}`,borderRadius:12,padding:'14px 16px',transition:'all .2s',cursor:'pointer'}}>
-          <div style={{display:'flex',alignItems:'center',gap:12}}>
-            <div style={{width:44,height:26,borderRadius:13,background:narratorPlays?'#8e44ad':'rgba(255,255,255,.08)',flexShrink:0,position:'relative',transition:'background .2s'}}>
-              <div style={{position:'absolute',top:3,left:narratorPlays?20:3,width:18,height:18,borderRadius:'50%',background:narratorPlays?'#fff':'rgba(255,255,255,.3)',transition:'left .2s'}}/>
-            </div>
+        {mkCard('#3498db','👥','Online — Io faccio il Narratore',
+          'Crei una stanza con un codice. Ogni giocatore usa il proprio telefono; tu narri e gestisci la partita.',
+          'Ognuno gioca dal proprio telefono, tu fai da regista.',
+          null,
+          ()=>createRoom(false),joinLoading)}
+
+        {mkCard('#9b59b6','🐺',"Online — Gioco anch'io",
+          "Come sopra, ma giochi anche tu: l'app fa da narratore al posto tuo e racconta gli eventi dell'alba.",
+          'Nessuno resta fuori a fare solo il narratore.',
+          null,
+          ()=>createRoom(true),joinLoading)}
+
+        <div style={{marginTop:18}}>{divider('oppure','#27ae60')}</div>
+
+        {/* Unisciti a una stanza */}
+        <div style={{background:'rgba(39,174,96,.05)',border:'1px solid rgba(39,174,96,.2)',borderRadius:14,padding:'15px 16px'}}>
+          <div style={{display:'flex',alignItems:'flex-start',gap:13,marginBottom:13}}>
+            <span style={{fontSize:'2rem',flexShrink:0,marginTop:2}}>🔑</span>
             <div>
-              <div style={{fontFamily:'Cinzel,serif',fontSize:'.82rem',color:narratorPlays?'#c39bd3':'#7a6090',fontWeight:narratorPlays?700:400,marginBottom:2}}>
-                🎭 Il creatore gioca come personaggio
-              </div>
-              <div style={{fontSize:'.72rem',color:narratorPlays?'#7d3c98':'#4a3060',lineHeight:1.5,fontStyle:'italic'}}>
-                {narratorPlays?'Modalità senza Narratore — tutti agiscono in autonomia, AI racconta gli eventi.':'Modalità classica — il creatore fa il Narratore.'}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Chiave API per la Voce del Villaggio (solo modalità senza narratore) */}
-        {narratorPlays&&(
-          <div style={{marginTop:-4,marginBottom:14,padding:'12px 16px',background:'rgba(155,89,182,.04)',border:'1px solid rgba(155,89,182,.16)',borderRadius:12}}>
-            <div style={{fontFamily:'Cinzel,serif',fontSize:'.6rem',letterSpacing:'.14em',color:'#8a6aa0',textTransform:'uppercase',marginBottom:7}}>🖊️ Voce del Villaggio — Chiave API (opzionale)</div>
-            <input type="password" placeholder="sk-ant-..." defaultValue={localStorage.getItem('lupus_api_key')||''}
-              onChange={e=>{const v=e.target.value.trim();if(v)localStorage.setItem('lupus_api_key',v);else localStorage.removeItem('lupus_api_key');}}
-              style={{width:'100%',background:'rgba(255,255,255,.04)',border:'1px solid rgba(155,89,182,.25)',borderRadius:8,padding:'10px 14px',color:'#ddd0b8',fontFamily:'EB Garamond,serif',fontSize:'.9rem',outline:'none',WebkitAppearance:'none'}}/>
-            <div style={{fontSize:'.66rem',color:'#5a4a6a',marginTop:6,fontStyle:'italic',lineHeight:1.5}}>Con una chiave API Anthropic gli annunci dell'alba sono generati dall'AI. Senza chiave, il gioco usa testi narrativi predefiniti. La chiave resta salvata solo su questo dispositivo.</div>
-          </div>
-        )}
-
-        <div style={{...S.card,background:'rgba(39,174,96,.05)',border:'1px solid rgba(39,174,96,.2)',cursor:'default',flexDirection:'column',alignItems:'stretch'}}>
-          <div style={{display:'flex',alignItems:'center',gap:14,marginBottom:14}}>
-            <span style={{fontSize:'2.2rem',flexShrink:0}}>🔑</span>
-            <div>
-              <div style={{fontFamily:'Cinzel,serif',fontSize:'.95rem',color:'#27ae60',fontWeight:700,marginBottom:3}}>Unisciti a una Stanza</div>
-              <div style={{fontSize:'.78rem',color:'#4a7060',lineHeight:1.5}}>Inserisci il codice ricevuto dall'host.</div>
+              <div style={{fontFamily:'Cinzel,serif',fontSize:'.92rem',color:'#27ae60',fontWeight:700,marginBottom:3}}>Unisciti a una Stanza</div>
+              <div style={{fontSize:'.77rem',color:'#7a9a88',lineHeight:1.5}}>Hai ricevuto un codice dall'host? Inseriscilo qui.</div>
             </div>
           </div>
           <div style={{display:'flex',gap:8}}>
@@ -3234,6 +3287,11 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
                 <div style={{fontFamily:'Cinzel,serif',fontSize:'.72rem',color:'#9b59b6',letterSpacing:'.1em',marginBottom:8}}>🎭 Il tuo nome in partita:</div>
                 <input type="text" placeholder="Il tuo nome..." value={playerName} onChange={e=>setPlayerName(e.target.value.slice(0,20))}
                   style={{width:'100%',fontSize:'.9rem',textAlign:'center'}}/>
+                <div style={{fontFamily:'Cinzel,serif',fontSize:'.6rem',letterSpacing:'.12em',color:'#8a6aa0',textTransform:'uppercase',margin:'14px 0 7px'}}>🖊️ Voce del Villaggio — Chiave AI (opzionale)</div>
+                <input type="password" placeholder="sk-ant-..." defaultValue={localStorage.getItem('lupus_api_key')||''}
+                  onChange={e=>{const v=e.target.value.trim();if(v)localStorage.setItem('lupus_api_key',v);else localStorage.removeItem('lupus_api_key');}}
+                  style={{width:'100%',background:'rgba(255,255,255,.04)',border:'1px solid rgba(155,89,182,.25)',borderRadius:8,padding:'9px 12px',color:'#ddd0b8',fontFamily:'EB Garamond,serif',fontSize:'.85rem',outline:'none',WebkitAppearance:'none'}}/>
+                <div style={{fontSize:'.64rem',color:'#5a4a6a',marginTop:6,fontStyle:'italic',lineHeight:1.5}}>Con una chiave API Anthropic gli annunci dell'alba sono scritti dall'AI. Senza, il gioco usa testi predefiniti. Resta salvata solo su questo telefono.</div>
               </div>
             )}
             <button className="btn btn-gold" style={{width:'100%',padding:14,fontSize:'.95rem'}}
@@ -4044,6 +4102,39 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
       <div className="screen fade">
         <h1 className="title">Configura Ruoli</h1>
         <p className="subtitle">{vName} — {n} giocatori</p>
+
+        {/* ── HERO: squadra consigliata già pronta ── */}
+        {(()=>{
+          const isDefault=!modalitaSpeciale&&JSON.stringify(dist)===JSON.stringify(getSuggestedDist(n));
+          const chips=ROLE_ORDER.filter(k=>k!=='villico'&&(dist[k]||0)>0).map(k=>({emoji:ROLES[k].emoji,name:ROLES[k].name,cnt:dist[k],color:ROLES[k].color}));
+          const vCount=Math.max(0,villici);
+          return(
+            <div style={{background:'linear-gradient(160deg,rgba(201,162,39,.12),rgba(201,162,39,.03))',border:'1px solid rgba(201,162,39,.32)',borderRadius:14,padding:'16px 16px 14px',marginBottom:18,boxShadow:'0 4px 20px rgba(0,0,0,.25)'}}>
+              <div style={{fontFamily:'Cinzel,serif',fontSize:'.94rem',color:'#e0c46a',fontWeight:700,marginBottom:4,display:'flex',alignItems:'center',gap:8}}>
+                <span>{isDefault?'✨':'🎭'}</span>{isDefault?'Squadra consigliata pronta':'La tua squadra'}
+              </div>
+              <p style={{fontSize:'.78rem',color:'#9a8358',fontStyle:'italic',lineHeight:1.55,marginBottom:13}}>
+                {isDefault
+                  ?`Abbiamo già preparato una composizione equilibrata per ${n} giocatori. Premi Inizia per giocare subito — oppure personalizza i ruoli qui sotto.`
+                  :`Composizione personalizzata per ${n} giocatori. Controlla l'equilibrio delle forze più in basso.`}
+              </p>
+              <div style={{display:'flex',flexWrap:'wrap',gap:6,marginBottom:14}}>
+                {chips.map(c=>(
+                  <span key={c.name} style={{display:'inline-flex',alignItems:'center',gap:5,background:'rgba(0,0,0,.28)',border:`1px solid ${c.color}44`,borderRadius:20,padding:'5px 11px 5px 9px',fontSize:'.8rem',color:'#d8c8a8'}}>
+                    <span style={{fontSize:'1rem'}}>{c.emoji}</span>{c.name}{c.cnt>1&&<span style={{fontFamily:'Cinzel,serif',fontWeight:700,color:c.color,marginLeft:1}}>×{c.cnt}</span>}
+                  </span>
+                ))}
+                {vCount>0&&(
+                  <span style={{display:'inline-flex',alignItems:'center',gap:5,background:'rgba(0,0,0,.28)',border:'1px solid rgba(230,126,34,.35)',borderRadius:20,padding:'5px 11px 5px 9px',fontSize:'.8rem',color:'#d8c8a8'}}>
+                    <span style={{fontSize:'1rem'}}>🧑‍🌾</span>{ROLES.villico.name}{vCount>1&&<span style={{fontFamily:'Cinzel,serif',fontWeight:700,color:'#e67e22',marginLeft:1}}>×{vCount}</span>}
+                  </span>
+                )}
+              </div>
+              <button className="btn btn-gold" style={{width:'100%',padding:'13px',fontSize:'.95rem',fontWeight:700}} disabled={!valid} onClick={confirmRoles}>▶ Inizia Partita</button>
+              <div style={{textAlign:'center',marginTop:8,fontSize:'.68rem',color:'#6a5a3a',letterSpacing:'.05em',fontStyle:'italic'}}>oppure personalizza i ruoli qui sotto ↓</div>
+            </div>
+          );
+        })()}
 
         {/* ── DIFFICULTY SELECTOR ── */}
         <div style={{marginBottom:16}}>
