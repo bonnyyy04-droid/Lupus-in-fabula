@@ -411,32 +411,39 @@ input[type=text]::placeholder{color:#2e2214}
 .vill-title-input::placeholder{color:rgba(201,162,39,.25);font-style:italic;font-family:'EB Garamond',serif;font-size:1rem;letter-spacing:.03em}
 
 /* ── SETUP: GIOCATORI ── */
-.players-section{background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px 16px 14px;margin-bottom:18px}
-.players-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px}
+.players-section{background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:18px 16px 16px;margin-bottom:18px;box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+.players-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .players-heading{display:flex;align-items:center;gap:7px;font-family:'Cinzel',serif;font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;color:#5a4830}
 .players-counter{font-family:'Cinzel',serif;font-size:.75rem;color:#3a2a14;transition:color .35s;display:flex;align-items:baseline;gap:2px}
 .players-counter.ready{color:#2ecc71;text-shadow:0 0 12px rgba(46,204,113,.3)}
 .players-count-num{font-size:1.1rem;font-weight:700;line-height:1}
+.players-slots{display:flex;gap:3px;margin-bottom:14px;flex-wrap:wrap}
+.players-slot{width:18px;height:5px;border-radius:3px;transition:background .25s}
+.players-slot.filled{background:rgba(201,162,39,.65)}
+.players-slot.empty{background:rgba(255,255,255,.07)}
 .players-add-row{display:flex;gap:8px;margin-bottom:14px}
-.players-add-input{flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(201,162,39,.18);border-radius:var(--r-sm);padding:11px 14px;color:var(--text);font-family:'EB Garamond',serif;font-size:.96rem;outline:none;transition:border-color .2s,background .2s;-webkit-appearance:none;min-width:0}
-.players-add-input:focus{border-color:rgba(201,162,39,.46);background:rgba(255,255,255,.06)}
+.players-add-input{flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(201,162,39,.22);border-radius:var(--r-sm);padding:12px 15px;color:var(--text);font-family:'EB Garamond',serif;font-size:1rem;outline:none;transition:border-color .2s,background .2s,box-shadow .2s;-webkit-appearance:none;min-width:0}
+.players-add-input:focus{border-color:rgba(201,162,39,.55);background:rgba(255,255,255,.07);box-shadow:0 0 0 3px rgba(201,162,39,.07)}
 .players-add-input::placeholder{color:#2a1c0a}
-.players-add-btn{width:44px;height:44px;flex-shrink:0;background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.32);border-radius:var(--r-sm);color:var(--gold);font-size:1.5rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s,transform .1s;-webkit-tap-highlight-color:transparent;line-height:1;font-weight:300}
-.players-add-btn:active:not(:disabled){transform:scale(.94)}
-.players-add-btn:hover:not(:disabled){background:rgba(201,162,39,.2);border-color:rgba(201,162,39,.5)}
-.players-add-btn:disabled{opacity:.22;cursor:not-allowed}
-@keyframes tokIn{from{opacity:0;transform:translateY(7px) scale(.93)}to{opacity:1;transform:translateY(0) scale(1)}}
-.ptok-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:8px}
-.ptok{position:relative;background:rgba(255,255,255,.04);border:1px solid rgba(201,162,39,.14);border-radius:11px;padding:11px 7px 9px;text-align:center;animation:tokIn .28s ease both;-webkit-tap-highlight-color:transparent;overflow:hidden}
-.ptok::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(to right,transparent,rgba(201,162,39,.22),transparent)}
-.ptok-ghost{border-style:dashed;border-color:rgba(255,255,255,.06);background:rgba(255,255,255,.01);pointer-events:none}
-.ptok-rm{position:absolute;top:4px;right:5px;background:none;border:none;color:#2a1608;font-size:.62rem;cursor:pointer;line-height:1;padding:3px;transition:color .15s;-webkit-tap-highlight-color:transparent;z-index:1}
-.ptok-rm:hover{color:#c0392b}
-.ptok-icon{font-size:1.5rem;line-height:1;display:block;margin-bottom:5px}
-.ptok-name{font-size:.72rem;font-family:'Cinzel',serif;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.02em;display:block;margin-bottom:3px}
-.ptok-num{font-size:.5rem;font-family:'Cinzel',serif;color:#352510;letter-spacing:.14em;display:block;text-transform:uppercase}
-.players-empty{text-align:center;padding:18px 0 6px}
-.players-ready-msg{text-align:center;font-size:.78rem;color:#2ecc71;font-style:italic;margin-top:6px;opacity:.85;font-family:'EB Garamond',serif}
+.players-add-btn{width:46px;height:46px;flex-shrink:0;background:linear-gradient(145deg,rgba(201,162,39,.18),rgba(201,162,39,.08));border:1px solid rgba(201,162,39,.38);border-radius:var(--r-sm);color:var(--gold);font-size:1.6rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s,transform .1s,box-shadow .15s;-webkit-tap-highlight-color:transparent;line-height:1;font-weight:300}
+.players-add-btn:active:not(:disabled){transform:scale(.92)}
+.players-add-btn:hover:not(:disabled){background:linear-gradient(145deg,rgba(201,162,39,.28),rgba(201,162,39,.14));border-color:rgba(201,162,39,.6);box-shadow:0 2px 14px rgba(201,162,39,.18)}
+.players-add-btn:disabled{opacity:.2;cursor:not-allowed}
+@keyframes tokIn{from{opacity:0;transform:translateY(9px) scale(.9)}to{opacity:1;transform:translateY(0) scale(1)}}
+.ptok-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.ptok{position:relative;background:linear-gradient(160deg,rgba(255,255,255,.06) 0%,rgba(255,255,255,.025) 100%);border:1px solid rgba(201,162,39,.18);border-radius:13px;padding:14px 8px 11px;text-align:center;animation:tokIn .26s ease both;-webkit-tap-highlight-color:transparent;overflow:hidden;transition:border-color .15s,box-shadow .15s}
+.ptok:hover{border-color:rgba(201,162,39,.35);box-shadow:0 2px 12px rgba(0,0,0,.25)}
+.ptok::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(to right,transparent,rgba(201,162,39,.25),transparent)}
+.ptok::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(to right,transparent,rgba(201,162,39,.18),transparent)}
+.ptok-ghost{border-style:dashed;border-color:rgba(255,255,255,.05);background:rgba(255,255,255,.008);pointer-events:none}
+.ptok-ghost::before,.ptok-ghost::after{display:none}
+.ptok-rm{position:absolute;top:5px;right:6px;background:rgba(0,0,0,.22);border:1px solid rgba(255,255,255,.07);border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;color:#4a2010;font-size:.6rem;cursor:pointer;line-height:1;padding:0;transition:background .15s,color .15s,border-color .15s;-webkit-tap-highlight-color:transparent;z-index:1}
+.ptok-rm:hover{background:rgba(192,57,43,.3);color:#e07060;border-color:rgba(192,57,43,.4)}
+.ptok-icon{font-size:1.65rem;line-height:1;display:block;margin-bottom:5px;filter:drop-shadow(0 1px 4px rgba(0,0,0,.4))}
+.ptok-name{font-size:.73rem;font-family:'Cinzel',serif;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.02em;display:block;margin-bottom:3px}
+.ptok-num{font-size:.52rem;font-family:'Cinzel',serif;color:rgba(201,162,39,.35);letter-spacing:.18em;display:block;text-transform:uppercase}
+.players-empty{text-align:center;padding:22px 0 10px}
+.players-ready-msg{text-align:center;font-size:.8rem;color:#2ecc71;font-style:italic;margin-top:8px;opacity:.9;font-family:'EB Garamond',serif;display:flex;align-items:center;justify-content:center;gap:6px}
 </style>
 </head>
 <body>
@@ -1041,7 +1048,7 @@ function getSuggestedDist(n){
   return         {...base,lupo:2,cucciolo:1,veggente:1,guardia:1,meretrice:1,criceto:1,misantropo:1,incompreso:1,villico:n-9};
 }
 
-const ROLE_MAX={lupo:10,cucciolo:5,veggente:5,guardia:5,meretrice:5,arciere:5,avvocato:5,negromante:5,gesu:5,cappuccetto:5,romeo:1,giulietta:1,orfano:5,contaminato:5,piromane:5,accusatore:5,funambolo:5,custode:5,araldo:5,alchimista:5,criceto:5,misantropo:5,incompreso:5,lupoAlpha:5,suicida:5,mutaforma:5,condor:5,corvo:5,vampiro:5,villico:99};
+const ROLE_MAX={lupo:10,cucciolo:5,veggente:5,guardia:5,meretrice:5,arciere:5,avvocato:5,negromante:5,gesu:5,cappuccetto:5,romeo:1,giulietta:1,orfano:5,contaminato:5,piromane:5,accusatore:5,funambolo:5,custode:5,araldo:5,alchimista:5,criceto:5,misantropo:5,incompreso:5,lupoAlpha:5,suicida:5,mutaforma:1,condor:5,corvo:5,vampiro:5,villico:99};
 const ROLE_ORDER=['lupo','cucciolo','lupoAlpha','veggente','guardia','meretrice','arciere','avvocato','negromante','gesu','cappuccetto','romeo','giulietta','orfano','contaminato','piromane','accusatore','funambolo','custode','araldo','alchimista','criceto','misantropo','incompreso','suicida','mutaforma','condor','corvo','vampiro','villico'];
 const DIFFICULTY={
   facile:   {label:'🌱 Facile',   color:'#2ecc71',bg:'rgba(46,204,113,.1)', desc:'Ruoli classici. Perfetto per la prima partita.',       roles:new Set(['lupo','cucciolo','lupoAlpha','veggente','guardia','meretrice'])},
@@ -1238,7 +1245,7 @@ function RoleModal({roleKey,onClose}){
 
 // ─── APP ──────────────────────────────────────────────────────────────────────
 const STEP_HINTS={
-  arciere:   {rules:["Sceglie un giocatore che perde i poteri stanotte","Non pu\u00f2 bloccare se stesso","Pu\u00f2 scegliere di passare"]},
+  arciere:   {rules:["Sceglie un giocatore che perde i poteri stanotte","Non pu\u00f2 bloccare se stesso","Pu\u00f2 scegliere di passare","Non pu\u00f2 bloccare la stessa persona per pi\u00f9 di 2 notti di fila"]},
   guardia:   {rules:["Protegge un giocatore dalla morte notturna","Pu\u00f2 proteggersi da solo una sola volta per partita","Se bloccato dall\u2019Arciere, non pu\u00f2 proteggere nessuno"]},
   custode:   {rules:["Silenzia un giocatore per tutto il giorno seguente","Non agisce la prima notte","Il bersaglio non pu\u00f2 parlare n\u00e9 votare"]},
   funambolo: {rules:["Il Narratore lancia la moneta in segreto","Testa = immune a qualsiasi morte stanotte","Croce = muore comunque anche se protetto"]},
@@ -1330,6 +1337,8 @@ function App(){
   const [araldoUsed,setAraldoUsed]=useState(false);
   const [araldoCands,setAraldoCands]=useState([]);  // [idx1, idx2] candidati forzati
   const [accLast,setAccLast]=useState(-1);
+  const [arcLast,setArcLast]=useState(-1); // round dell'ultimo blocco
+  const [arcLastTarget,setArcLastTarget]=useState(null); // idx bersaglio ultima notte (per limite 2 notti consecutive)
   const [gesuDeath,setGesuDeath]=useState(null);
   const [cappKilled,setCappKilled]=useState(false);
   const [alphaTransf,setAlphaTransf]=useState(false);
@@ -1617,7 +1626,7 @@ function App(){
     setSeerKill(s.seerKill??null);
     setCAlone(s.cAlone||false);setCFirst(s.cFirst||false);
     setPirUsed(s.pirUsed||false);setAlchUsed(s.alchUsed||false);
-    setAraldoUsed(s.araldoUsed||false);setAccLast(s.accLast??-1);
+    setAraldoUsed(s.araldoUsed||false);setAccLast(s.accLast??-1);setArcLast(s.arcLast??-1);setArcLastTarget(s.arcLastTarget??null);
     setGesuDeath(s.gesuDeath??null);setCappKilled(s.cappKilled||false);
     setAlphaTransf(s.alphaTransf||false);
     setMutRole(s.mutRole??null);setConRole(s.conRole??null);
@@ -1637,11 +1646,12 @@ function App(){
     if(sc==='setup'||sc==='home')return;
     saveGame({sc,names,vName,players,ri,round,ns,dist,gc,wc,vc,vr,mc,ac,cusC,negC,negR,pirC,accC,accR,
       alchAct,alchT,alchTs,mutC,conC,corC,seerKill,cAlone,cFirst,pirUsed,alchUsed,araldoUsed,accLast,
+      arcLast,arcLastTarget,
       gesuDeath,cappKilled,alphaTransf,mutRole,conRole,corvoVotes,orfanoEff,silenced,avvRm,de,vi,win,
       ordineMode,sindacoIdx,showRoles,funamboloCoin,vampPrede,araldoCands,guardSelfUsed,gameLog,narratorPlays});
   },[sc,players,ri,round,ns,gc,wc,vc,vr,mc,ac,cusC,negC,negR,pirC,accC,accR,
     alchAct,alchT,alchTs,mutC,conC,corC,seerKill,cAlone,cFirst,pirUsed,alchUsed,
-    araldoUsed,accLast,gesuDeath,cappKilled,alphaTransf,mutRole,conRole,corvoVotes,
+    araldoUsed,accLast,arcLast,arcLastTarget,gesuDeath,cappKilled,alphaTransf,mutRole,conRole,corvoVotes,
     orfanoEff,silenced,de,vi,win,funamboloCoin,vampPrede,araldoCands,guardSelfUsed]);
 
   // ── AUTH ANONIMA: aggiorna UID e stato React quando Firebase autentica ────
@@ -2200,6 +2210,22 @@ function App(){
   const goRolePick=()=>{setVName(vInp.trim()||'il Villaggio');setDist(getSuggestedDist(names.length));setSc('rolePick');};
 
   const confirmRoles=()=>{
+    // ── MULTIPLAYER: verifica che la lobby non sia cambiata dopo la configurazione ──
+    if(gameMode==='multiplayer'&&roomCode){
+      const connected=new Set(lobbyPlayers.map(p=>p.name));
+      const hostName=narratorPlays&&playerName.trim()?playerName.trim():null;
+      const expected=names.filter(n=>n!==hostName);
+      const missing=expected.filter(n=>!connected.has(n));
+      const extra=lobbyPlayers.filter(p=>!names.includes(p.name)).map(p=>p.name);
+      if(missing.length||extra.length){
+        let msg='⚠️ La lobby è cambiata da quando hai configurato i ruoli.\n';
+        if(missing.length)msg+=`\n• Non più connessi: ${missing.join(', ')}`;
+        if(extra.length)msg+=`\n• Nuovi in attesa: ${extra.join(', ')}`;
+        msg+='\n\nTorna alla lobby (← Modifica Giocatori) per aggiornare la lista prima di iniziare.';
+        if(typeof window!=='undefined'&&window.alert)window.alert(msg);
+        return;
+      }
+    }
     const _n=names.length;
     const _nonV=ROLE_ORDER.filter(k=>k!=='villico').reduce((s,k)=>s+(dist[k]||0),0);
     const fixedDist={...dist,villico:Math.max(0,_n-_nonV)};
@@ -2210,11 +2236,17 @@ function App(){
     setAraldoUsed(false);setAccLast(-1);setGesuDeath(null);setCappKilled(false);
     setAlphaTransf(false);setMutRole(null);setConRole(null);
     setCorvoVotes({});setOrfanoEff(false);setSilenced(null);setAvvRm(null);
+    setArcLast(-1);setArcLastTarget(null);
     setSindacoIdx(useSindaco?null:-1);setSindacoTmp(null);setVampPrede([]);setAraldoCands([]);
     setGuardSelfUsed(false);setLupoAlphaActivatedName(null);
     setGameLog([]);
     if(gameMode==='multiplayer'&&roomCode){
-      fbWriteRoles(roomCode,ps,lobbyPlayerMap);
+      // Ricostruisci la mappa nome→id dai connessi attuali (gestisce riconnessioni con id nuovo)
+      const freshMap={};
+      lobbyPlayers.forEach(p=>{freshMap[p.name]=p.id;});
+      if(narratorPlays&&playerName.trim())freshMap[playerName.trim()]=myIdRef.current;
+      setLobbyPlayerMap(freshMap);
+      fbWriteRoles(roomCode,ps,freshMap);
       if(narratorPlays&&playerName.trim()){
         // L'host gioca: imposta myRole direttamente dall'array ps (il listener
         // Firebase non scatta perché roomRole==='host', non 'player')
@@ -2269,8 +2301,18 @@ function App(){
     let activatedName=null;
     let alphaJustActivated=false;
     if(alphaTransf){
-      const lai=fr.findIndex(p=>p.role==='lupoAlpha'&&p.alive);
-      if(lai!==-1){activatedName=fr[lai].name;fr[lai]={...fr[lai],role:'lupo'};alphaJustActivated=true;}
+      // Si trasforma chi ha RUOLO EFFETTIVO Lupo Mannaro: il Mannaro vero,
+      // oppure un Mutaforma/Condor che lo aveva copiato. Diventa Lupo Grande stabile.
+      const effOf=(p)=>(p.role==='mutaforma'&&mutRole)?mutRole:(p.role==='condor'&&conRole)?conRole:p.role;
+      const lai=fr.findIndex(p=>p.alive&&effOf(p)==='lupoAlpha');
+      if(lai!==-1){
+        activatedName=fr[lai].name;
+        const wasMut=fr[lai].role==='mutaforma',wasCon=fr[lai].role==='condor';
+        fr[lai]={...fr[lai],role:'lupo'};
+        if(wasMut)setMutRole(null);
+        if(wasCon)setConRole(null);
+        alphaJustActivated=true;
+      }
       setAlphaTransf(false);
     }
     setPlayers(fr);resetNight();setCAlone(ca);setCFirst(cf);
@@ -2359,22 +2401,35 @@ function App(){
     const aAlchTs=actions['alchimista']?.targets||[];
     // Apply state updates
     let curP=players.map(p=>({...p,protected:false}));
-    if(guardT!==null){
+    // ── ARCIERE: blocca QUALSIASI ruolo il cui attore è il suo bersaglio ──────
+    const arcBlk=(role)=>arcT!==null&&arcT!==undefined&&arcT===curP.findIndex(p=>p.role===role&&p.alive);
+    // Lupi bloccati se l'Arciere colpisce il Lupo Grande, il Mannaro o un Cucciolo solitario
+    let effWolfT=wolfT;
+    if(arcT!==null&&arcT!==undefined&&curP[arcT]){
+      const at=curP[arcT];
+      const lupoAlive=curP.some(p=>p.role==='lupo'&&p.alive);
+      const cucSolo=!lupoAlive&&curP.some(p=>p.role==='cucciolo'&&p.alive);
+      if(at.role==='lupo'||at.role==='lupoAlpha'||(cucSolo&&at.role==='cucciolo'))effWolfT=null;
+    }
+    const effMerT=arcBlk('meretrice')?null:merT;
+    const effPirT=arcBlk('piromane')?null:pirT;
+    const effAlchAct=arcBlk('alchimista')?null:aAlchAct;
+    if(guardT!==null&&!arcBlk('guardia')){
       const gIdx=curP.findIndex(p=>p.role==='guardia'&&p.alive);
       if(guardT===gIdx)setGuardSelfUsed(true);
       curP=curP.map((p,i)=>({...p,protected:i===guardT}));
       setPlayers(curP);
     }
-    if(cusT!==null)setSilenced(cusT);
+    if(cusT!==null&&!arcBlk('custode'))setSilenced(cusT);
     if(arcT!==null)setAc(arcT);
-    if(wolfT!==null)setWc(wolfT);
-    if(merT!==null)setMc(merT);
-    if(pirT!==null){setPirC(pirT);setPirUsed(true);}
-    if(aAlchAct){setAlchAct(aAlchAct);setAlchT(aAlchT);setAlchTs(aAlchTs);setAlchUsed(true);}
-    if(mutT!==null){setMutC(mutT);setMutRole(curP[mutT]?.role||null);}
-    if(conT!==null){setConC(conT);setConRole(curP[conT]?.role||null);}
-    if(corT!==null){setCorC(corT);setCorvoVotes(prev=>{const n={...prev};n[corT]=(n[corT]||0)+1;return n;});}
-    if(vampT!==null)setVampPrede(prev=>{if(prev.includes(vampT))return prev;return[...prev,vampT];});
+    if(effWolfT!==null)setWc(effWolfT);
+    if(effMerT!==null)setMc(effMerT);
+    if(effPirT!==null){setPirC(effPirT);setPirUsed(true);}
+    if(effAlchAct){setAlchAct(effAlchAct);setAlchT(aAlchT);setAlchTs(aAlchTs);setAlchUsed(true);}
+    if(mutT!==null&&!arcBlk('mutaforma')){setMutC(mutT);setMutRole(curP[mutT]?.role||null);}
+    if(conT!==null&&!arcBlk('condor')){setConC(conT);setConRole(curP[conT]?.role||null);}
+    if(corT!==null&&!arcBlk('corvo')){setCorC(corT);setCorvoVotes(prev=>{const n={...prev};n[corT]=(n[corT]||0)+1;return n;});}
+    if(vampT!==null&&!arcBlk('vampiro'))setVampPrede(prev=>{if(prev.includes(vampT))return prev;return[...prev,vampT];});
     // Seer (only if not blocked by archer)
     const vIdx=curP.findIndex(p=>p.role==='veggente'&&p.alive);
     if(seerT!==null&&vIdx!==-1&&arcT!==vIdx){
@@ -2419,7 +2474,7 @@ function App(){
       accRes={idx:accT,isWolf:isW};setAccR(accRes);setAccLast(round);
     }
     getDb().ref(`rooms/${roomCode}/autoNight`).remove();
-    const resolvedEvs=resolve(curP,{wt:wolfT,mt:merT,arcT,pt:pirT,accRes,aAct:aAlchAct,aT:aAlchT,aTs:aAlchTs});
+    const resolvedEvs=resolve(curP,{wt:effWolfT,mt:effMerT,arcT,pt:effPirT,accRes,aAct:effAlchAct,aT:aAlchT,aTs:aAlchTs});
     generateAiNarration(resolvedEvs||[],round);
   };
 
@@ -2500,8 +2555,8 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
 
   // ── NIGHT CONFIRMS ──
   const confGuard=()=>{if(gc===null)return;const guardIdx=players.findIndex(p=>p.role==='guardia'&&p.alive);if(gc===guardIdx)setGuardSelfUsed(true);const u=players.map((p,i)=>({...p,protected:i===gc}));setPlayers(u);advance('guardia',u);};
-  const confArc=()=>{advance('arciere',players,{arcT:ac});};
-  const skipArc=()=>{setAc(null);advance('arciere',players,{arcT:null});};
+  const confArc=()=>{setArcLast(round);setArcLastTarget(ac);advance('arciere',players,{arcT:ac});};
+  const skipArc=()=>{setAc(null);setArcLastTarget(null);advance('arciere',players,{arcT:null});};
   const confCus=()=>{if(cusC===null)return;setSilenced(cusC);advance('custode',players);};
   const skipCus=()=>{advance('custode',players);};
   const [pendingWolfTarget,setPendingWolfTarget]=useState(null); // null=not confirmed yet, 'none'=no victim, number=victim idx
@@ -2518,7 +2573,8 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
   };
   const proceedFromWolves=()=>{
     const t=pendingWolfTarget==='none'?null:pendingWolfTarget;
-    advance('lupi',players,{wt:t});
+    // Passa arcT esplicitamente: evita che resolve usi uno stato stantio
+    advance('lupi',players,{wt:t,arcT:ac});
   };
   const confSeer=()=>{
     if(vc===null)return;
@@ -2601,6 +2657,9 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
 
     // block set (arciere)
     const blocked=arcT!==null&&arcT!==undefined?new Set([arcT]):new Set();
+    // funambolo: la sua moneta non vale se l'Arciere lo ha bloccato
+    const funIdxR=np.findIndex(p=>p.role==='funambolo'&&p.alive);
+    const funCoin=(arcT!==null&&arcT!==undefined&&arcT===funIdxR)?null:funamboloCoin;
 
     // meretrice
     const merIdx=np.findIndex(p=>p.role==='meretrice'&&p.alive);
@@ -2616,24 +2675,28 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
     // wolf attack
     if(wolfT!==null&&wolfT!==undefined){
       const isCric=wolfT===cricIdx&&cricIdx!==-1;
-      const isAlpha=np[wolfT]&&np[wolfT].role==='lupoAlpha'&&!alphaTransf&&!blocked.has(wolfT);
+      const isAlpha=np[wolfT]&&effRoleOf(np[wolfT])==='lupoAlpha'&&!alphaTransf&&!blocked.has(wolfT);
       const isFun=np[wolfT]&&np[wolfT].role==='funambolo';
-      const funTesta=isFun&&funamboloCoin==='testa';
-      const funCroce=isFun&&funamboloCoin==='croce';
+      const funTesta=isFun&&funCoin==='testa';
+      const funCroce=isFun&&funCoin==='croce';
       if(wolfOnMer){/* silent */}
       else if(isCric){/* silent – criceto survives */}
-      else if(isAlpha){setAlphaTransf(true);/* silent – transforms next night */}
       else if(funTesta){/* funambolo immune stanotte */}
       else if(guardT===wolfT&&!funCroce){
+        /* Protezione guardia: ha priorità sulla trasformazione del lupo mannaro.
+           Se il lupo mannaro è protetto NON si attiva — la trasformazione non parte. */
         evs.push({t:'protected',tx:'🛡️ I morsi della notte non hanno trovato carne — qualcuno era sotto protezione.'});
         if(merOnSameAsWolf&&merIdx!==-1){/* also protected, silent */}
-      }else{
+      }else if(isAlpha){setAlphaTransf(true);/* silent – transforms next night */}
+      else{
         if(np[wolfT].role==='contaminato'){
           dying.add(wolfT);
-          // Un Lupo Grande a caso muore la stessa mattina del Contaminato
+          // Muore UN Lupo Grande: il capobranco eletto se esiste, altrimenti uno a caso.
+          // (Un Cucciolo trasformato ha già role==='lupo', quindi è incluso automaticamente.)
           const lupiVivi=np.map((p,i)=>i).filter(i=>np[i].role==='lupo'&&np[i].alive);
           if(lupiVivi.length>0){
-            dying.add(lupiVivi[Math.floor(Math.random()*lupiVivi.length)]);
+            const leaderIdx=lupiVivi.find(i=>np[i].name===wolfLeaderRef.current);
+            dying.add(leaderIdx!==undefined?leaderIdx:lupiVivi[Math.floor(Math.random()*lupiVivi.length)]);
           }
         }else{dying.add(wolfT);}
         if(merOnSameAsWolf&&merIdx!==-1)dying.add(merIdx);
@@ -2672,13 +2735,13 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
       if(np[i]?.alive){
         // funambolo testa: immune a qualsiasi morte
         const funIdx2=np.findIndex(p=>p.role==='funambolo'&&p.alive);
-        if(i===funIdx2&&funamboloCoin==='testa')return;
+        if(i===funIdx2&&funCoin==='testa')return;
         np[i]={...np[i],alive:false};
         evs.push({t:'death',tx:`💀 ${np[i].name} è stato trovato morto all'alba.`});
         // clear corvo votes if corvo dies
         if(effRoleOf(np[i])==='corvo')setCorvoVotes({});
         // gesù morto di notte → segna il round per resurrezione
-        if(np[i].role==='gesu')setGesuDeath(round);
+        if(effRoleOf(np[i])==='gesu')setGesuDeath(round);
         // Romeo/Giulietta chain — ALL partners die, using effective role
         const er=effRoleOf(np[i]);
         if(er==='romeo'){
@@ -2706,7 +2769,7 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
     // Es: muore Notte 1 (round=1) → gesuDeath=1, resurge quando round-gesuDeath>=3
     // → Night 4 resolve (round=4): 4-1=3 ✓ → annuncio Mattina 4
     if(gesuDeath!==null&&round-gesuDeath>=3){
-      const gi=np.findIndex(p=>p.role==='gesu'&&!p.alive);
+      const gi=np.findIndex(p=>effRoleOf(p)==='gesu'&&!p.alive);
       if(gi!==-1){np[gi]={...np[gi],alive:true};evs.push({t:'revive',tx:`✝️ Miracolo! ${np[gi].name} (Gesù) risorge dalla morte!`});setGesuDeath(null);}
     }
 
@@ -3060,7 +3123,7 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
                   setDe(s.de||[]);setVi(s.vi??null);setWin(s.win??null);
                   setCAlone(s.cAlone||false);setCFirst(s.cFirst||false);
                   setPirUsed(s.pirUsed||false);setAlchUsed(s.alchUsed||false);setAraldoUsed(s.araldoUsed||false);
-                  setAccLast(s.accLast??-1);setGesuDeath(s.gesuDeath??null);setCappKilled(s.cappKilled||false);
+                  setAccLast(s.accLast??-1);setArcLast(s.arcLast??-1);setArcLastTarget(s.arcLastTarget??null);setGesuDeath(s.gesuDeath??null);setCappKilled(s.cappKilled||false);
                   setAlphaTransf(s.alphaTransf||false);setMutRole(s.mutRole??null);setConRole(s.conRole??null);
                   setCorvoVotes(s.corvoVotes||{});setOrfanoEff(s.orfanoEff||false);
                   setSilenced(s.silenced??null);setAvvRm(s.avvRm??null);
@@ -3573,6 +3636,16 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
                 </div>
               )}
               {mpAutoActed&&<div style={{textAlign:'center',padding:'10px 0',color:'#2ecc71',fontSize:'.85rem',fontStyle:'italic'}}>✓ Azione inviata — in attesa degli altri...</div>}
+              {/* HOST: valvola di sicurezza se un giocatore si disconnette */}
+              {roomRole==='host'&&mpAutoActed&&mpAutoCounter.total>0&&mpAutoCounter.done<mpAutoCounter.total&&(
+                <div style={{marginTop:8,paddingTop:10,borderTop:'1px solid rgba(155,89,182,.15)'}}>
+                  <button className="btn btn-outline" style={{width:'100%',padding:10,fontSize:'.76rem',color:'#b07a4a',borderColor:'rgba(176,122,74,.4)'}}
+                    onClick={()=>{if(window.confirm(`Forzare l'alba saltando ${mpAutoCounter.total-mpAutoCounter.done} giocatore/i che non ha/hanno ancora agito?`)&&triggerAutoResolveRef.current)triggerAutoResolveRef.current();}}>
+                    ⏭️ Forza l'alba — salta chi manca ({mpAutoCounter.total-mpAutoCounter.done} in attesa)
+                  </button>
+                  <div style={{fontSize:'.66rem',color:'#5a4a3a',fontStyle:'italic',textAlign:'center',marginTop:5}}>Usalo solo se un giocatore si è disconnesso</div>
+                </div>
+              )}
             </div>
           );
         })()}
@@ -4000,13 +4073,20 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
           <div className="players-header">
             <div className="players-heading">
               <span>🏘️</span>
-              <span>Abitanti</span>
+              <span>Abitanti del Villaggio</span>
             </div>
             <div className={`players-counter${names.length>=2?' ready':''}`}>
               <span className="players-count-num">{names.length}</span>
-              <span style={{margin:'0 2px',opacity:.4}}>/</span>
-              <span>20</span>
+              <span style={{margin:'0 3px',opacity:.35,fontSize:'.7rem'}}>/</span>
+              <span style={{opacity:.5}}>20</span>
             </div>
+          </div>
+
+          {/* Slot bar */}
+          <div className="players-slots">
+            {Array.from({length:20},(_,i)=>(
+              <div key={i} className={`players-slot ${i<names.length?'filled':'empty'}`}/>
+            ))}
           </div>
 
           {/* Riga aggiunta */}
@@ -4014,13 +4094,14 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
             <input
               type="text"
               className="players-add-input"
-              placeholder="Nome giocatore..."
+              placeholder="Nome abitante..."
               value={inp}
               onChange={e=>setInp(e.target.value)}
               onKeyDown={e=>e.key==='Enter'&&addP()}
               maxLength={20}
+              autoComplete="off"
             />
-            <button className="players-add-btn" onClick={addP} disabled={!inp.trim()||names.length>=20}>+</button>
+            <button className="players-add-btn" onClick={addP} disabled={!inp.trim()||names.length>=20} title="Aggiungi giocatore">+</button>
           </div>
 
           {/* Token grid */}
@@ -4028,7 +4109,7 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
             <div className="ptok-grid">
               {names.map((n,i)=>(
                 <div key={n+i} className="ptok" style={{animationDelay:`${Math.min(i,8)*0.04}s`}}>
-                  <button className="ptok-rm" onClick={()=>setNames(p=>p.filter((_,j)=>j!==i))}>✕</button>
+                  <button className="ptok-rm" onClick={()=>setNames(p=>p.filter((_,j)=>j!==i))} title="Rimuovi">✕</button>
                   <span className="ptok-icon">{P_ICONS[i%P_ICONS.length]}</span>
                   <span className="ptok-name">{n}</span>
                   <span className="ptok-num">#{i+1}</span>
@@ -4036,8 +4117,8 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
               ))}
               {names.length<20&&(
                 <div className="ptok ptok-ghost">
-                  <span className="ptok-icon" style={{opacity:.15}}>👤</span>
-                  <span className="ptok-name" style={{color:'rgba(255,255,255,.08)'}}>·  ·  ·</span>
+                  <span className="ptok-icon" style={{opacity:.1,fontSize:'1.2rem'}}>＋</span>
+                  <span className="ptok-name" style={{color:'rgba(255,255,255,.06)',fontSize:'.62rem',letterSpacing:'.06em'}}>aggiungi</span>
                 </div>
               )}
             </div>
@@ -4046,17 +4127,23 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
           {/* Empty state */}
           {names.length===0&&(
             <div className="players-empty">
-              <span style={{fontSize:'2.2rem',display:'block',marginBottom:8,opacity:.2}}>👥</span>
-              <p style={{fontSize:'.84rem',color:'#2e1e0c',fontStyle:'italic'}}>Nessun abitante ancora...</p>
+              <span style={{fontSize:'2.4rem',display:'block',marginBottom:8,opacity:.15}}>👥</span>
+              <p style={{fontSize:'.84rem',color:'#2e1e0c',fontStyle:'italic'}}>Il villaggio è deserto...</p>
+              <p style={{fontSize:'.72rem',color:'#1e1208',fontStyle:'italic',marginTop:4}}>Scrivi un nome e premi Invio o +</p>
             </div>
           )}
 
           {/* Status messages */}
           {names.length>0&&names.length<2&&(
-            <p className="warn" style={{marginTop:6}}>⚠️ Minimo 2 giocatori ({2-names.length} mancante)</p>
+            <p className="warn" style={{marginTop:8}}>⚠️ Servono almeno 2 giocatori per iniziare</p>
           )}
           {names.length>=2&&(
-            <p className="players-ready-msg">✓ {names.length} {names.length===1?'giocatore pronto':'giocatori pronti'} per la partita</p>
+            <p className="players-ready-msg">
+              <span style={{color:'#2ecc71',fontWeight:700}}>✓</span>
+              <span>{names.length} {names.length===1?'giocatore pronto':'giocatori pronti'}</span>
+              {names.length>=6&&names.length<10&&<span style={{opacity:.5,fontSize:'.7rem'}}>— partita ideale!</span>}
+              {names.length>=10&&<span style={{opacity:.5,fontSize:'.7rem'}}>— partita epica!</span>}
+            </p>
           )}
         </div>
 
@@ -4635,15 +4722,31 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
       );
     }
 
-    if(ns==='arciere') return(
+    if(ns==='arciere'){
+      // Limite: non può bloccare la stessa persona per 3 notti di fila
+      // (può bloccarla max 2 notti consecutive, poi deve cambiare bersaglio)
+      const arcConsecBlock = arcLast>=1 && (round - arcLast)<=1 && arcLastTarget!==null;
+      const arcBlocked = (p,i) => arcConsecBlock && i===arcLastTarget;
+      return(
       <NW color="#27ae60" emoji="🏹" title="L'Arciere si sveglia">
         <div className="instr">L'Arciere scocca una freccia silenziosa — la persona scelta perde i suoi poteri stanotte.</div>
+        {arcConsecBlock&&(
+          <div style={{background:'rgba(39,174,96,.08)',border:'1px solid rgba(39,174,96,.25)',borderRadius:10,padding:'9px 13px',marginBottom:12,fontSize:'.8rem',color:'#5a9070',fontStyle:'italic',lineHeight:1.5}}>
+            ⚠️ <strong style={{color:'#5aaa80'}}>Limite colpi:</strong> l'arciere ha già bloccato <strong style={{color:'#c9a227'}}>{players[arcLastTarget]?.name}</strong> la notte scorsa. Non può sceglierlo di nuovo stanotte — deve cambiare bersaglio.
+          </div>
+        )}
         <div className="nlbl">Chi blocca?</div>
-        <PList players={alive.filter(p=>p.role!=='arciere')} sel={ac} onSel={setAc}/>
-        <button className="btn btn-gold mb8" onClick={confArc} disabled={ac===null}>Conferma</button>
+        <PList
+          players={alive.filter(p=>p.role!=='arciere')}
+          sel={ac}
+          onSel={i=>{if(!arcBlocked(null,i))setAc(i);}}
+          disabledIds={arcConsecBlock&&arcLastTarget!==null?new Set([arcLastTarget]):new Set()}
+        />
+        <button className="btn btn-gold mb8" onClick={confArc} disabled={ac===null||arcBlocked(null,ac)}>Conferma</button>
         <button className="btn btn-outline" onClick={skipArc}>Passa senza agire</button>
       </NW>
-    );
+      );
+    }
 
     if(ns==='custode') return(
       <NW color="#95a5a6" emoji="🤫" title="Il Custode del Silenzio si sveglia">
@@ -4667,6 +4770,10 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
       const flipCoin=()=>{setFunamboloCoin(Math.random()<0.5?'testa':'croce');};
       return(
         <NW color="#16a085" emoji="🎪" title="Il Funambolo cammina sul filo">
+          {isBlocked('funambolo')?(
+            <><div className="instr" style={{borderColor:'rgba(39,174,96,.3)',color:'#70a080'}}>🏹 L'Arciere ha bloccato il Funambolo. Niente moneta stanotte — può morire normalmente.</div>
+            <button className="btn btn-gold" onClick={()=>advance('funambolo',players)}>Continua →</button></>
+          ):(<>
           <div className="instr">Il Narratore lancia in segreto la moneta del destino. Il risultato è solo suo.</div>
           {!funamboloCoin?(
             <>
@@ -4691,6 +4798,7 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
               <button className="btn btn-gold" onClick={()=>advance('funambolo',players)}>Conferma →</button>
             </>
           )}
+          </>)}
         </NW>
       );
     }
@@ -4723,7 +4831,11 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
                 </div>
                 {pendingWolfTarget!=='none'&&<div style={{fontSize:'.75rem',color:'#8a5a4a',fontStyle:'italic'}}>Solo il Narratore vede questo</div>}
               </div>
-              <button className="btn btn-gold mb8" onClick={proceedFromWolves}>Avanza all'alba →</button>
+              {(()=>{
+                const nxt=NIGHT_STEPS.slice(NIGHT_STEPS.indexOf('lupi')+1).find(s=>stepHasPlayer(s,players));
+                const lbl=nxt?`Prosegui — ${ROLES[nxt]?.emoji||''} ${ROLES[nxt]?.name||'prossimo ruolo'} →`:"Avanza all'alba →";
+                return <button className="btn btn-gold mb8" onClick={proceedFromWolves}>{lbl}</button>;
+              })()}
               <button className="btn btn-outline" style={{color:'#c0704a',borderColor:'rgba(192,112,74,.4)',fontSize:'.82rem'}} onClick={undoWolves}>↩ Annulla — cambia vittima</button>
             </div>
           ):(
@@ -5415,7 +5527,11 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
 
         {/* ── VOTO DIGITALE MULTIPLAYER ── */}
         {gameMode==='multiplayer'&&(()=>{
-          const sorted=Object.entries(liveVotes).sort((a,b)=>b[1]-a[1]);
+          // Avvocato: toglie 1 voto al bersaglio scelto, applicato al conteggio digitale
+          const avvActive=avvRm!==null&&players.some(p=>p.role==='avvocato'&&p.alive);
+          const effVotes={...liveVotes};
+          if(avvActive&&effVotes[avvRm])effVotes[avvRm]=Math.max(0,effVotes[avvRm]-1);
+          const sorted=Object.entries(effVotes).filter(([,c])=>c>0).sort((a,b)=>b[1]-a[1]);
           const topCount=sorted.length>0?sorted[0][1]:0;
           const topEntries=sorted.filter(([,c])=>c===topCount);
           const isTie=topEntries.length>1;
@@ -5442,13 +5558,13 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
                   </div>
                   {players.map((p,idx)=>{
                     if(!p.alive)return null;
-                    const count=liveVotes[idx]||0;
+                    const count=effVotes[idx]||0;
                     if(count===0)return null;
                     const isLeading=!isTie&&idx===winnerIdx;
                     const isTied=isTie&&tiedIdxs.includes(idx);
                     return(
                       <div key={idx} style={{display:'flex',alignItems:'center',gap:10,padding:'7px 10px',borderRadius:8,marginBottom:5,background:isTied?'rgba(212,130,26,.1)':isLeading?'rgba(201,162,39,.1)':'rgba(255,255,255,.02)',border:`1px solid ${isTied?'rgba(212,130,26,.4)':isLeading?'rgba(201,162,39,.3)':'rgba(255,255,255,.05)'}`}}>
-                        <span style={{fontFamily:'Cinzel,serif',fontSize:'.88rem',color:isTied?'#d4821a':isLeading?'#c9a227':'#8a7060',flex:1}}>{p.name}{isTied?<span style={{fontSize:'.65rem',color:'#d4821a',marginLeft:6}}>parità</span>:''}</span>
+                        <span style={{fontFamily:'Cinzel,serif',fontSize:'.88rem',color:isTied?'#d4821a':isLeading?'#c9a227':'#8a7060',flex:1}}>{p.name}{avvActive&&idx===avvRm?<span style={{fontSize:'.62rem',color:'#f39c12',marginLeft:6}}>⚖️ -1</span>:''}{isTied?<span style={{fontSize:'.65rem',color:'#d4821a',marginLeft:6}}>parità</span>:''}</span>
                         <span style={{fontSize:'.85rem'}}>{Array(count).fill('🗳️').join('')}</span>
                         <span style={{fontFamily:'Cinzel,serif',fontWeight:700,color:isTied?'#d4821a':isLeading?'#c9a227':'#6a5a40',fontSize:'.9rem'}}>{count}</span>
                       </div>
