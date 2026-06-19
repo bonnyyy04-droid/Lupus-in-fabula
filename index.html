@@ -484,6 +484,8 @@ const ROLES = {
   condor:      {name:'Condor',               emoji:'🦅',wolfTeam:false,winsWithWolves:false,soloTeam:true, seerSees:'villico',survivesWolf:false,color:'#d35400',bg:'rgba(211,84,0,.13)',    desc:'Dalla seconda notte copi i poteri di un giocatore morto. Vinci con la fazione del ruolo copiato.'},
   corvo:       {name:'Corvo',                emoji:'🪶',wolfTeam:false,winsWithWolves:false,soloTeam:true, seerSees:'villico',survivesWolf:false,color:'#8395a7',bg:'rgba(131,149,167,.13)',    desc:'Ogni notte aggiungi un voto nascosto contro un giocatore. Vinci se sei vivo alla fine della partita.'},
   vampiro:     {name:'Vampiro',              emoji:'🧛',wolfTeam:false,winsWithWolves:false,soloTeam:true, seerSees:'lupo',   survivesWolf:false,color:'#a569bd',bg:'rgba(165,105,189,.13)',   desc:'Ogni notte morde un giocatore vivo che diventa sua Preda (fedele in segreto). Vince quando lui + le Prede in vita superano gli altri. Il Veggente lo vede come Lupo.'},
+  illusionista:{name:'Illusionista',         emoji:'🎩',wolfTeam:false,winsWithWolves:true, soloTeam:false,seerSees:'lupo',   survivesWolf:false,experimental:true,color:'#6c5ce7',bg:'rgba(108,92,231,.13)',  desc:'Vince con i Lupi ma non si sveglia con il branco e non sa chi sono. Ogni notte sceglie un giocatore (anche sé stesso) e decide se al Veggente apparirà come Lupo o come Innocente quella notte. Di base lui appare come Lupo.'},
+  mentalista:  {name:'Mentalista',           emoji:'🧠',wolfTeam:false,winsWithWolves:false,soloTeam:false,isOrdine:false,seerSees:'villico',survivesWolf:false,experimental:true,hiddenAs:'villico',color:'#a29bfe',bg:'rgba(162,155,254,.13)',desc:'Crede di essere un semplice Villico e non agisce di notte. Quando muore (o a fine partita) prova a indovinare il ruolo di tutti i sopravvissuti: se li azzecca tutti ottiene 1,5 punti e non viene eliminato; se sbaglia 0,5 punti. Vince con il Villaggio.'},
 };
 
 // ─── LIBRO DATA ───────────────────────────────────────────────────────────────
@@ -581,6 +583,12 @@ const BOOK = [
   {key:'vampiro',cat:'neutri',emoji:'🧛',name:'Il Vampiro',color:'#a569bd',faction:'Solitario',fc:'#a569bd',
    desc:'Non cerca il sangue — cerca il controllo. Ogni notte sceglie una vittima e la piega alla sua volontà.',
    ability:'Morde un giocatore vivo ogni notte: diventa sua Preda segreta. Vince quando lui + le Prede in vita > tutti gli altri. Il Veggente lo vede come Lupo.',win:'Solo (maggioranza con le Prede)'},
+  {key:'illusionista',cat:'esperimenti',emoji:'🎩',name:"L'Illusionista",color:'#6c5ce7',faction:'Lupi (esperimento)',fc:'#e74c3c',
+   desc:'Maestro dell\'inganno ottico. Non caccia con il branco e non ne conosce i membri, ma piega la vista del Veggente a suo piacimento.',
+   ability:'Ogni notte sceglie un giocatore (anche sé stesso) e decide se al Veggente apparirà come Lupo o Innocente quella notte. Di base appare come Lupo. Vince con i Lupi.',win:'I Lupi'},
+  {key:'mentalista',cat:'esperimenti',emoji:'🧠',name:'Il Mentalista',color:'#a29bfe',faction:'Villaggio (esperimento)',fc:'#2ecc71',
+   desc:'Crede di essere un comune Villico, ma la sua mente legge la verità. Studia tutti in silenzio, in attesa del momento giusto.',
+   ability:'Non agisce di notte e si vede come Villico. Quando muore (o a fine partita) indovina i ruoli di tutti i sopravvissuti: se li azzecca tutti, 1,5 punti e non viene eliminato; se sbaglia, 0,5 punti.',win:'Il Villaggio'},
 ];
 const BOOK_CATS=[{k:'tutti',l:'Tutti'},{k:'speciale',l:'📜 Narratore'},{k:'villaggio',l:'🏘️ Villaggio'},{k:'lupi',l:'🐺 Lupi'},{k:'neutri',l:'⚖️ Neutri'},{k:'storia',l:'📜 Storia'},{k:'regole',l:'📋 Regole'},{k:'varianti',l:'🎭 Varianti'},{k:'consigli',l:'💡 Consigli'},{k:'dadi',l:'🎲 Dadi'}];
 
@@ -1042,26 +1050,27 @@ function buildRolesFromDist(dist){
 }
 
 function getSuggestedDist(n){
-  const base={lupo:0,cucciolo:0,veggente:0,guardia:0,meretrice:0,arciere:0,avvocato:0,negromante:0,gesu:0,cappuccetto:0,romeo:0,giulietta:0,orfano:0,contaminato:0,piromane:0,accusatore:0,funambolo:0,custode:0,araldo:0,alchimista:0,criceto:0,misantropo:0,incompreso:0,lupoAlpha:0,suicida:0,mutaforma:0,condor:0,corvo:0,vampiro:0,villico:0};
+  const base={lupo:0,cucciolo:0,veggente:0,guardia:0,meretrice:0,arciere:0,avvocato:0,negromante:0,gesu:0,cappuccetto:0,romeo:0,giulietta:0,orfano:0,contaminato:0,piromane:0,accusatore:0,funambolo:0,custode:0,araldo:0,alchimista:0,criceto:0,misantropo:0,incompreso:0,lupoAlpha:0,suicida:0,mutaforma:0,condor:0,corvo:0,vampiro:0,illusionista:0,mentalista:0,villico:0};
   if(n<=7)  return {...base,lupo:1,veggente:1,villico:n-2};
   if(n<=11) return {...base,lupo:1,cucciolo:1,veggente:1,guardia:1,meretrice:1,villico:n-5};
   return         {...base,lupo:2,cucciolo:1,veggente:1,guardia:1,meretrice:1,criceto:1,misantropo:1,incompreso:1,villico:n-9};
 }
 
-const ROLE_MAX={lupo:10,cucciolo:5,veggente:5,guardia:5,meretrice:5,arciere:5,avvocato:5,negromante:5,gesu:5,cappuccetto:5,romeo:1,giulietta:1,orfano:5,contaminato:5,piromane:5,accusatore:5,funambolo:5,custode:5,araldo:5,alchimista:5,criceto:5,misantropo:5,incompreso:5,lupoAlpha:5,suicida:5,mutaforma:1,condor:5,corvo:5,vampiro:5,villico:99};
-const ROLE_ORDER=['lupo','cucciolo','lupoAlpha','veggente','guardia','meretrice','arciere','avvocato','negromante','gesu','cappuccetto','romeo','giulietta','orfano','contaminato','piromane','accusatore','funambolo','custode','araldo','alchimista','criceto','misantropo','incompreso','suicida','mutaforma','condor','corvo','vampiro','villico'];
+const ROLE_MAX={lupo:10,cucciolo:5,veggente:5,guardia:5,meretrice:5,arciere:5,avvocato:5,negromante:5,gesu:5,cappuccetto:5,romeo:1,giulietta:1,orfano:5,contaminato:5,piromane:5,accusatore:5,funambolo:5,custode:5,araldo:5,alchimista:5,criceto:5,misantropo:5,incompreso:5,lupoAlpha:5,suicida:5,mutaforma:1,condor:5,corvo:5,vampiro:5,illusionista:1,mentalista:1,villico:99};
+const ROLE_ORDER=['lupo','cucciolo','lupoAlpha','veggente','guardia','meretrice','arciere','avvocato','negromante','gesu','cappuccetto','romeo','giulietta','orfano','contaminato','piromane','accusatore','funambolo','custode','araldo','alchimista','criceto','misantropo','incompreso','suicida','mutaforma','condor','corvo','vampiro','illusionista','mentalista','villico'];
 const DIFFICULTY={
   facile:   {label:'🌱 Facile',   color:'#2ecc71',bg:'rgba(46,204,113,.1)', desc:'Ruoli classici. Perfetto per la prima partita.',       roles:new Set(['lupo','cucciolo','lupoAlpha','veggente','guardia','meretrice'])},
   medio:    {label:'⚔️ Medio',    color:'#f39c12',bg:'rgba(243,156,18,.1)', desc:'Interazioni elaborate. Per chi conosce le basi.',      roles:new Set(['lupo','cucciolo','lupoAlpha','veggente','guardia','meretrice','arciere','custode','araldo','romeo','giulietta','orfano','incompreso','criceto','mutaforma','condor'])},
-  difficile:{label:'💀 Difficile',color:'#e74c3c',bg:'rgba(231,76,60,.1)',  desc:'Tutti i ruoli. Solo per gruppi esperti.',              roles:new Set(['lupo','cucciolo','lupoAlpha','veggente','guardia','meretrice','arciere','custode','araldo','romeo','giulietta','orfano','incompreso','criceto','mutaforma','condor','funambolo','accusatore','negromante','alchimista','corvo','vampiro','piromane','suicida','misantropo','gesu','cappuccetto','avvocato','contaminato'])},
+  difficile:{label:'💀 Difficile',color:'#e74c3c',bg:'rgba(231,76,60,.1)',  desc:'Tutti i ruoli. Solo per gruppi esperti.',              roles:new Set(['lupo','cucciolo','lupoAlpha','veggente','guardia','meretrice','arciere','custode','araldo','romeo','giulietta','orfano','incompreso','criceto','mutaforma','condor','funambolo','accusatore','negromante','alchimista','corvo','vampiro','piromane','suicida','misantropo','gesu','cappuccetto','avvocato','contaminato','illusionista','mentalista'])},
 };
 const ROLE_CATS_CONFIG=[
   {id:'classici', label:'⚔️ Classici',      roles:['lupo','cucciolo','veggente','guardia','meretrice']},
   {id:'lupi',     label:'🐺 Fazione Lupi',  roles:['lupoAlpha','incompreso','misantropo']},
   {id:'villaggio',label:'🏘️ Fazione Villaggio', roles:['arciere','avvocato','negromante','gesu','cappuccetto','romeo','giulietta','orfano','contaminato','piromane','accusatore','funambolo','custode','araldo','alchimista']},
   {id:'neutri',   label:'⚖️ Fazione Neutri', roles:['criceto','suicida','mutaforma','condor','corvo','vampiro']},
+  {id:'esperimenti',label:'🧪 Esperimenti', roles:['illusionista','mentalista']},
 ];
-const NIGHT_STEPS=['arciere','guardia','custode','funambolo','lupi','veggente','meretrice','negromante','accusatore','piromane','alchimista','araldo','mutaforma','condor','corvo','vampiro'];
+const NIGHT_STEPS=['arciere','guardia','custode','funambolo','lupi','illusionista','veggente','meretrice','negromante','accusatore','piromane','alchimista','araldo','mutaforma','condor','corvo','vampiro'];
 // helper: check if a night step has an active player
 function stepHasPlayer(step,ps){
   if(step==='lupi')return ps.some(p=>(p.role==='lupo'||p.role==='cucciolo')&&p.alive);
@@ -1165,7 +1174,7 @@ const isMyTurn=(role,step)=>{if(!role||!step)return false;if(step==='lupi')retur
 // Usata a livello componente come closure su mutRole/conRole
 // Definita dentro App() come const effRole = (p) => ...
 
-const ACTION_LABELS={arciere:'Chi vuoi bloccare stanotte?',guardia:'Chi vuoi proteggere?',custode:'Chi vuoi silenziare domani?',lupi:'Chi attaccate questa notte?',veggente:'Chi vuoi scrutare?',meretrice:'Chi vuoi visitare?',negromante:'Chi vuoi evocare?',accusatore:'Chi vuoi accusare?',piromane:'Chi vuoi bruciare? (usa con cura!)',mutaforma:'Chi vuoi copiare?',condor:'Chi vuoi assorbire?',corvo:'Chi vuoi segnare?',vampiro:'Chi vuoi mordere?',araldo:'Chi metti al primo posto?'};
+const ACTION_LABELS={arciere:'Chi vuoi bloccare stanotte?',guardia:'Chi vuoi proteggere?',custode:'Chi vuoi silenziare domani?',lupi:'Chi attaccate questa notte?',veggente:'Chi vuoi scrutare?',meretrice:'Chi vuoi visitare?',negromante:'Chi vuoi evocare?',accusatore:'Chi vuoi accusare?',piromane:'Chi vuoi bruciare? (usa con cura!)',mutaforma:'Chi vuoi copiare?',condor:'Chi vuoi assorbire?',corvo:'Chi vuoi segnare?',vampiro:'Chi vuoi mordere?',araldo:'Chi metti al primo posto?',illusionista:"Su chi crei l'illusione?"};
 
 // ── SCOREBOARD ─────────────────────────────────────────────────────────────
 const SSK='lupus_scores_v1';
@@ -1260,6 +1269,7 @@ const STEP_HINTS={
   condor:    {rules:["Si attiva dalla seconda notte","Assorbe l\u2019essenza di un giocatore MORTO per sempre","Acquisisce poteri e condizioni di vittoria del ruolo assorbito"]},
   corvo:     {rules:["Aggiunge voti nascosti contro un giocatore ogni notte","Il Narratore mostra i voti del Corvo durante il giorno (solo a lui)","Vince se \u00e8 vivo alla fine della partita"]},
   vampiro:   {rules:["Morde un giocatore: diventa sua Preda (rimane segreto)","Le Prede supportano in segreto il Vampiro","Vince quando lui + Prede vivi > tutti gli altri vivi"]},
+  illusionista:{rules:["Agisce SEMPRE prima del Veggente","Sceglie un giocatore (anche sé stesso) e come apparirà: Lupo o Innocente","L'effetto vale solo per la scrutata del Veggente di quella notte"]},
   araldo:    {rules:["Pu\u00f2 agire solo entro la terza notte (poi scade)","Usabile una sola volta: sceglie 2 candidati obbligatori","Dopo aver usato il potere, muore"]},
 };
 
@@ -1328,6 +1338,10 @@ function App(){
   const [conC,setConC]=useState(null);
   const [corC,setCorC]=useState(null);
   const [seerKill,setSeerKill]=useState(null);
+  // ── ILLUSIONISTA (esperimento) ──
+  const [illuMask,setIlluMask]=useState(null);   // {targetIdx, asWolf} attivo per la notte corrente
+  const [illuSel,setIlluSel]=useState(null);      // bersaglio selezionato nello step
+  const [illuAs,setIlluAs]=useState('lupo');      // 'lupo' | 'villico' apparenza scelta
 
   // flags
   const [cAlone,setCAlone]=useState(false);
@@ -1348,6 +1362,7 @@ function App(){
   const [orfanoEff,setOrfanoEff]=useState(false);
   const [silenced,setSilenced]=useState(null);
   const [avvRm,setAvvRm]=useState(null);
+  const [mentResolved,setMentResolved]=useState(false); // Mentalista: il narratore ha già gestito l'indovinello
 
   const [de,setDe]=useState([]);
   const [wolvesConfirmed,setWolvesConfirmed]=useState(false); // undo lupi
@@ -1433,6 +1448,7 @@ function App(){
   const [isObserver,setIsObserver]=useState(false);       // questo client è uno spettatore
   const [mpIsAlive,setMpIsAlive]=useState(true);         // questo giocatore è vivo
   const [mpSelTarget,setMpSelTarget]=useState(null);     // target selezionato nella lista
+  const [mpIlluAppear,setMpIlluAppear]=useState('lupo'); // Illusionista (telefono): apparenza scelta
   // ── VOTO DIGITALE — HOST ───────────────────────────────────────────────────
   const [voteOpen,setVoteOpen]=useState(false);
   const [liveVotes,setLiveVotes]=useState({});            // {targetIdx: count}
@@ -2235,7 +2251,7 @@ function App(){
     setCAlone(false);setCFirst(false);setPirUsed(false);setAlchUsed(false);
     setAraldoUsed(false);setAccLast(-1);setGesuDeath(null);setCappKilled(false);
     setAlphaTransf(false);setMutRole(null);setConRole(null);
-    setCorvoVotes({});setOrfanoEff(false);setSilenced(null);setAvvRm(null);
+    setCorvoVotes({});setOrfanoEff(false);setSilenced(null);setAvvRm(null);setMentResolved(false);
     setArcLast(-1);setArcLastTarget(null);
     setSindacoIdx(useSindaco?null:-1);setSindacoTmp(null);setVampPrede([]);setAraldoCands([]);
     setGuardSelfUsed(false);setLupoAlphaActivatedName(null);
@@ -2294,7 +2310,7 @@ function App(){
 
   const nextReveal=()=>{if(ri+1<players.length){setRi(r=>r+1);setRv(false);}else startNight(players,false,false);};
 
-  const resetNight=()=>{setGc(null);setWc(null);setVc(null);setVr(null);setMc(null);setAc(null);setCusC(null);setNegC(null);setNegR(null);setPirC(null);setAccC(null);setAccR(null);setAlchAct(null);setAlchT(null);setAlchTs([]);setMutC(null);setConC(null);setCorC(null);setSeerKill(null);setFunamboloCoin(null);setVampC(null);setAraldoCands([]);setSuicidaWonInfo(null);setMimicSel(null);setMimicPhase('select');setMimicData(null);setMutShowReveal(false);setConShowReveal(false);setLupoAlphaActivatedName(null);setWolvesConfirmed(false);setAiNarration(null);setAiNarLoading(false);};
+  const resetNight=()=>{setGc(null);setWc(null);setVc(null);setVr(null);setMc(null);setAc(null);setCusC(null);setNegC(null);setNegR(null);setPirC(null);setAccC(null);setAccR(null);setAlchAct(null);setAlchT(null);setAlchTs([]);setMutC(null);setConC(null);setCorC(null);setSeerKill(null);setFunamboloCoin(null);setVampC(null);setAraldoCands([]);setSuicidaWonInfo(null);setMimicSel(null);setMimicPhase('select');setMimicData(null);setMutShowReveal(false);setConShowReveal(false);setLupoAlphaActivatedName(null);setWolvesConfirmed(false);setAiNarration(null);setAiNarLoading(false);setIlluMask(null);setIlluSel(null);setIlluAs('lupo');};
 
   const startNight=(ps,ca,cf)=>{
     let fr=ps.map(p=>({...p,protected:false}));
@@ -2396,6 +2412,8 @@ function App(){
     const seerT=getT('veggente'),negT=getT('negromante'),accT=getT('accusatore');
     const guardT=getT('guardia'),cusT=getT('custode'),mutT=getT('mutaforma');
     const conT=getT('condor'),corT=getT('corvo'),vampT=getT('vampiro');
+    const illuT=getT('illusionista');
+    const illuAppear=actions['illusionista']?.appear||'lupo';
     const aAlchAct=actions['alchimista']?.act||null;
     const aAlchT=actions['alchimista']?.targetIdx??null;
     const aAlchTs=actions['alchimista']?.targets||[];
@@ -2437,9 +2455,10 @@ function App(){
       const tgt=curP[seerT];
       if(tgt){
         const eR=(tgt.role==='mutaforma'&&mutRole)?mutRole:(tgt.role==='condor'&&conRole)?conRole:tgt.role;
-        const seen=ROLES[eR]?.seerSees||'villico';
+        const masked=illuT!==null&&illuT===seerT&&!arcBlk('illusionista');
+        const seen=masked?illuAppear:(ROLES[eR]?.seerSees||'villico');
         if(eR==='criceto')setSeerKill(seerT);
-        setVr({idx:seerT,seen,role:eR});
+        setVr({idx:seerT,seen,role:eR,masked});
         const vName2=curP[vIdx].name;
         if(lobbyPlayerMap[vName2])getDb().ref(`rooms/${roomCode}/nightReveal/${lobbyPlayerMap[vName2]}`).set({
           title:'La Veggente vede:',targetName:tgt.name,
@@ -2580,9 +2599,11 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
     if(vc===null)return;
     const p=players[vc];
     const eR=effRole(p);
-    const seen=ROLES[eR]?.seerSees||'villico';
+    // Illusionista: se ha mascherato questo bersaglio, il Veggente vede il falso
+    const masked=illuMask&&illuMask.targetIdx===vc;
+    const seen=masked?illuMask.appear:(ROLES[eR]?.seerSees||'villico');
     if(eR==='criceto')setSeerKill(vc);
-    setVr({idx:vc,seen,role:eR});
+    setVr({idx:vc,seen,role:eR,masked});
     if(gameMode==='multiplayer'){
       const vPlayer=players.find(x=>x.role==='veggente'&&x.alive);
       if(vPlayer&&lobbyPlayerMap[vPlayer.name]){
@@ -2594,6 +2615,8 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
     }
   };
   const endSeer=()=>{advance('veggente',players);};
+  const confIllu=()=>{if(illuSel===null)return;setIlluMask({targetIdx:illuSel,appear:illuAs});advance('illusionista',players);};
+  const skipIllu=()=>{setIlluMask(null);advance('illusionista',players);};
   const confMer=()=>{if(mc===null)return;advance('meretrice',players,{mt:mc});};
   const skipMer=()=>{setMc(null);advance('meretrice',players,{mt:null});};
   const confNeg=()=>{
@@ -3496,7 +3519,8 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
         )}
         {/* Role reveal panel for player */}
         {mpPhase==='roleReveal'&&myRole&&(()=>{
-          const R2=ROLES[myRole.role]||{};
+          // Il Mentalista si crede un Villico
+          const R2=ROLES[myRole.role==='mentalista'?'villico':myRole.role]||{};
           const isWolf=R2.wolfTeam||false;
           const tl=R2.soloTeam?'⚖️ Fazione Solitaria':isWolf?'🐺 Squadra Lupi':R2.winsWithWolves?'😒 Vinci coi Lupi':'🏘️ Squadra Villaggio';
           const tc=R2.soloTeam?'#f39c12':isWolf||R2.winsWithWolves?'#e74c3c':'#2ecc71';
@@ -3548,10 +3572,11 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
 
         {/* AUTO NIGHT UI */}
         {isNight&&mpIsAlive&&myRole&&narratorPlays&&mpAutoPhase==='collecting'&&(()=>{
-          const R2=ROLES[myRole.role]||{};
-          const hasAction=R2&&(R2.wolfTeam||['veggente','guardia','meretrice','arciere','custode','negromante','accusatore','piromane','alchimista','mutaforma','condor','corvo','vampiro'].includes(myRole.role));
+          const R2=ROLES[myRole.role==='mentalista'?'villico':myRole.role]||{};
+          const isIllu=myRole.role==='illusionista';
+          const hasAction=R2&&(R2.wolfTeam||isIllu||['veggente','guardia','meretrice','arciere','custode','negromante','accusatore','piromane','alchimista','mutaforma','condor','corvo','vampiro'].includes(myRole.role));
           const isWolf=R2.wolfTeam;
-          const aliveTgts=(mpAlive||[]).filter(p=>p.name!==myRole.name&&(!isWolf||!ROLES[p.role||'villico']?.wolfTeam));
+          const aliveTgts=isIllu?(mpAlive||[]):(mpAlive||[]).filter(p=>p.name!==myRole.name&&(!isWolf||!ROLES[p.role||'villico']?.wolfTeam));
           return(
             <div style={{animation:'fadeUp .3s ease'}}>
               {/* Counter */}
@@ -3584,12 +3609,21 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
                       </div>
                     ))}
                   </div>
+                  {isIllu&&mpSelTarget!==null&&(
+                    <div style={{marginBottom:10}}>
+                      <div style={{fontSize:'.72rem',color:'#8a7860',fontStyle:'italic',marginBottom:6}}>Al Veggente apparirà come...</div>
+                      <div style={{display:'flex',gap:8}}>
+                        <button onClick={()=>setMpIlluAppear('lupo')} style={{flex:1,padding:'10px',borderRadius:9,cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:'.82rem',border:`1.5px solid ${mpIlluAppear==='lupo'?'#e74c3c':'rgba(231,76,60,.25)'}`,background:mpIlluAppear==='lupo'?'rgba(231,76,60,.15)':'rgba(255,255,255,.03)',color:mpIlluAppear==='lupo'?'#e74c3c':'#7a5a5a'}}>🐺 Lupo</button>
+                        <button onClick={()=>setMpIlluAppear('villico')} style={{flex:1,padding:'10px',borderRadius:9,cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:'.82rem',border:`1.5px solid ${mpIlluAppear==='villico'?'#2ecc71':'rgba(46,204,113,.25)'}`,background:mpIlluAppear==='villico'?'rgba(46,204,113,.15)':'rgba(255,255,255,.03)',color:mpIlluAppear==='villico'?'#2ecc71':'#5a7a5a'}}>🧑‍🌾 Innocente</button>
+                      </div>
+                    </div>
+                  )}
                   <div style={{display:'flex',gap:8}}>
                     <button className="btn btn-gold" style={{flex:2,padding:11,fontSize:'.85rem'}} disabled={mpSelTarget===null}
                       onClick={async()=>{
                         if(mpSelTarget===null)return;
                         const key=isWolf?'lupi':myRole.role;
-                        await getDb().ref(`rooms/${roomCode}/autoNight/actions/${key}`).set({targetIdx:mpSelTarget,actorRole:myRole.role,actorId:myIdRef.current});
+                        await getDb().ref(`rooms/${roomCode}/autoNight/actions/${key}`).set(isIllu?{targetIdx:mpSelTarget,appear:mpIlluAppear,actorRole:myRole.role,actorId:myIdRef.current}:{targetIdx:mpSelTarget,actorRole:myRole.role,actorId:myIdRef.current});
                         const cs=await getDb().ref(`rooms/${roomCode}/autoNight/counter`).once('value');
                         const cur=cs.val()||{done:0,total:0};
                         await getDb().ref(`rooms/${roomCode}/autoNight/counter`).set({...cur,done:cur.done+1});
@@ -4572,7 +4606,9 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
   }
 
   if(sc==='roleReveal'){
-    const p=players[ri];const r=ROLES[p.role];
+    const p=players[ri];
+    // Il Mentalista si crede un Villico: la sua carta mostra "Villico"
+    const r=ROLES[p.role==='mentalista'?'villico':p.role];
     const isOrdineRole=ordineMode&&r.isOrdine;
     const tl=r.soloTeam?'⚖️ Fazione Solitaria':r.wolfTeam?'🐺 Squadra Lupi':r.winsWithWolves?'😒 Vinci coi Lupi':isOrdineRole?'🔮 Ordine':'🏘️ Squadra Villaggio';
     const tc=r.soloTeam?'#f39c12':r.wolfTeam||r.winsWithWolves?'#e74c3c':isOrdineRole?'#1abc9c':'#2ecc71';
@@ -4915,6 +4951,30 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
       );
     }
 
+    if(ns==='illusionista') return(
+      <NW color="#6c5ce7" emoji="🎩" title="L'Illusionista tesse la trama">
+        {isBlocked('illusionista')?(
+          <><div className="instr" style={{borderColor:'rgba(39,174,96,.3)',color:'#70a080'}}>🏹 L'Arciere ha bloccato l'Illusionista. Nessuna illusione stanotte.</div>
+          <button className="btn btn-gold" onClick={skipIllu}>Continua →</button></>
+        ):(<>
+          <div className="instr">L'Illusionista inganna gli occhi del Veggente. Sceglie un giocatore (anche sé stesso) e con quale aspetto apparirà stanotte. Agisce prima del Veggente.</div>
+          <div className="nlbl">Su chi crea l'illusione?</div>
+          <PList players={alive} sel={illuSel} onSel={setIlluSel}/>
+          {illuSel!==null&&(
+            <div style={{marginBottom:12}}>
+              <div className="nlbl">Al Veggente apparirà come...</div>
+              <div style={{display:'flex',gap:8}}>
+                <button onClick={()=>setIlluAs('lupo')} style={{flex:1,padding:'12px',borderRadius:10,cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:'.9rem',border:`1.5px solid ${illuAs==='lupo'?'#e74c3c':'rgba(231,76,60,.25)'}`,background:illuAs==='lupo'?'rgba(231,76,60,.15)':'rgba(255,255,255,.03)',color:illuAs==='lupo'?'#e74c3c':'#7a5a5a'}}>🐺 Lupo</button>
+                <button onClick={()=>setIlluAs('villico')} style={{flex:1,padding:'12px',borderRadius:10,cursor:'pointer',fontFamily:'Cinzel,serif',fontSize:'.9rem',border:`1.5px solid ${illuAs==='villico'?'#2ecc71':'rgba(46,204,113,.25)'}`,background:illuAs==='villico'?'rgba(46,204,113,.15)':'rgba(255,255,255,.03)',color:illuAs==='villico'?'#2ecc71':'#5a7a5a'}}>🧑‍🌾 Innocente</button>
+              </div>
+            </div>
+          )}
+          <button className="btn btn-gold mb8" onClick={confIllu} disabled={illuSel===null}>Conferma illusione</button>
+          <button className="btn btn-outline" onClick={skipIllu}>Passa senza agire</button>
+        </>)}
+      </NW>
+    );
+
     if(ns==='veggente') return(
       <NW color="#9b59b6" emoji="🔮" title="La Veggente si sveglia">
         {isBlocked('veggente')?(
@@ -4930,10 +4990,14 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
               return(
                 <><div style={{fontSize:'2.5rem',marginBottom:8}}>{isLupo?'🐺':'🧑‍🌾'}</div>
                 <div style={{color:isLupo?'#e74c3c':'#2ecc71',fontFamily:'Cinzel,serif',fontWeight:600}}>{isLupo?'Lupo':'Innocente'}</div>
-                {isLupo&&<div style={{fontSize:'.74rem',marginTop:6,color:'#8a4040',fontStyle:'italic'}}>{ROLES[vr.role]?.name||'Lupo'}</div>}
-                {vr.role==='lupoAlpha'&&<div style={{fontSize:'.74rem',marginTop:6,color:'#6a5a40',fontStyle:'italic'}}>(In realtà è il Lupo Mannaro — ancora innocente)</div>}
-                {vr.role==='cucciolo'&&<div style={{fontSize:'.74rem',marginTop:6,color:'#6a5a40',fontStyle:'italic'}}>(In realtà è il Lupo Cucciolo)</div>}
-                {vr.role==='incompreso'&&<div style={{fontSize:'.74rem',marginTop:6,color:'#6a5a40',fontStyle:'italic'}}>(In realtà è l'Incompreso — è innocente)</div>}
+                {vr.masked?(
+                  <div style={{fontSize:'.74rem',marginTop:8,color:'#8e7bff',fontStyle:'italic',borderTop:'1px solid rgba(108,92,231,.3)',paddingTop:8}}>🎩 Illusione attiva — il Veggente vede il falso (in realtà è {ROLES[vr.role]?.name||'?'}).</div>
+                ):(<>
+                  {isLupo&&<div style={{fontSize:'.74rem',marginTop:6,color:'#8a4040',fontStyle:'italic'}}>{ROLES[vr.role]?.name||'Lupo'}</div>}
+                  {vr.role==='lupoAlpha'&&<div style={{fontSize:'.74rem',marginTop:6,color:'#6a5a40',fontStyle:'italic'}}>(In realtà è il Lupo Mannaro — ancora innocente)</div>}
+                  {vr.role==='cucciolo'&&<div style={{fontSize:'.74rem',marginTop:6,color:'#6a5a40',fontStyle:'italic'}}>(In realtà è il Lupo Cucciolo)</div>}
+                  {vr.role==='incompreso'&&<div style={{fontSize:'.74rem',marginTop:6,color:'#6a5a40',fontStyle:'italic'}}>(In realtà è l'Incompreso — è innocente)</div>}
+                </>)}
                 {vr.role==='criceto'&&<div style={{fontSize:'.74rem',marginTop:8,color:'#c0392b',fontStyle:'italic',borderTop:'1px solid rgba(192,57,43,.25)',paddingTop:8}}>⚠️ Narratore: è il Criceto — morirà all'alba.</div>}
                 </>
               );
@@ -5125,7 +5189,9 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
             <div style={{marginBottom:8,fontSize:'.95rem'}}><strong style={{color:'#c8a05a'}}>{players[mimicData.idx]?.name}</strong> appare come...</div>
             <div style={{fontSize:'2.5rem',marginBottom:8}}>{seen==='lupo'?'🐺':'🧑‍🌾'}</div>
             <div style={{color:seen==='lupo'?'#e74c3c':'#2ecc71',fontFamily:'Cinzel,serif',fontWeight:600}}>{seen==='lupo'?'Lupo':'Innocente'}</div>
-            {seen==='lupo'&&<div style={{fontSize:'.74rem',marginTop:6,color:'#8a4040',fontStyle:'italic'}}>{ROLES[mimicData.role]?.name||'Lupo'}</div>}
+            {mimicData.masked?(
+              <div style={{fontSize:'.74rem',marginTop:8,color:'#8e7bff',fontStyle:'italic',borderTop:'1px solid rgba(108,92,231,.3)',paddingTop:8}}>🎩 Illusione attiva — visione falsa (in realtà è {ROLES[mimicData.role]?.name||'?'}).</div>
+            ):(seen==='lupo'&&<div style={{fontSize:'.74rem',marginTop:6,color:'#8a4040',fontStyle:'italic'}}>{ROLES[mimicData.role]?.name||'Lupo'}</div>)}
             {mimicData.role==='criceto'&&<div style={{fontSize:'.74rem',marginTop:8,color:'#c0392b',fontStyle:'italic',borderTop:'1px solid rgba(192,57,43,.25)',paddingTop:8}}>⚠️ Narratore: è il Criceto — morirà all'alba.</div>}
           </div>{hdr}
           <button className="btn btn-gold" onClick={()=>{setMimicPhase('select');setMimicData(null);setMimicSel(null);advFn();}}>Fine turno →</button></>);
@@ -5133,7 +5199,7 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
         return(<><div className="instr">Scruta l'anima di un giocatore.</div>{hdr}
           <div className="nlbl">Chi scruta?</div>
           <PList players={alive.filter(p=>p.role!==actorRole)} sel={mimicSel} onSel={setMimicSel}/>
-          <button className="btn btn-gold" onClick={()=>{if(mimicSel===null)return;const rawR2=players[mimicSel].role;const effR2=(rawR2==='mutaforma'&&mutRole)?mutRole:(rawR2==='condor'&&conRole)?conRole:rawR2;const seen=ROLES[effR2].seerSees;if(effR2==='criceto')setSeerKill(mimicSel);setMimicData({idx:mimicSel,role:effR2,seen});setMimicPhase('result');}} disabled={mimicSel===null}>Rivela Identità</button></>);
+          <button className="btn btn-gold" onClick={()=>{if(mimicSel===null)return;const rawR2=players[mimicSel].role;const effR2=(rawR2==='mutaforma'&&mutRole)?mutRole:(rawR2==='condor'&&conRole)?conRole:rawR2;const masked2=illuMask&&illuMask.targetIdx===mimicSel;const seen=masked2?illuMask.appear:ROLES[effR2].seerSees;if(effR2==='criceto')setSeerKill(mimicSel);setMimicData({idx:mimicSel,role:effR2,seen,masked:masked2});setMimicPhase('result');}} disabled={mimicSel===null}>Rivela Identità</button></>);
       }
       // Negromante → two-phase
       if(copiedRole==='negromante'){
@@ -5412,6 +5478,23 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
         </div>
       )}
       <div className="screen fade">
+        {/* 🧠 MENTALISTA: promemoria al narratore quando muore (modalità narratore) */}
+        {players.some(p=>p.role==='mentalista'&&!p.alive)&&!mentResolved&&!(narratorPlays&&gameMode==='multiplayer')&&(
+          <div style={{background:'rgba(162,155,254,.1)',border:'1px solid rgba(162,155,254,.4)',borderRadius:14,padding:'14px 16px',marginBottom:14}}>
+            <div style={{fontFamily:'Cinzel,serif',fontSize:'.82rem',color:'#a29bfe',fontWeight:700,marginBottom:6}}>🧠 Il Mentalista è caduto!</div>
+            <p style={{fontSize:'.8rem',color:'#9a8870',lineHeight:1.55,marginBottom:10}}>Chiedigli di indovinare il ruolo di <strong>tutti i sopravvissuti</strong>. Se li azzecca tutti: <strong style={{color:'#2ecc71'}}>1,5 punti e resta in gioco</strong>. Se sbaglia: <strong style={{color:'#e0c46a'}}>0,5 punti</strong> (squadra Villaggio).</p>
+            <div style={{fontFamily:'Cinzel,serif',fontSize:'.62rem',letterSpacing:'.12em',color:'#7a6aa0',textTransform:'uppercase',marginBottom:6}}>Ruoli reali dei vivi (solo per te)</div>
+            <div style={{display:'flex',flexDirection:'column',gap:3,marginBottom:12}}>
+              {players.filter(p=>p.alive).map((p,i)=>{const ek=effRole(p);return(
+                <div key={i} style={{display:'flex',justifyContent:'space-between',fontSize:'.82rem',padding:'4px 8px',borderRadius:6,background:'rgba(0,0,0,.18)'}}>
+                  <span style={{color:'#c4a882'}}>{p.name}</span>
+                  <span style={{color:ROLES[ek]?.color||'#8a7860',fontFamily:'Cinzel,serif'}}>{ROLES[ek]?.emoji} {ROLES[ek]?.name}</span>
+                </div>
+              );})}
+            </div>
+            <button className="btn btn-outline" style={{width:'100%',padding:9,fontSize:'.8rem',color:'#a29bfe',borderColor:'rgba(162,155,254,.4)'}} onClick={()=>setMentResolved(true)}>✓ Gestito</button>
+          </div>
+        )}
         {/* Timer selector */}
         <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:10,flexWrap:'wrap'}}>
           <span style={{fontFamily:'Cinzel,serif',fontSize:'.62rem',color:'#5a4a28',letterSpacing:'.1em'}}>⏱ TIMER TURNO:</span>
