@@ -2962,6 +2962,7 @@ function App() {
     total: 0
   });
   const autoTimer90Ref = useRef(null);
+  const resolvingRef = useRef(false);
   const [mpAllPlayers, setMpAllPlayers] = useState([]);
   const [mpStepMeta, setMpStepMeta] = useState({});
   const [mpSpecRoles, setMpSpecRoles] = useState([]);
@@ -4475,6 +4476,7 @@ function App() {
   };
   const startAutoNight = ps => {
     if (!roomCode || !narratorPlays) return;
+    resolvingRef.current = false;
     setHostNightSel(null);
     setHostNightActed(false);
     setMpAutoActed(false);
@@ -4507,7 +4509,8 @@ function App() {
   };
   const triggerAutoResolveRef = useRef(null);
   const resolveAutoNight = async () => {
-    if (!roomCode) return;
+    if (!roomCode || resolvingRef.current) return;
+    resolvingRef.current = true;
     if (autoTimer90Ref.current) {
       clearInterval(autoTimer90Ref.current);
       autoTimer90Ref.current = null;
@@ -4517,7 +4520,8 @@ function App() {
     const getT = step => {
       const a = actions[step];
       if (!a || a.skip || a.targetIdx == null) return null;
-      return a.targetIdx;
+      const ti = a.targetIdx;
+      return ti >= 0 && ti < players.length ? ti : null;
     };
     const wolfT = getT('lupi'),
       merT = getT('meretrice'),
@@ -4548,6 +4552,10 @@ function App() {
       const lupoAlive = curP.some(p => p.role === 'lupo' && p.alive);
       const cucSolo = !lupoAlive && curP.some(p => p.role === 'cucciolo' && p.alive);
       if (at.role === 'lupo' || at.role === 'lupoAlpha' || cucSolo && at.role === 'cucciolo') effWolfT = null;
+    }
+    if (effWolfT != null) {
+      const v = curP[effWolfT];
+      if (!v || !v.alive || ROLES[v.role]?.wolfTeam) effWolfT = null;
     }
     const effMerT = arcBlk('meretrice') ? null : merT;
     const effPirT = arcBlk('piromane') ? null : pirT;
@@ -7543,7 +7551,12 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
       const isIllu = myRole.role === 'illusionista';
       const hasAction = R2 && (R2.wolfTeam || isIllu || ['veggente', 'guardia', 'meretrice', 'arciere', 'custode', 'negromante', 'accusatore', 'piromane', 'alchimista', 'mutaforma', 'condor', 'corvo', 'vampiro'].includes(myRole.role));
       const isWolf = R2.wolfTeam;
-      const aliveTgts = isIllu ? mpAlive || [] : (mpAlive || []).filter(p => p.name !== myRole.name && (!isWolf || !ROLES[p.role || 'villico']?.wolfTeam));
+      const aliveTgts = isIllu ? mpAlive || [] : (mpAlive || []).filter(p => {
+        if (p.name === myRole.name) return false;
+        if (!isWolf) return true;
+        const full = (mpAllPlayers || []).find(x => x.name === p.name);
+        return !(full && ROLES[full.role]?.wolfTeam);
+      });
       return React.createElement("div", {
         style: {
           animation: 'fadeUp .3s ease'
@@ -7734,15 +7747,7 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
             actorRole: myRole.role,
             actorId: myIdRef.current
           });
-          const cs = await getDb().ref(`rooms/${roomCode}/autoNight/counter`).once('value');
-          const cur = cs.val() || {
-            done: 0,
-            total: 0
-          };
-          await getDb().ref(`rooms/${roomCode}/autoNight/counter`).set({
-            ...cur,
-            done: cur.done + 1
-          });
+          await getDb().ref(`rooms/${roomCode}/autoNight/counter/done`).transaction(d => (d || 0) + 1);
           setMpAutoActed(true);
         }
       }, "\u2713 Conferma"), React.createElement("button", {
@@ -7760,18 +7765,10 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
             actorRole: myRole.role,
             actorId: myIdRef.current
           });
-          const cs = await getDb().ref(`rooms/${roomCode}/autoNight/counter`).once('value');
-          const cur = cs.val() || {
-            done: 0,
-            total: 0
-          };
-          await getDb().ref(`rooms/${roomCode}/autoNight/counter`).set({
-            ...cur,
-            done: cur.done + 1
-          });
+          await getDb().ref(`rooms/${roomCode}/autoNight/counter/done`).transaction(d => (d || 0) + 1);
           setMpAutoActed(true);
         }
-      }, "Passa"))), !hasAction && !mpAutoActed && React.createElement("div", {
+      }, "Passa"))), (!hasAction || aliveTgts.length === 0) && !mpAutoActed && React.createElement("div", {
         style: {
           background: 'rgba(30,30,30,.4)',
           border: '1px solid rgba(100,100,100,.2)',
@@ -7799,7 +7796,7 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
           fontStyle: 'italic',
           marginBottom: 10
         }
-      }, "Nessuna azione notturna. Attendi in silenzio."), React.createElement("button", {
+      }, hasAction ? 'Nessun bersaglio valido stanotte.' : 'Nessuna azione notturna. Attendi in silenzio.'), React.createElement("button", {
         className: "btn btn-outline",
         style: {
           width: '100%',
@@ -7813,15 +7810,7 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
             actorRole: myRole.role,
             actorId: myIdRef.current
           });
-          const cs = await getDb().ref(`rooms/${roomCode}/autoNight/counter`).once('value');
-          const cur = cs.val() || {
-            done: 0,
-            total: 0
-          };
-          await getDb().ref(`rooms/${roomCode}/autoNight/counter`).set({
-            ...cur,
-            done: cur.done + 1
-          });
+          await getDb().ref(`rooms/${roomCode}/autoNight/counter/done`).transaction(d => (d || 0) + 1);
           setMpAutoActed(true);
         }
       }, "\u2713 Sono pronto")), isWolf && React.createElement("div", {
@@ -10510,15 +10499,7 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
             actorRole: myRole.role,
             actorId: myIdRef.current
           });
-          const cs = await getDb().ref(`rooms/${roomCode}/autoNight/counter`).once('value');
-          const cur = cs.val() || {
-            done: 0,
-            total: 0
-          };
-          await getDb().ref(`rooms/${roomCode}/autoNight/counter`).set({
-            ...cur,
-            done: cur.done + 1
-          });
+          await getDb().ref(`rooms/${roomCode}/autoNight/counter/done`).transaction(d => (d || 0) + 1);
           setHostNightSel(null);
           setHostNightActed(true);
         }
@@ -10536,15 +10517,7 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
             actorRole: myRole.role,
             actorId: myIdRef.current
           });
-          const cs = await getDb().ref(`rooms/${roomCode}/autoNight/counter`).once('value');
-          const cur = cs.val() || {
-            done: 0,
-            total: 0
-          };
-          await getDb().ref(`rooms/${roomCode}/autoNight/counter`).set({
-            ...cur,
-            done: cur.done + 1
-          });
+          await getDb().ref(`rooms/${roomCode}/autoNight/counter/done`).transaction(d => (d || 0) + 1);
           setHostNightActed(true);
         }
       }, "Passa"))), (!hasAct || filtT.length === 0) && !hostNightActed && React.createElement("button", {
@@ -10561,15 +10534,7 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
             actorRole: myRole.role,
             actorId: myIdRef.current
           });
-          const cs = await getDb().ref(`rooms/${roomCode}/autoNight/counter`).once('value');
-          const cur = cs.val() || {
-            done: 0,
-            total: 0
-          };
-          await getDb().ref(`rooms/${roomCode}/autoNight/counter`).set({
-            ...cur,
-            done: cur.done + 1
-          });
+          await getDb().ref(`rooms/${roomCode}/autoNight/counter/done`).transaction(d => (d || 0) + 1);
           setHostNightActed(true);
         }
       }, "\u2713 Pronto (nessuna azione)"), hostNightActed && React.createElement("div", {
