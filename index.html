@@ -4516,31 +4516,57 @@ function App() {
       autoTimer90Ref.current = null;
     }
     const snap = await getDb().ref(`rooms/${roomCode}/autoNight/actions`).once('value');
-    const actions = snap.val() || {};
-    const getT = step => {
-      const a = actions[step];
-      if (!a || a.skip || a.targetIdx == null) return null;
-      const ti = a.targetIdx;
-      return ti >= 0 && ti < players.length ? ti : null;
+    const rawActions = snap.val() || {};
+    const byRole = {};
+    Object.entries(rawActions).forEach(([key, a]) => {
+      if (!a) return;
+      const role = a.actorRole || key;
+      (byRole[role] = byRole[role] || []).push(a);
+    });
+    const validIdx = ti => ti != null && ti >= 0 && ti < players.length;
+    const firstT = role => {
+      for (const a of byRole[role] || []) {
+        if (!a.skip && validIdx(a.targetIdx)) return a.targetIdx;
+      }
+      return null;
     };
-    const wolfT = getT('lupi'),
-      merT = getT('meretrice'),
-      arcT = getT('arciere'),
-      pirT = getT('piromane');
-    const seerT = getT('veggente'),
-      negT = getT('negromante'),
-      accT = getT('accusatore');
-    const guardT = getT('guardia'),
-      cusT = getT('custode'),
-      mutT = getT('mutaforma');
-    const conT = getT('condor'),
-      corT = getT('corvo'),
-      vampT = getT('vampiro');
-    const illuT = getT('illusionista');
-    const illuAppear = actions['illusionista']?.appear || 'lupo';
-    const aAlchAct = actions['alchimista']?.act || null;
-    const aAlchT = actions['alchimista']?.targetIdx ?? null;
-    const aAlchTs = actions['alchimista']?.targets || [];
+    const nameById = {};
+    Object.entries(lobbyPlayerMap).forEach(([nm, id]) => {
+      nameById[id] = nm;
+    });
+    const idxOfActor = aid => {
+      const nm = nameById[aid];
+      return nm ? players.findIndex(p => p.name === nm) : -1;
+    };
+    const wolfList = [...(byRole.lupo || []), ...(byRole.cucciolo || []), ...(byRole.lupoAlpha || [])];
+    let wolfT = null;
+    {
+      const c = {};
+      wolfList.forEach(a => {
+        if (!a.skip && validIdx(a.targetIdx)) c[a.targetIdx] = (c[a.targetIdx] || 0) + 1;
+      });
+      const e = Object.entries(c).sort((x, y) => y[1] - x[1]);
+      if (e.length) wolfT = parseInt(e[0][0]);
+    }
+    const merT = firstT('meretrice'),
+      arcT = firstT('arciere'),
+      pirT = firstT('piromane');
+    const seerT = firstT('veggente'),
+      negT = firstT('negromante'),
+      accT = firstT('accusatore');
+    const guardT = firstT('guardia'),
+      cusT = firstT('custode'),
+      mutT = firstT('mutaforma');
+    const conT = firstT('condor'),
+      corT = firstT('corvo'),
+      vampT = firstT('vampiro');
+    const illuA = (byRole.illusionista || []).find(a => !a.skip && validIdx(a.targetIdx));
+    const illuT = illuA ? illuA.targetIdx : null;
+    const illuAppear = illuA?.appear || 'lupo';
+    const alchA = (byRole.alchimista || []).find(a => a.act);
+    const aAlchAct = alchA?.act || null;
+    const aAlchT = alchA?.targetIdx ?? null;
+    const aAlchTs = alchA?.targets || [];
     let curP = players.map(p => ({
       ...p,
       protected: false
@@ -4560,14 +4586,22 @@ function App() {
     const effMerT = arcBlk('meretrice') ? null : merT;
     const effPirT = arcBlk('piromane') ? null : pirT;
     const effAlchAct = arcBlk('alchimista') ? null : aAlchAct;
-    if (guardT !== null && !arcBlk('guardia')) {
-      const gIdx = curP.findIndex(p => p.role === 'guardia' && p.alive);
-      if (guardT === gIdx) setGuardSelfUsed(true);
-      curP = curP.map((p, i) => ({
-        ...p,
-        protected: i === guardT
-      }));
-      setPlayers(curP);
+    {
+      const protSet = new Set();
+      (byRole.guardia || []).forEach(a => {
+        if (a.skip || !validIdx(a.targetIdx)) return;
+        const gA = idxOfActor(a.actorId);
+        if (gA === arcT) return;
+        protSet.add(a.targetIdx);
+        if (gA !== -1 && gA === a.targetIdx) setGuardSelfUsed(true);
+      });
+      if (protSet.size) {
+        curP = curP.map((p, i) => ({
+          ...p,
+          protected: protSet.has(i)
+        }));
+        setPlayers(curP);
+      }
     }
     if (cusT !== null && !arcBlk('custode')) setSilenced(cusT);
     if (arcT !== null) setAc(arcT);
@@ -4583,11 +4617,11 @@ function App() {
       setAlchTs(aAlchTs);
       setAlchUsed(true);
     }
-    if (mutT !== null && !arcBlk('mutaforma')) {
+    if (mutT !== null && mutRole == null && !arcBlk('mutaforma')) {
       setMutC(mutT);
       setMutRole(curP[mutT]?.role || null);
     }
-    if (conT !== null && !arcBlk('condor')) {
+    if (conT !== null && conRole == null && !arcBlk('condor')) {
       setConC(conT);
       setConRole(curP[conT]?.role || null);
     }
@@ -4605,51 +4639,50 @@ function App() {
       if (prev.includes(vampT)) return prev;
       return [...prev, vampT];
     });
-    const vIdx = curP.findIndex(p => p.role === 'veggente' && p.alive);
-    if (seerT !== null && vIdx !== -1 && arcT !== vIdx) {
-      setVc(seerT);
-      const tgt = curP[seerT];
-      if (tgt) {
-        const eR = tgt.role === 'mutaforma' && mutRole ? mutRole : tgt.role === 'condor' && conRole ? conRole : tgt.role;
-        const masked = illuT !== null && illuT === seerT && !arcBlk('illusionista');
-        const seen = masked ? illuAppear : ROLES[eR]?.seerSees || 'villico';
-        if (eR === 'criceto') setSeerKill(seerT);
-        setVr({
-          idx: seerT,
-          seen,
-          role: eR,
-          masked
-        });
-        const vName2 = curP[vIdx].name;
-        if (lobbyPlayerMap[vName2]) getDb().ref(`rooms/${roomCode}/nightReveal/${lobbyPlayerMap[vName2]}`).set({
-          title: 'La Veggente vede:',
-          targetName: tgt.name,
-          emoji: seen === 'lupo' ? '🐺' : '🧑‍🌾',
-          roleName: seen === 'lupo' ? 'Lupo' : 'Innocente',
-          isGood: seen !== 'lupo'
-        });
-      }
-    }
-    const nIdx = curP.findIndex(p => p.role === 'negromante' && p.alive);
-    if (negT !== null && nIdx !== -1 && arcT !== nIdx) {
-      setNegC(negT);
-      const tgt = curP[negT];
-      if (tgt) {
-        const eR = tgt.role === 'mutaforma' && mutRole ? mutRole : tgt.role === 'condor' && conRole ? conRole : tgt.role;
-        setNegR({
-          idx: negT,
-          role: eR
-        });
-        const nName = curP[nIdx].name;
-        if (lobbyPlayerMap[nName]) getDb().ref(`rooms/${roomCode}/nightReveal/${lobbyPlayerMap[nName]}`).set({
-          title: 'Il morto era:',
-          targetName: tgt.name,
-          emoji: ROLES[eR]?.emoji || '👤',
-          roleName: ROLES[eR]?.name || 'Sconosciuto',
-          isGood: !(ROLES[eR]?.wolfTeam || ROLES[eR]?.winsWithWolves)
-        });
-      }
-    }
+    (byRole.veggente || []).forEach(a => {
+      if (a.skip || !validIdx(a.targetIdx)) return;
+      if (idxOfActor(a.actorId) === arcT) return;
+      const st = a.targetIdx,
+        tgt = curP[st];
+      if (!tgt) return;
+      const eR = tgt.role === 'mutaforma' && mutRole ? mutRole : tgt.role === 'condor' && conRole ? conRole : tgt.role;
+      const masked = illuT !== null && illuT === st && !arcBlk('illusionista');
+      const seen = masked ? illuAppear : ROLES[eR]?.seerSees || 'villico';
+      if (eR === 'criceto') setSeerKill(st);
+      setVc(st);
+      setVr({
+        idx: st,
+        seen,
+        role: eR,
+        masked
+      });
+      if (a.actorId) getDb().ref(`rooms/${roomCode}/nightReveal/${a.actorId}`).set({
+        title: 'La Veggente vede:',
+        targetName: tgt.name,
+        emoji: seen === 'lupo' ? '🐺' : '🧑‍🌾',
+        roleName: seen === 'lupo' ? 'Lupo' : 'Innocente',
+        isGood: seen !== 'lupo'
+      });
+    });
+    (byRole.negromante || []).forEach(a => {
+      if (a.skip || !validIdx(a.targetIdx)) return;
+      if (idxOfActor(a.actorId) === arcT) return;
+      const tgt = curP[a.targetIdx];
+      if (!tgt) return;
+      const eR = tgt.role === 'mutaforma' && mutRole ? mutRole : tgt.role === 'condor' && conRole ? conRole : tgt.role;
+      setNegC(a.targetIdx);
+      setNegR({
+        idx: a.targetIdx,
+        role: eR
+      });
+      if (a.actorId) getDb().ref(`rooms/${roomCode}/nightReveal/${a.actorId}`).set({
+        title: 'Il morto era:',
+        targetName: tgt.name,
+        emoji: ROLES[eR]?.emoji || '👤',
+        roleName: ROLES[eR]?.name || 'Sconosciuto',
+        isGood: !(ROLES[eR]?.wolfTeam || ROLES[eR]?.winsWithWolves)
+      });
+    });
     let accRes = undefined;
     const aIdx = curP.findIndex(p => p.role === 'accusatore' && p.alive);
     const canAcc = round >= 2 && (accLast === -1 || round - accLast >= 2);
@@ -7549,9 +7582,14 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
     }, mpAiNarration)), isNight && mpIsAlive && myRole && narratorPlays && mpAutoPhase === 'collecting' && (() => {
       const R2 = ROLES[myRole.role === 'mentalista' ? 'villico' : myRole.role] || {};
       const isIllu = myRole.role === 'illusionista';
+      const needsDead = myRole.role === 'condor' || myRole.role === 'negromante';
       const hasAction = R2 && (R2.wolfTeam || isIllu || ['veggente', 'guardia', 'meretrice', 'arciere', 'custode', 'negromante', 'accusatore', 'piromane', 'alchimista', 'mutaforma', 'condor', 'corvo', 'vampiro'].includes(myRole.role));
       const isWolf = R2.wolfTeam;
-      const aliveTgts = isIllu ? mpAlive || [] : (mpAlive || []).filter(p => {
+      const deadTgts = (mpAllPlayers || []).filter(p => !p.alive).map(p => ({
+        name: p.name,
+        idx: p.idx
+      }));
+      const aliveTgts = isIllu ? mpAlive || [] : needsDead ? deadTgts : (mpAlive || []).filter(p => {
         if (p.name === myRole.name) return false;
         if (!isWolf) return true;
         const full = (mpAllPlayers || []).find(x => x.name === p.name);
@@ -7737,7 +7775,7 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
         onClick: async () => {
           if (mpSelTarget === null) return;
           const key = isWolf ? 'lupi' : myRole.role;
-          await getDb().ref(`rooms/${roomCode}/autoNight/actions/${key}`).set(isIllu ? {
+          await getDb().ref(`rooms/${roomCode}/autoNight/actions/${myIdRef.current}`).set(isIllu ? {
             targetIdx: mpSelTarget,
             appear: mpIlluAppear,
             actorRole: myRole.role,
@@ -7760,7 +7798,7 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
         },
         onClick: async () => {
           const key = isWolf ? 'lupi' : myRole.role;
-          await getDb().ref(`rooms/${roomCode}/autoNight/actions/${key}`).set({
+          await getDb().ref(`rooms/${roomCode}/autoNight/actions/${myIdRef.current}`).set({
             skip: true,
             actorRole: myRole.role,
             actorId: myIdRef.current
@@ -7805,7 +7843,7 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
           color: '#86714a'
         },
         onClick: async () => {
-          await getDb().ref(`rooms/${roomCode}/autoNight/actions/${myRole.role}`).set({
+          await getDb().ref(`rooms/${roomCode}/autoNight/actions/${myIdRef.current}`).set({
             skip: true,
             actorRole: myRole.role,
             actorId: myIdRef.current
@@ -10280,10 +10318,14 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
       const R3 = myRole ? ROLES[myRole.role] : null;
       const hasAct = R3 && (R3.wolfTeam || ['veggente', 'guardia', 'meretrice', 'arciere', 'custode', 'negromante', 'accusatore', 'piromane', 'alchimista', 'mutaforma', 'condor', 'corvo', 'vampiro'].includes(myRole.role));
       const isWolf3 = R3?.wolfTeam;
-      const filtT = myRole ? players.filter(p => p.alive && p.name !== myRole.name && (!isWolf3 || !ROLES[p.role]?.wolfTeam)).map(p => ({
+      const needsDead3 = myRole?.role === 'condor' || myRole?.role === 'negromante';
+      const filtT = !myRole ? [] : needsDead3 ? players.filter(p => !p.alive).map(p => ({
         ...p,
         _i: players.indexOf(p)
-      })) : [];
+      })) : players.filter(p => p.alive && p.name !== myRole.name && (!isWolf3 || !ROLES[p.role]?.wolfTeam)).map(p => ({
+        ...p,
+        _i: players.indexOf(p)
+      }));
       return React.createElement("div", {
         className: "app night"
       }, React.createElement(ConnBanner, null), React.createElement(MuteBtn, null), React.createElement("div", {
@@ -10494,7 +10536,7 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
         disabled: hostNightSel === null,
         onClick: async () => {
           const key = isWolf3 ? 'lupi' : myRole.role;
-          await getDb().ref(`rooms/${roomCode}/autoNight/actions/${key}`).set({
+          await getDb().ref(`rooms/${roomCode}/autoNight/actions/${myIdRef.current}`).set({
             targetIdx: hostNightSel,
             actorRole: myRole.role,
             actorId: myIdRef.current
@@ -10512,7 +10554,7 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
         },
         onClick: async () => {
           const key = isWolf3 ? 'lupi' : myRole.role;
-          await getDb().ref(`rooms/${roomCode}/autoNight/actions/${key}`).set({
+          await getDb().ref(`rooms/${roomCode}/autoNight/actions/${myIdRef.current}`).set({
             skip: true,
             actorRole: myRole.role,
             actorId: myIdRef.current
@@ -10529,7 +10571,7 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
           fontSize: '.8rem'
         },
         onClick: async () => {
-          await getDb().ref(`rooms/${roomCode}/autoNight/actions/${myRole.role}`).set({
+          await getDb().ref(`rooms/${roomCode}/autoNight/actions/${myIdRef.current}`).set({
             skip: true,
             actorRole: myRole.role,
             actorId: myIdRef.current
