@@ -4152,6 +4152,229 @@ function App() {
     }
     return lines.join('\n');
   };
+  const exportRecapImage = async () => {
+    try {
+      const nights = gameLog.length || 1;
+      const winMap = {
+        lupi: {
+          em: '🐺',
+          ttl: 'I Lupi Vincono',
+          col: '#e74c3c'
+        },
+        villici: {
+          em: '🏘️',
+          ttl: 'Il Villaggio Vince',
+          col: '#2ca35a'
+        },
+        ordine: {
+          em: '🔮',
+          ttl: "L'Ordine Vince",
+          col: '#159b85'
+        },
+        criceto: {
+          em: '🐹',
+          ttl: 'Il Criceto Vince',
+          col: '#d98a14'
+        },
+        suicida: {
+          em: '🪦',
+          ttl: 'Il Suicida Vince',
+          col: '#7a8488'
+        },
+        vampiro: {
+          em: '🧛',
+          ttl: 'Il Vampiro Regna',
+          col: '#8e44ad'
+        }
+      };
+      const wi = winMap[win] || {
+        em: '🎭',
+        ttl: 'Partita conclusa',
+        col: '#c9a227'
+      };
+      const actionIcon = {
+        wolf: '🐺',
+        seer: '👁️',
+        guard: '🛡️',
+        mer: '💃',
+        arc: '🏹',
+        custode: '🔒',
+        neg: '☠️',
+        pir: '🔥',
+        acc: '⚖️',
+        mut: '🔄',
+        con: '🦅',
+        cor: '🪶',
+        vamp: '🧛',
+        alch: '⚗️'
+      };
+      const deathInfo = {};
+      gameLog.forEach(e => {
+        if (e.deaths) Object.entries(e.deaths).forEach(([pi, c]) => {
+          if (!deathInfo[pi]) deathInfo[pi] = {
+            round: e.round,
+            cause: c
+          };
+        });
+        if (e.voteVictim != null && !deathInfo[e.voteVictim]) deathInfo[e.voteVictim] = {
+          round: e.round,
+          cause: 'vote'
+        };
+      });
+      const trunc = (s, n) => s && s.length > n ? s.slice(0, n - 1) + '…' : s || '';
+      const cellText = (pi, entry) => {
+        const di = deathInfo[pi];
+        if (di && di.round < entry.round) return {
+          t: '·',
+          dim: true
+        };
+        const a = entry.actions && entry.actions[pi];
+        const died = entry.deaths && entry.deaths[pi] || entry.voteVictim === pi;
+        let s = '—';
+        if (a) {
+          const tN = trunc(players[a.target]?.name, 7);
+          const ic = actionIcon[a.type] || '•';
+          if (a.type === 'seer' && a.seerRole) s = `${ic}${tN} ${ROLES[a.seerRole]?.emoji || ''}`;else if (a.type === 'alch') s = `${ic}${a.act === 'rossa' ? '🔴' : '⚫'}`;else if (a.target != null) s = `${ic} ${tN}`;else s = ic;
+        }
+        if (died) s += ' 💀';
+        return {
+          t: s,
+          dim: false,
+          died
+        };
+      };
+      const nameW = 190,
+        nightW = 128,
+        rowH = 56,
+        headH = 58,
+        titleH = 104,
+        padX = 26,
+        padBot = 56;
+      const tableW = nameW + nights * nightW,
+        W = Math.max(tableW + padX * 2, 660),
+        H = titleH + headH + players.length * rowH + padBot,
+        S = 2;
+      const x0 = Math.round((W - tableW) / 2),
+        y0 = titleH,
+        colX = i => x0 + nameW + i * nightW;
+      const cv = document.createElement('canvas');
+      cv.width = W * S;
+      cv.height = H * S;
+      const ctx = cv.getContext('2d');
+      ctx.scale(S, S);
+      ctx.textBaseline = 'middle';
+      const line = (a, b, c, d) => {
+        ctx.beginPath();
+        ctx.moveTo(a, b);
+        ctx.lineTo(c, d);
+        ctx.stroke();
+      };
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, '#0e1622');
+      bg.addColorStop(1, '#05080e');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, W, H);
+      const py = titleH - 8,
+        ph = H - titleH - padBot + 22;
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(x0 - 16, py, tableW + 32, ph, 16);else ctx.rect(x0 - 16, py, tableW + 32, ph);
+      const par = ctx.createLinearGradient(0, py, 0, py + ph);
+      par.addColorStop(0, '#efe3c4');
+      par.addColorStop(1, '#e1d0a4');
+      ctx.fillStyle = par;
+      ctx.fill();
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = 'rgba(80,55,18,.5)';
+      ctx.stroke();
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#c9a227';
+      ctx.font = 'bold 16px Georgia,serif';
+      ctx.fillText('— HANNO VINTO —', W / 2, 34);
+      ctx.fillStyle = wi.col;
+      let _tf = 38;
+      const _ts = wi.em + '  ' + wi.ttl;
+      ctx.font = `bold ${_tf}px Georgia,serif`;
+      while (ctx.measureText(_ts).width > W - 52 && _tf > 22) {
+        _tf -= 2;
+        ctx.font = `bold ${_tf}px Georgia,serif`;
+      }
+      ctx.fillText(_ts, W / 2, 76);
+      ctx.fillStyle = '#5a3a12';
+      ctx.font = 'bold 15px Georgia,serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('Ruoli / Notti', x0 + 12, y0 + headH / 2);
+      ctx.textAlign = 'center';
+      for (let i = 0; i < nights; i++) ctx.fillText('🌙 ' + (i + 1), colX(i) + nightW / 2, y0 + headH / 2);
+      players.forEach((p, pi) => {
+        const ry = y0 + headH + pi * rowH;
+        if (pi % 2) {
+          ctx.fillStyle = 'rgba(120,85,35,.07)';
+          ctx.fillRect(x0, ry, tableW, rowH);
+        }
+        const ek = effRole(p),
+          R2 = ROLES[ek] || ROLES.villico;
+        ctx.textAlign = 'left';
+        ctx.font = '22px serif';
+        ctx.fillStyle = '#000';
+        ctx.fillText(R2.emoji, x0 + 10, ry + rowH / 2);
+        ctx.font = 'bold 15px Georgia,serif';
+        ctx.fillStyle = p.alive ? '#2a1d0c' : '#7a5636';
+        ctx.fillText(trunc(p.name, 12), x0 + 42, ry + rowH / 2 - 9);
+        ctx.font = '12px Georgia,serif';
+        ctx.fillStyle = R2.color;
+        ctx.fillText(R2.name, x0 + 42, ry + rowH / 2 + 10);
+        ctx.textAlign = 'center';
+        gameLog.forEach((entry, i) => {
+          const c = cellText(pi, entry);
+          ctx.font = (c.died ? 'bold ' : '') + '14px Georgia,serif';
+          ctx.fillStyle = c.dim ? 'rgba(90,68,38,.3)' : c.died ? '#a3302c' : '#33260f';
+          ctx.fillText(c.t, colX(i) + nightW / 2, ry + rowH / 2);
+        });
+      });
+      ctx.strokeStyle = 'rgba(80,55,18,.3)';
+      ctx.lineWidth = 1;
+      const tableH = headH + players.length * rowH;
+      for (let r = 0; r <= players.length; r++) {
+        const yy = y0 + headH + r * rowH;
+        line(x0, yy, x0 + tableW, yy);
+      }
+      line(x0, y0, x0 + tableW, y0);
+      for (let i = 0; i <= nights; i++) line(colX(i), y0, colX(i), y0 + tableH);
+      line(x0, y0, x0, y0 + tableH);
+      line(x0 + tableW, y0, x0 + tableW, y0 + tableH);
+      ctx.textAlign = 'center';
+      ctx.fillStyle = 'rgba(201,162,39,.55)';
+      ctx.font = 'italic 13px Georgia,serif';
+      ctx.fillText(`${vName || 'Villaggio'} · Lupus in Fabula`, W / 2, H - 24);
+      cv.toBlob(async blob => {
+        if (!blob) return;
+        const file = new File([blob], `recap-${(vName || 'partita').replace(/\s+/g, '_')}.png`, {
+          type: 'image/png'
+        });
+        try {
+          if (navigator.canShare && navigator.canShare({
+            files: [file]
+          })) {
+            await navigator.share({
+              files: [file],
+              title: 'Recap partita Lupus'
+            });
+            return;
+          }
+        } catch (e) {}
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = file.name;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1500);
+      }, 'image/png');
+    } catch (e) {
+      console.warn('[recap image]', e);
+    }
+  };
   const addP = () => {
     const n = inp.trim();
     if (!n || names.length >= 20 || names.includes(n)) return;
@@ -13884,16 +14107,23 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
       },
       onClick: newGame
     }, "\uD83C\uDFE0 Nuova Partita")), React.createElement("button", {
+      className: "btn btn-gold",
+      style: {
+        width: '100%',
+        marginTop: 8
+      },
+      onClick: exportRecapImage
+    }, "\uD83D\uDDBC\uFE0F Salva Recap (immagine)"), React.createElement("button", {
       style: {
         width: '100%',
         marginTop: 8,
-        padding: '10px',
+        padding: '9px',
         borderRadius: 10,
-        border: '1px solid rgba(201,162,39,.25)',
-        background: recapCopied ? 'rgba(46,204,113,.12)' : 'rgba(201,162,39,.06)',
-        color: recapCopied ? '#2ecc71' : '#8a7040',
+        border: '1px solid rgba(201,162,39,.2)',
+        background: recapCopied ? 'rgba(46,204,113,.12)' : 'transparent',
+        color: recapCopied ? '#2ecc71' : '#7a6038',
         fontFamily: 'Cinzel,serif',
-        fontSize: '.72rem',
+        fontSize: '.68rem',
         letterSpacing: '.1em',
         cursor: 'pointer',
         transition: 'all .2s'
@@ -13913,7 +14143,7 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
         setRecapCopied(true);
         setTimeout(() => setRecapCopied(false), 2500);
       }
-    }, recapCopied ? '✓ Copiato negli appunti!' : '📋 Copia Recap Partita'), gameLog.length > 0 && React.createElement("div", null, React.createElement("button", {
+    }, recapCopied ? '✓ Copiato!' : '📋 Copia anche come testo'), gameLog.length > 0 && React.createElement("div", null, React.createElement("button", {
       onClick: () => setLogOpen(v => !v),
       style: {
         display: 'flex',
