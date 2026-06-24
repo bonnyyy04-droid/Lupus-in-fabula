@@ -144,6 +144,11 @@ body{background:var(--n-bg);color:var(--text);font-family:'EB Garamond',serif;fo
 /* ── SCREEN ── */
 .screen{position:relative;z-index:1;max-width:460px;margin:0 auto;padding:30px 18px 80px}
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes mysticFloat{0%,100%{transform:translateY(0);filter:drop-shadow(0 0 14px rgba(201,162,39,.45))}50%{transform:translateY(-9px);filter:drop-shadow(0 0 30px rgba(201,162,39,.8))}}
+@keyframes revealPop{0%{opacity:0;transform:scale(.62) translateY(14px)}55%{opacity:1;transform:scale(1.05) translateY(0)}75%{transform:scale(.985)}100%{transform:scale(1)}}
+@keyframes emojiBurst{0%{transform:scale(0) rotate(-25deg);opacity:0}55%{transform:scale(1.35) rotate(10deg);opacity:1}80%{transform:scale(.92) rotate(-3deg)}100%{transform:scale(1) rotate(0)}}
+@keyframes glowRing{0%{opacity:0;transform:scale(.45)}35%{opacity:.85}100%{opacity:0;transform:scale(1.7)}}
+@keyframes runePulse{0%,100%{opacity:.35;letter-spacing:.32em}50%{opacity:.85;letter-spacing:.4em}}
 .fade{animation:fadeUp .32s ease both}
 
 /* ── TYPOGRAPHY ── */
@@ -453,6 +458,7 @@ const {
   useEffect,
   useRef
 } = React;
+const ALLOW_SOLO_TEST = true;
 const ROLES = {
   lupo: {
     name: 'Lupo Grande',
@@ -2969,6 +2975,7 @@ function App() {
   const [mpSpecTargets, setMpSpecTargets] = useState(null);
   const [mpNightReveal, setMpNightReveal] = useState(null);
   const [mpRoleReady, setMpRoleReady] = useState(false);
+  const [mpRevealOpen, setMpRevealOpen] = useState(false);
   const [mpReadyCount, setMpReadyCount] = useState(0);
   const [wolfLeader, setWolfLeader] = useState(null);
   const [wolfSuggestions, setWolfSuggestions] = useState({});
@@ -2988,6 +2995,7 @@ function App() {
   const [mpIlluAppear, setMpIlluAppear] = useState('lupo');
   const [voteOpen, setVoteOpen] = useState(false);
   const [liveVotes, setLiveVotes] = useState({});
+  const [liveVotesRaw, setLiveVotesRaw] = useState({});
   const [pendingDigitalElim, setPendingDigitalElim] = useState(false);
   const [mpVoteOpen, setMpVoteOpen] = useState(false);
   const [mpVoteTarget, setMpVoteTarget] = useState(null);
@@ -3478,6 +3486,7 @@ function App() {
         setMpActionSent(false);
         setMpIsAlive(true);
         setMpRoleReady(false);
+        setMpRevealOpen(false);
         setMpWolfSuggest(null);
         setMpWolfLeaderName(null);
         setMpVoteOpen(false);
@@ -3700,6 +3709,7 @@ function App() {
         if (idx != null && idx >= 0) counts[idx] = (counts[idx] || 0) + 1;
       });
       setLiveVotes(counts);
+      setLiveVotesRaw(data);
     };
     ref.on('value', h);
     return () => ref.off('value', h);
@@ -3709,7 +3719,10 @@ function App() {
     const ref = getDb().ref(rp('voting/open'));
     const h = snap => {
       setVoteOpen(!!snap.val());
-      if (!snap.val()) setLiveVotes({});
+      if (!snap.val()) {
+        setLiveVotes({});
+        setLiveVotesRaw({});
+      }
     };
     ref.on('value', h);
     return () => ref.off('value', h);
@@ -4394,7 +4407,7 @@ function App() {
       const expected = names.filter(n => n !== hostName);
       const missing = expected.filter(n => !connected.has(n));
       const extra = realConnected.filter(p => !names.includes(p.name)).map(p => p.name);
-      if (missing.length || extra.length) {
+      if (!ALLOW_SOLO_TEST && (missing.length || extra.length)) {
         let msg = '⚠️ La lobby è cambiata da quando hai configurato i ruoli.\n';
         if (missing.length) msg += `\n• Non più connessi: ${missing.join(', ')}`;
         if (extra.length) msg += `\n• Nuovi in attesa: ${extra.join(', ')}`;
@@ -7278,7 +7291,7 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
         padding: 14,
         fontSize: '.95rem'
       },
-      disabled: realPlayers.length === 0 || narratorPlays && !playerName.trim(),
+      disabled: !ALLOW_SOLO_TEST && realPlayers.length === 0 || narratorPlays && !playerName.trim(),
       onClick: async () => {
         await fbStartGame(roomCode);
         const map = {};
@@ -7664,14 +7677,68 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
         style: {
           marginBottom: 16
         }
+      }, !mpRevealOpen ? React.createElement("div", {
+        onClick: () => {
+          setMpRevealOpen(true);
+          if (navigator.vibrate) navigator.vibrate([30, 40, 70]);
+        },
+        style: {
+          background: 'radial-gradient(ellipse at 50% 36%,rgba(44,32,74,.55),rgba(8,6,16,.94))',
+          border: '1px solid rgba(201,162,39,.3)',
+          borderRadius: 18,
+          padding: '44px 20px',
+          marginBottom: 12,
+          textAlign: 'center',
+          cursor: 'pointer',
+          WebkitTapHighlightColor: 'transparent',
+          position: 'relative',
+          overflow: 'hidden'
+        }
       }, React.createElement("div", {
         style: {
-          background: R2.bg || 'rgba(201,162,39,.08)',
-          border: `1px solid ${R2.color || '#c9a227'}55`,
+          fontSize: '4.3rem',
+          marginBottom: 16,
+          animation: 'mysticFloat 2.6s ease-in-out infinite'
+        }
+      }, "\uD83C\uDF19"), React.createElement("p", {
+        style: {
+          fontFamily: 'Cinzel Decorative,serif',
+          fontSize: '1.05rem',
+          color: '#d4b04a',
+          marginBottom: 10
+        }
+      }, "Il destino ti ha scelto\u2026"), React.createElement("p", {
+        style: {
+          fontFamily: 'Cinzel,serif',
+          fontSize: '.72rem',
+          color: '#9a8ac0',
+          textTransform: 'uppercase',
+          animation: 'runePulse 2s ease-in-out infinite'
+        }
+      }, "\u2726 Tocca per scoprire il tuo ruolo \u2726")) : React.createElement(React.Fragment, null, React.createElement("div", {
+        style: {
+          position: 'relative',
+          marginBottom: 12
+        }
+      }, React.createElement("div", {
+        style: {
+          position: 'absolute',
+          inset: 0,
           borderRadius: 14,
-          padding: '20px 16px',
-          marginBottom: 12,
-          textAlign: 'center'
+          background: `radial-gradient(circle at 50% 40%,${R2.color || '#c9a227'}55,transparent 65%)`,
+          animation: 'glowRing .9s ease-out both',
+          pointerEvents: 'none'
+        }
+      }), React.createElement("div", {
+        style: {
+          position: 'relative',
+          background: R2.bg || 'rgba(201,162,39,.08)',
+          border: `1px solid ${R2.color || '#c9a227'}88`,
+          borderRadius: 14,
+          padding: '22px 16px',
+          textAlign: 'center',
+          animation: 'revealPop .65s cubic-bezier(.2,.8,.25,1) both',
+          boxShadow: `0 0 30px ${R2.color || '#c9a227'}33`
         }
       }, React.createElement("p", {
         style: {
@@ -7684,13 +7751,15 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
         }
       }, "Il tuo ruolo"), React.createElement("div", {
         style: {
-          fontSize: '3rem',
-          marginBottom: 8
+          fontSize: '3.4rem',
+          marginBottom: 8,
+          display: 'inline-block',
+          animation: 'emojiBurst .7s cubic-bezier(.2,.9,.3,1) both'
         }
       }, R2.emoji || '❓'), React.createElement("div", {
         style: {
           fontFamily: 'Cinzel Decorative,serif',
-          fontSize: '1.2rem',
+          fontSize: '1.25rem',
           color: R2.color || '#c9a227',
           marginBottom: 8
         }
@@ -7711,7 +7780,7 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
           color: tc,
           fontFamily: 'Cinzel,serif'
         }
-      }, tl)), !mpRoleReady ? React.createElement("button", {
+      }, tl))), !mpRoleReady ? React.createElement("button", {
         className: "btn btn-gold",
         style: {
           width: '100%',
@@ -7729,7 +7798,7 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
           fontFamily: 'Cinzel,serif',
           fontSize: '.8rem'
         }
-      }, "\u2713 Ruolo confermato \u2014 in attesa degli altri..."));
+      }, "\u2713 Ruolo confermato \u2014 in attesa degli altri...")));
     })(), mpPhase === 'roleReveal' && !myRole && React.createElement("div", {
       style: {
         textAlign: 'center',
@@ -8930,7 +8999,7 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
         fontSize: '.85rem',
         fontStyle: 'italic'
       }
-    }, "Partita terminata. Attendi il recap..."))), !myRole ? React.createElement("div", {
+    }, "Partita terminata. Attendi il recap..."))), mpPhase !== 'roleReveal' && (!myRole ? React.createElement("div", {
       style: {
         textAlign: 'center',
         padding: '20px 0'
@@ -9002,7 +9071,7 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
         fontStyle: 'italic',
         margin: 0
       }
-    }, R?.desc || '')), React.createElement("p", {
+    }, R?.desc || ''))), React.createElement("p", {
       style: {
         color: '#3a2a10',
         fontSize: '.7rem',
@@ -13215,6 +13284,11 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
         ...liveVotes
       };
       if (avvActive && effVotes[avvRm]) effVotes[avvRm] = Math.max(0, effVotes[avvRm] - 1);
+      const sindAlive = useSindaco && sindacoIdx >= 0 && players[sindacoIdx]?.alive;
+      const sindId = sindAlive ? lobbyPlayerMap[players[sindacoIdx]?.name] : null;
+      const sindVoteIdx = sindId != null ? liveVotesRaw[sindId] : null;
+      const sindBonusTarget = sindVoteIdx != null && sindVoteIdx >= 0 && players[sindVoteIdx]?.alive ? sindVoteIdx : null;
+      if (sindBonusTarget != null) effVotes[sindBonusTarget] = (effVotes[sindBonusTarget] || 0) + 1;
       const sorted = Object.entries(effVotes).filter(([, c]) => c > 0).sort((a, b) => b[1] - a[1]);
       const topCount = sorted.length > 0 ? sorted[0][1] : 0;
       const topEntries = sorted.filter(([, c]) => c === topCount);
@@ -13297,7 +13371,13 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
             color: '#f39c12',
             marginLeft: 6
           }
-        }, "\u2696\uFE0F -1") : '', isTied ? React.createElement("span", {
+        }, "\u2696\uFE0F -1") : '', sindBonusTarget === idx ? React.createElement("span", {
+          style: {
+            fontSize: '.62rem',
+            color: '#c9a227',
+            marginLeft: 6
+          }
+        }, "\uD83C\uDFDB\uFE0F +1") : '', isTied ? React.createElement("span", {
           style: {
             fontSize: '.65rem',
             color: '#d4821a',
