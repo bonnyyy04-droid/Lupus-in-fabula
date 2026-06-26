@@ -4867,7 +4867,6 @@ function App() {
       if (e.length) wolfT = parseInt(e[0][0]);
     }
     const merT = firstT('meretrice'),
-      arcT = firstT('arciere'),
       pirT = firstT('piromane');
     const seerT = firstT('veggente'),
       negT = firstT('negromante'),
@@ -4885,6 +4884,9 @@ function App() {
     const aAlchAct = alchA?.act || null;
     const aAlchT = alchA?.targetIdx ?? null;
     const aAlchTs = alchA?.targets || [];
+    const arcRaw = firstT('arciere');
+    const arc3rd = arcRaw !== null && arcLast >= 1 && round - arcLast <= 1 && arcRaw === arcLastTarget && arcStreak >= 2;
+    const arcT = arc3rd ? null : arcRaw;
     let curP = players.map(p => ({
       ...p,
       protected: false
@@ -5014,6 +5016,12 @@ function App() {
       };
       setAccR(accRes);
       setAccLast(round);
+    }
+    if (arcT !== null) {
+      const consec = arcLast >= 1 && round - arcLast <= 1 && arcT === arcLastTarget;
+      setArcStreak(consec ? arcStreak + 1 : 1);
+      setArcLast(round);
+      setArcLastTarget(arcT);
     }
     getDb().ref(`rooms/${roomCode}/autoNight`).remove();
     const resolvedEvs = resolve(curP, {
@@ -7692,13 +7700,13 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
       }
     }, "⚔️ Avvia Partita ", realPlayers.length > 0 && `(${realPlayers.length + (narratorPlays ? 1 : 0)} gioc.)`), realPlayers.length === 0 && React.createElement("p", {
       style: {
-        color: '#3a2a10',
+        color: ALLOW_SOLO_TEST ? '#6a5a2a' : '#3a2a10',
         fontSize: '.74rem',
         fontStyle: 'italic',
         textAlign: 'center',
         marginTop: 8
       }
-    }, "Attendi almeno 1 giocatore")) : React.createElement("div", {
+    }, ALLOW_SOLO_TEST ? 'Nessun giocatore connesso — puoi avviare comunque' : 'Attendi almeno 1 giocatore')) : React.createElement("div", {
       style: {
         display: 'flex',
         alignItems: 'center',
