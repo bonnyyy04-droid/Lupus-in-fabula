@@ -2977,6 +2977,7 @@ function App() {
     done: 0,
     total: 0
   });
+  const [mpGuardSelfUsed, setMpGuardSelfUsed] = useState(false);
   const autoTimer90Ref = useRef(null);
   const resolvingRef = useRef(false);
   const [mpAllPlayers, setMpAllPlayers] = useState([]);
@@ -4011,6 +4012,26 @@ function App() {
     return () => ref.off('value', h);
   }, [roomCode, roomRole]);
   useEffect(() => {
+    if (!roomCode || gameMode !== 'multiplayer') return;
+    getDb().ref(`rooms/${roomCode}/guardSelfUsed`).set(!!guardSelfUsed);
+  }, [guardSelfUsed, roomCode, gameMode]);
+  useEffect(() => {
+    if (!roomCode) return;
+    const ref = getDb().ref(`rooms/${roomCode}/guardSelfUsed`);
+    const h = snap => setMpGuardSelfUsed(!!snap.val());
+    ref.on('value', h);
+    return () => ref.off('value', h);
+  }, [roomCode]);
+  useEffect(() => {
+    if (narratorPlays && roomRole === 'host' && !myRole && playerName && players.length) {
+      const hp = players.find(p => p.name === playerName.trim());
+      if (hp) setMyRole({
+        role: hp.role,
+        name: hp.name
+      });
+    }
+  }, [narratorPlays, roomRole, myRole, playerName, players]);
+  useEffect(() => {
     if (!roomCode || !narratorPlays) return;
     const ref = getDb().ref(`rooms/${roomCode}/autoNight/counter`);
     const h = snap => {
@@ -4856,7 +4877,18 @@ function App() {
       const nm = nameById[aid];
       return nm ? players.findIndex(p => p.name === nm) : -1;
     };
-    const wolfList = [...(byRole.lupo || []), ...(byRole.cucciolo || []), ...(byRole.lupoAlpha || [])];
+    const grandeAlive = players.some(p => p.role === 'lupo' && p.alive);
+    let wolfList;
+    if (grandeAlive) {
+      const origGrandeAlive = players.some(p => p.role === 'lupo' && p.alive && p.name !== lupoAlphaActivatedName);
+      wolfList = (byRole.lupo || []).filter(a => {
+        if (!origGrandeAlive) return true;
+        const ai = idxOfActor(a.actorId);
+        return ai >= 0 && players[ai] && players[ai].name !== lupoAlphaActivatedName;
+      });
+    } else {
+      wolfList = byRole.cucciolo || [];
+    }
     let wolfT = null;
     {
       const c = {};
@@ -4908,12 +4940,18 @@ function App() {
     const effAlchAct = arcBlk('alchimista') ? null : aAlchAct;
     {
       const protSet = new Set();
+      let usedSelfThisNight = false;
       (byRole.guardia || []).forEach(a => {
         if (a.skip || !validIdx(a.targetIdx)) return;
         const gA = idxOfActor(a.actorId);
         if (gA === arcT) return;
+        const isSelf = gA !== -1 && gA === a.targetIdx;
+        if (isSelf && (guardSelfUsed || usedSelfThisNight)) return;
         protSet.add(a.targetIdx);
-        if (gA !== -1 && gA === a.targetIdx) setGuardSelfUsed(true);
+        if (isSelf) {
+          setGuardSelfUsed(true);
+          usedSelfThisNight = true;
+        }
       });
       if (protSet.size) {
         curP = curP.map((p, i) => ({
@@ -4961,7 +4999,17 @@ function App() {
     });
     (byRole.veggente || []).forEach(a => {
       if (a.skip || !validIdx(a.targetIdx)) return;
-      if (idxOfActor(a.actorId) === arcT) return;
+      if (idxOfActor(a.actorId) === arcT) {
+        if (a.actorId) getDb().ref(`rooms/${roomCode}/nightReveal/${a.actorId}`).set({
+          title: '🏹 Sei stato arcierato!',
+          targetName: '',
+          emoji: '🏹',
+          roleName: "L'Arciere ti ha bloccato: stanotte non vedi nulla.",
+          isGood: false,
+          blocked: true
+        });
+        return;
+      }
       const st = a.targetIdx,
         tgt = curP[st];
       if (!tgt) return;
@@ -4986,7 +5034,17 @@ function App() {
     });
     (byRole.negromante || []).forEach(a => {
       if (a.skip || !validIdx(a.targetIdx)) return;
-      if (idxOfActor(a.actorId) === arcT) return;
+      if (idxOfActor(a.actorId) === arcT) {
+        if (a.actorId) getDb().ref(`rooms/${roomCode}/nightReveal/${a.actorId}`).set({
+          title: '🏹 Sei stato arcierato!',
+          targetName: '',
+          emoji: '🏹',
+          roleName: "L'Arciere ti ha bloccato: stanotte non interroghi nessuno.",
+          isGood: false,
+          blocked: true
+        });
+        return;
+      }
       const tgt = curP[a.targetIdx];
       if (!tgt) return;
       const eR = tgt.role === 'mutaforma' && mutRole ? mutRole : tgt.role === 'condor' && conRole ? conRole : tgt.role;
@@ -5505,7 +5563,10 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
         setGesuDeath(null);
       }
     }
-    setPlayers(np);
+    setPlayers(np.map(p => ({
+      ...p,
+      protected: false
+    })));
     setDe(evs);
     setSeerKill(null);
     setCAlone(nca);
@@ -7996,7 +8057,7 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
         color: mpNightReveal.isGood ? '#2ecc71' : '#e74c3c',
         marginBottom: 6
       }
-    }, mpNightReveal.roleName), React.createElement("p", {
+    }, mpNightReveal.roleName), mpNightReveal.targetName ? React.createElement("p", {
       style: {
         fontSize: '.9rem',
         color: '#a09080',
@@ -8006,7 +8067,11 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
       style: {
         color: '#fff'
       }
-    }, mpNightReveal.targetName)), React.createElement("button", {
+    }, mpNightReveal.targetName)) : React.createElement("div", {
+      style: {
+        marginBottom: 24
+      }
+    }), React.createElement("button", {
       className: "btn btn-gold",
       onClick: () => {
         getDb().ref(`rooms/${roomCode}/nightReveal/${myIdRef.current}`).remove();
@@ -8212,14 +8277,21 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
       const R2 = ROLES[myRole.role === 'mentalista' ? 'villico' : myRole.role] || {};
       const isIllu = myRole.role === 'illusionista';
       const needsDead = myRole.role === 'condor' || myRole.role === 'negromante';
-      const hasAction = R2 && (R2.wolfTeam || isIllu || ['veggente', 'guardia', 'meretrice', 'arciere', 'custode', 'negromante', 'accusatore', 'piromane', 'alchimista', 'mutaforma', 'condor', 'corvo', 'vampiro'].includes(myRole.role));
+      const wolfRank = {
+        lupo: 2,
+        cucciolo: 1
+      };
+      const myWRank = wolfRank[myRole.role] || 0;
+      const wolfDefer = myWRank > 0 && (mpAllPlayers || []).some(p => p.alive && (wolfRank[p.role] || 0) > myWRank);
+      const hasAction = R2 && !wolfDefer && (R2.wolfTeam || isIllu || ['veggente', 'guardia', 'meretrice', 'arciere', 'custode', 'negromante', 'accusatore', 'piromane', 'alchimista', 'mutaforma', 'condor', 'corvo', 'vampiro'].includes(myRole.role));
       const isWolf = R2.wolfTeam;
+      const guardCanSelf = myRole.role === 'guardia' && !mpGuardSelfUsed;
       const deadTgts = (mpAllPlayers || []).filter(p => !p.alive).map(p => ({
         name: p.name,
         idx: p.idx
       }));
       const aliveTgts = isIllu ? mpAlive || [] : needsDead ? deadTgts : (mpAlive || []).filter(p => {
-        if (p.name === myRole.name) return false;
+        if (p.name === myRole.name) return guardCanSelf;
         if (!isWolf) return true;
         const full = (mpAllPlayers || []).find(x => x.name === p.name);
         return !(full && ROLES[full.role]?.wolfTeam);
@@ -8459,11 +8531,11 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
       }, R2.name || 'Villico'), React.createElement("div", {
         style: {
           fontSize: '.75rem',
-          color: '#4a4040',
+          color: wolfDefer ? '#c08070' : '#4a4040',
           fontStyle: 'italic',
           marginBottom: 10
         }
-      }, hasAction ? 'Nessun bersaglio valido stanotte.' : 'Nessuna azione notturna. Attendi in silenzio.'), React.createElement("button", {
+      }, wolfDefer ? '🐺 Stanotte decide il capobranco. Puoi suggerire nella chat del branco.' : hasAction ? 'Nessun bersaglio valido stanotte.' : 'Nessuna azione notturna. Attendi in silenzio.'), React.createElement("button", {
         className: "btn btn-outline",
         style: {
           width: '100%',
@@ -10799,7 +10871,54 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
         fontStyle: 'italic',
         margin: 0
       }
-    }, "Stanotte ogni personaggio agirà in autonomia dal proprio telefono. Aspetta che tutti abbiano agito prima di scoprire l'esito.")), React.createElement("div", {
+    }, "Stanotte ogni personaggio agirà in autonomia dal proprio telefono. Aspetta che tutti abbiano agito prima di scoprire l'esito.")), narratorPlays && myRole && (() => {
+      const HR = ROLES[myRole.role === 'mentalista' ? 'villico' : myRole.role] || {};
+      const isW = HR.wolfTeam;
+      return React.createElement("div", {
+        style: {
+          background: HR.bg || 'rgba(201,162,39,.08)',
+          border: `1px solid ${HR.color || '#c9a227'}55`,
+          borderRadius: 14,
+          padding: '16px 18px',
+          marginBottom: 16,
+          textAlign: 'center'
+        }
+      }, React.createElement("div", {
+        style: {
+          fontFamily: 'Cinzel,serif',
+          fontSize: '.62rem',
+          color: '#a08056',
+          letterSpacing: '.16em',
+          marginBottom: 6
+        }
+      }, "IL TUO RUOLO"), React.createElement("div", {
+        style: {
+          fontSize: '2.6rem',
+          marginBottom: 4
+        }
+      }, HR.emoji || '❓'), React.createElement("div", {
+        style: {
+          fontFamily: 'Cinzel Decorative,serif',
+          fontSize: '1.25rem',
+          color: HR.color || '#c9a227'
+        }
+      }, HR.name || myRole.role), React.createElement("div", {
+        style: {
+          fontFamily: 'Cinzel,serif',
+          fontSize: '.7rem',
+          color: isW ? '#e57373' : HR.winsWithWolves ? '#e57373' : HR.soloTeam ? '#f39c12' : '#2ecc71',
+          marginTop: 5
+        }
+      }, HR.soloTeam ? '⚖️ Fazione Solitaria' : isW ? '🐺 Squadra Lupi' : HR.winsWithWolves ? '😒 Vinci coi Lupi' : '🏘️ Squadra Villaggio'), React.createElement("div", {
+        style: {
+          fontSize: '.76rem',
+          color: '#9a8560',
+          fontStyle: 'italic',
+          marginTop: 8,
+          lineHeight: 1.5
+        }
+      }, HR.desc || ''));
+    })(), React.createElement("div", {
       style: {
         background: 'rgba(201,162,39,.06)',
         border: '1px solid rgba(201,162,39,.18)',
@@ -10954,13 +11073,20 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
       const pct = autoTotalCount > 0 ? Math.round(autoActedCount / autoTotalCount * 100) : 0;
       const allDone = autoActedCount >= autoTotalCount && autoTotalCount > 0;
       const R3 = myRole ? ROLES[myRole.role] : null;
-      const hasAct = R3 && (R3.wolfTeam || ['veggente', 'guardia', 'meretrice', 'arciere', 'custode', 'negromante', 'accusatore', 'piromane', 'alchimista', 'mutaforma', 'condor', 'corvo', 'vampiro'].includes(myRole.role));
+      const wolfRank3 = {
+        lupo: 2,
+        cucciolo: 1
+      };
+      const myWRank3 = wolfRank3[myRole?.role] || 0;
+      const wolfDefer3 = myWRank3 > 0 && players.some(p => p.alive && (wolfRank3[p.role] || 0) > myWRank3);
+      const hasAct = R3 && !wolfDefer3 && (R3.wolfTeam || ['veggente', 'guardia', 'meretrice', 'arciere', 'custode', 'negromante', 'accusatore', 'piromane', 'alchimista', 'mutaforma', 'condor', 'corvo', 'vampiro'].includes(myRole.role));
       const isWolf3 = R3?.wolfTeam;
       const needsDead3 = myRole?.role === 'condor' || myRole?.role === 'negromante';
+      const guardCanSelf3 = myRole?.role === 'guardia' && !guardSelfUsed;
       const filtT = !myRole ? [] : needsDead3 ? players.filter(p => !p.alive).map(p => ({
         ...p,
         _i: players.indexOf(p)
-      })) : players.filter(p => p.alive && p.name !== myRole.name && (!isWolf3 || !ROLES[p.role]?.wolfTeam)).map(p => ({
+      })) : players.filter(p => p.alive && (p.name !== myRole.name || guardCanSelf3) && (!isWolf3 || !ROLES[p.role]?.wolfTeam)).map(p => ({
         ...p,
         _i: players.indexOf(p)
       }));
@@ -11085,24 +11211,21 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
         }
       }, "Giocatori"), React.createElement("div", {
         className: "player-grid"
-      }, players.map(p => {
-        const r = ROLES[p.role];
-        return React.createElement("div", {
-          key: p.id,
-          className: `p-tok ${p.alive ? 'alive' : 'dead'}`
-        }, !p.alive && React.createElement("span", {
-          className: "pt-dead-x"
-        }, "✕"), React.createElement("span", {
-          className: "pt-em"
-        }, r.emoji), React.createElement("span", {
-          className: "pt-name"
-        }, p.name), React.createElement("span", {
-          className: "pt-role",
-          style: {
-            color: r.color
-          }
-        }, r.name));
-      }))), myRole && R3 && React.createElement("div", {
+      }, players.map(p => React.createElement("div", {
+        key: p.id,
+        className: `p-tok ${p.alive ? 'alive' : 'dead'}`
+      }, !p.alive && React.createElement("span", {
+        className: "pt-dead-x"
+      }, "✕"), React.createElement("span", {
+        className: "pt-em"
+      }, p.alive ? '🌙' : '💀'), React.createElement("span", {
+        className: "pt-name"
+      }, p.name), React.createElement("span", {
+        className: "pt-role",
+        style: {
+          color: '#6a5a40'
+        }
+      }, p.alive ? 'in gioco' : 'eliminato'))))), myRole && R3 && React.createElement("div", {
         style: {
           background: isWolf3 ? 'rgba(80,10,10,.4)' : 'rgba(20,30,60,.4)',
           border: `1px solid ${isWolf3 ? 'rgba(180,40,40,.35)' : 'rgba(60,100,180,.3)'}`,
@@ -11135,7 +11258,7 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
           color: '#9a8560',
           fontStyle: 'italic'
         }
-      }, ACTION_LABELS[myRole.role] || 'Nessuna azione'))), !hostNightActed && hasAct && filtT.length > 0 && React.createElement(React.Fragment, null, React.createElement("div", {
+      }, wolfDefer3 ? '🐺 Stanotte decide il capobranco' : guardCanSelf3 ? 'Puoi proteggere anche te stesso (1 volta a partita)' : ACTION_LABELS[myRole.role] || 'Nessuna azione'))), !hostNightActed && hasAct && filtT.length > 0 && React.createElement(React.Fragment, null, React.createElement("div", {
         style: {
           display: 'flex',
           flexDirection: 'column',
@@ -11224,7 +11347,37 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
           color: '#2ecc71',
           fontSize: '.85rem'
         }
-      }, "✓ Azione inviata"))));
+      }, "✓ Azione inviata")), (!myRole || !R3) && !hostNightActed && React.createElement("button", {
+        className: "btn btn-outline",
+        style: {
+          width: '100%',
+          padding: 11,
+          color: '#86714a',
+          fontSize: '.82rem'
+        },
+        onClick: async () => {
+          await getDb().ref(`rooms/${roomCode}/autoNight/actions/${myIdRef.current}`).set({
+            skip: true,
+            actorRole: myRole && myRole.role || 'villico',
+            actorId: myIdRef.current
+          });
+          await getDb().ref(`rooms/${roomCode}/autoNight/counter/done`).transaction(d => (d || 0) + 1);
+          setHostNightActed(true);
+        }
+      }, "✓ Sono pronto"), autoTotalCount > 0 && autoActedCount < autoTotalCount && React.createElement("button", {
+        className: "btn btn-outline",
+        style: {
+          width: '100%',
+          marginTop: 12,
+          padding: 10,
+          fontSize: '.78rem',
+          color: '#d4821a',
+          borderColor: 'rgba(212,130,26,.45)'
+        },
+        onClick: () => {
+          if (window.confirm(`Forzare l'alba saltando ${autoTotalCount - autoActedCount} giocatore/i che non ha/hanno ancora agito?`) && triggerAutoResolveRef.current) triggerAutoResolveRef.current();
+        }
+      }, "⏭️ Forza l'alba — salta chi manca (", autoTotalCount - autoActedCount, " in attesa)")));
     }
     if (ns === 'guardia') {
       const guardIdx = players.findIndex(p => p.role === 'guardia' && p.alive);
@@ -13686,7 +13839,99 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
           fontSize: '.8rem',
           fontStyle: 'italic'
         }
-      }, "● Votazione aperta — ", totalVotes, " voto/i ricevuto/i")), players.map((p, idx) => {
+      }, "● Votazione aperta — ", totalVotes, " voto/i ricevuto/i")), narratorPlays && (() => {
+        const hostIdx = players.findIndex(p => p.name === (myRole && myRole.name));
+        if (hostIdx < 0 || !players[hostIdx]?.alive) return null;
+        const hv = liveVotesRaw[myIdRef.current];
+        const hasVoted = hv !== undefined && hv !== null;
+        return React.createElement("div", {
+          style: {
+            background: 'rgba(52,152,219,.08)',
+            border: '1px solid rgba(52,152,219,.25)',
+            borderRadius: 10,
+            padding: '10px 12px',
+            marginBottom: 12
+          }
+        }, hasVoted ? React.createElement("div", {
+          style: {
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 8
+          }
+        }, React.createElement("span", {
+          style: {
+            fontSize: '.82rem',
+            color: '#5dade2'
+          }
+        }, "🗳️ Il tuo voto: ", React.createElement("strong", null, hv === -1 ? 'nullo (astenuto)' : players[hv]?.name)), React.createElement("button", {
+          onClick: () => {
+            getDb().ref(`rooms/${roomCode}/voting/votes/${myIdRef.current}`).remove();
+            setMpVoteTarget(null);
+          },
+          style: {
+            background: 'none',
+            border: '1px solid rgba(52,152,219,.4)',
+            borderRadius: 7,
+            padding: '4px 10px',
+            color: '#7aa8c8',
+            fontFamily: 'Cinzel,serif',
+            fontSize: '.68rem',
+            cursor: 'pointer'
+          }
+        }, "Cambia")) : React.createElement(React.Fragment, null, React.createElement("div", {
+          style: {
+            fontFamily: 'Cinzel,serif',
+            fontSize: '.66rem',
+            color: '#7aa8c8',
+            letterSpacing: '.08em',
+            marginBottom: 7
+          }
+        }, "🗳️ IL TUO VOTO (giochi anche tu)"), React.createElement("div", {
+          style: {
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 5,
+            marginBottom: 8
+          }
+        }, players.map((p, i) => p.alive && i !== hostIdx ? React.createElement("button", {
+          key: i,
+          onClick: () => setMpVoteTarget(i),
+          style: {
+            padding: '5px 11px',
+            borderRadius: 14,
+            cursor: 'pointer',
+            fontFamily: 'Cinzel,serif',
+            fontSize: '.78rem',
+            border: `1px solid ${mpVoteTarget === i ? 'rgba(52,152,219,.7)' : 'rgba(52,152,219,.2)'}`,
+            background: mpVoteTarget === i ? 'rgba(52,152,219,.18)' : 'rgba(0,0,0,.2)',
+            color: mpVoteTarget === i ? '#5dade2' : '#8a9aa8'
+          }
+        }, p.name) : null)), React.createElement("div", {
+          style: {
+            display: 'flex',
+            gap: 6
+          }
+        }, React.createElement("button", {
+          className: "btn btn-gold",
+          style: {
+            flex: 2,
+            padding: 8,
+            fontSize: '.8rem'
+          },
+          disabled: mpVoteTarget === null,
+          onClick: () => fbSubmitVote(roomCode, myIdRef.current, mpVoteTarget)
+        }, "✓ Conferma voto"), React.createElement("button", {
+          className: "btn btn-outline",
+          style: {
+            flex: 1,
+            padding: 8,
+            fontSize: '.76rem',
+            color: '#9a8560'
+          },
+          onClick: () => fbSubmitVote(roomCode, myIdRef.current, -1)
+        }, "🚫 Nullo"))));
+      })(), players.map((p, idx) => {
         if (!p.alive) return null;
         const count = effVotes[idx] || 0;
         if (count === 0) return null;
