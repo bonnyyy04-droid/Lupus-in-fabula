@@ -877,6 +877,62 @@ const ROLES = {
     desc: 'Crede di essere un semplice Villico e non agisce di notte. Quando muore (o a fine partita) prova a indovinare il ruolo di tutti i sopravvissuti: se li azzecca tutti ottiene 1,5 punti e non viene eliminato; se sbaglia 0,5 punti. Vince con il Villaggio.'
   }
 };
+const ROLE_ICONS = {
+  lupo: '<path fill-rule="evenodd" d="M3.5 3.5 L9 7.2 C10.9 6.6 13.1 6.6 15 7.2 L20.5 3.5 L18.7 9.8 C20.3 11.7 20.2 14.4 18.4 16.2 L13.8 20.4 C12.7 21.4 11.3 21.4 10.2 20.4 L5.6 16.2 C3.8 14.4 3.7 11.7 5.3 9.8 Z M8 12 a1.15 1.15 0 1 0 2.3 0 a1.15 1.15 0 1 0 -2.3 0 Z M13.7 12 a1.15 1.15 0 1 0 2.3 0 a1.15 1.15 0 1 0 -2.3 0 Z"/>',
+  cucciolo: '<path fill-rule="evenodd" d="M5.5 5 L9 8 C10.7 7.4 13.3 7.4 15 8 L18.5 5 L17.4 10 C18.7 11.4 18.7 14.2 17 16 C14.7 18.5 9.3 18.5 7 16 C5.3 14.2 5.3 11.4 6.6 10 Z M8.4 12.3 a1.4 1.4 0 1 0 2.8 0 a1.4 1.4 0 1 0 -2.8 0 Z M12.8 12.3 a1.4 1.4 0 1 0 2.8 0 a1.4 1.4 0 1 0 -2.8 0 Z"/>',
+  lupoAlpha: '<path d="M12 12.8 C8.8 12.8 6.2 15.1 6.2 17.6 C6.2 19.5 8 20.4 9.9 19.8 C10.6 19.6 11.3 19.5 12 19.5 C12.7 19.5 13.4 19.6 14.1 19.8 C16 20.4 17.8 19.5 17.8 17.6 C17.8 15.1 15.2 12.8 12 12.8 Z"/><ellipse cx="6" cy="10.2" rx="1.7" ry="2.2"/><ellipse cx="18" cy="10.2" rx="1.7" ry="2.2"/><ellipse cx="9.5" cy="7.2" rx="1.6" ry="2.1"/><ellipse cx="14.5" cy="7.2" rx="1.6" ry="2.1"/>',
+  villico: '<rect x="11.1" y="8.5" width="1.8" height="12.5" rx="0.8"/><path d="M12 2 C13.5 4 13.5 6.2 12 8.2 C10.5 6.2 10.5 4 12 2 Z"/><path d="M11.6 5.6 C11.6 8 10.3 9.7 8 10.4 C7 8.4 7.8 6.2 9.8 5 C10.5 5.1 11.2 5.3 11.6 5.6 Z"/><path d="M12.4 5.6 C12.4 8 13.7 9.7 16 10.4 C17 8.4 16.2 6.2 14.2 5 C13.5 5.1 12.8 5.3 12.4 5.6 Z"/><path d="M11.6 9.4 C11.6 11.8 10.3 13.5 8 14.2 C7 12.2 7.8 10 9.8 8.8 C10.5 8.9 11.2 9.1 11.6 9.4 Z"/><path d="M12.4 9.4 C12.4 11.8 13.7 13.5 16 14.2 C17 12.2 16.2 10 14.2 8.8 C13.5 8.9 12.8 9.1 12.4 9.4 Z"/><path d="M11.6 13.2 C11.6 15.6 10.3 17.3 8 18 C7 16 7.8 13.8 9.8 12.6 C10.5 12.7 11.2 12.9 11.6 13.2 Z"/><path d="M12.4 13.2 C12.4 15.6 13.7 17.3 16 18 C17 16 16.2 13.8 14.2 12.6 C13.5 12.7 12.8 12.9 12.4 13.2 Z"/>',
+  veggente: '<circle cx="12" cy="10" r="6.2"/><path d="M6 15.6 h12 l-1.4 3.8 h-9.2 Z"/><circle cx="9.6" cy="7.7" r="1.4" fill="rgba(255,255,255,.5)"/>',
+  guardia: '<path d="M12 2.4 L20 5 V11 C20 16.2 16.5 19.6 12 21.6 C7.5 19.6 4 16.2 4 11 V5 Z"/>',
+  meretrice: '<path fill-rule="evenodd" d="M12 9.4 C10 6.6 5.3 6.4 3.8 9 C6 9.6 7 10.6 12 10.6 C17 10.6 18 9.6 20.2 9 C18.7 6.4 14 6.6 12 9.4 Z M3.8 10.3 C5 13.4 8.9 15.6 12 15.6 C15.1 15.6 19 13.4 20.2 10.3 C18 11.2 15.8 11.7 12 11.7 C8.2 11.7 6 11.2 3.8 10.3 Z"/>',
+  arciere: '<path d="M5.5 2.5 C12 6 12 18 5.5 21.5 C7.6 21.5 9.8 18.6 10.8 14.4 C11.1 12.8 11.1 11.2 10.8 9.6 C9.8 5.4 7.6 2.5 5.5 2.5 Z"/><rect x="6.4" y="2.6" width="1.1" height="18.8" rx="0.5"/><rect x="4.5" y="11.35" width="14" height="1.3" rx="0.4"/><path d="M16 9.3 L20.5 12 L16 14.7 Z"/>',
+  negromante: '<path fill-rule="evenodd" d="M12 3 C7.3 3 4 6.4 4 10.8 C4 13.6 5.4 15.6 7 16.6 L7 19.4 a1.4 1.4 0 0 0 1.4 1.4 L9.5 20.8 L9.5 18.2 h1 L10.5 20.8 h3 L13.5 18.2 h1 L14.5 20.8 L15.6 20.8 a1.4 1.4 0 0 0 1.4 -1.4 L17 16.6 C18.6 15.6 20 13.6 20 10.8 C20 6.4 16.7 3 12 3 Z M7.7 10.6 a2.15 2.15 0 1 0 4.3 0 a2.15 2.15 0 1 0 -4.3 0 Z M12 10.6 a2.15 2.15 0 1 0 4.3 0 a2.15 2.15 0 1 0 -4.3 0 Z M12 13.2 l-1.3 2.2 h2.6 Z"/>',
+  custode: '<path d="M7.5 9.5 V7.5 a4.5 4.5 0 0 1 9 0 V9.5 h-2 V7.5 a2.5 2.5 0 0 0 -5 0 V9.5 Z"/><path fill-rule="evenodd" d="M6 9.4 h12 a1.6 1.6 0 0 1 1.6 1.6 v7.4 a1.6 1.6 0 0 1 -1.6 1.6 h-12 a1.6 1.6 0 0 1 -1.6 -1.6 v-7.4 a1.6 1.6 0 0 1 1.6 -1.6 Z M12 12.8 a1.5 1.5 0 0 0 -0.8 2.8 L11 18.2 h2 L12.8 15.6 A1.5 1.5 0 0 0 12 12.8 Z"/>',
+  piromane: '<path d="M12 2 C13 6 17 8 17 13 C17 16.3 14.8 19 12 19 C9.2 19 7 16.3 7 13 C7 11 8 9.6 8.6 9 C8.6 11 9.6 12 10.6 12 C11.1 8 12 5 12 2 Z"/>',
+  accusatore: '<path fill-rule="evenodd" d="M12 3 L22 20.5 H2 Z M11 8.5 h2 l-0.35 6 h-1.3 Z M12 16.2 a1.2 1.2 0 1 0 0.01 0 Z"/>',
+  mutaforma: '<path fill-rule="evenodd" d="M3.5 8 C3.5 6.5 5 6 12 6 C19 6 20.5 6.5 20.5 8 C20.5 12 18 16.2 14.4 16.2 C12.9 16.2 12.5 14.6 12 14.6 C11.5 14.6 11.1 16.2 9.6 16.2 C6 16.2 3.5 12 3.5 8 Z M6.4 9.4 a1.7 1.7 0 1 0 3.4 0 a1.7 1.7 0 1 0 -3.4 0 Z M14.2 9.4 a1.7 1.7 0 1 0 3.4 0 a1.7 1.7 0 1 0 -3.4 0 Z"/>',
+  gesu: '<path d="M10 3 h4 v5 h5 v4 h-5 v9 h-4 v-9 h-5 v-4 h5 Z"/>',
+  vampiro: '<path d="M12 8.2 C11.2 6.6 10.6 6 10.6 4.6 C9.6 5.6 9.2 6.6 9.3 7.7 C7.2 6 4 6 2 7.6 C3.6 7.7 4.1 8.7 4 9.8 C3 9.6 2.3 10 1.9 10.7 C3.7 10.9 5.2 11.9 6.2 13.4 C7.1 12.1 8.7 11.9 9.7 13 C10.2 13.6 11 14.2 12 15.6 C13 14.2 13.8 13.6 14.3 13 C15.3 11.9 16.9 12.1 17.8 13.4 C18.8 11.9 20.3 10.9 22.1 10.7 C21.7 10 21 9.6 20 9.8 C19.9 8.7 20.4 7.7 22 7.6 C20 6 16.8 6 14.7 7.7 C14.8 6.6 14.4 5.6 13.4 4.6 C13.4 6 12.8 6.6 12 8.2 Z"/>'
+};
+const RoleIcon = ({
+  role,
+  size = 24,
+  color,
+  className,
+  style,
+  fallbackEmoji
+}) => {
+  const inner = ROLE_ICONS[role];
+  if (!inner) {
+    const em = fallbackEmoji || (ROLES[role] || {}).emoji || '❓';
+    return React.createElement("span", {
+      className: className,
+      style: {
+        fontSize: size * 0.92 + 'px',
+        lineHeight: 1,
+        display: 'inline-block',
+        ...style
+      }
+    }, em);
+  }
+  const col = color || (ROLES[role] || {}).color || '#c9a227';
+  return React.createElement("svg", {
+    width: size,
+    height: size,
+    viewBox: "0 0 24 24",
+    fill: col,
+    className: className,
+    style: {
+      display: 'inline-block',
+      verticalAlign: 'middle',
+      flexShrink: 0,
+      ...style
+    },
+    dangerouslySetInnerHTML: {
+      __html: inner
+    }
+  });
+};
 const BOOK = [{
   key: 'narratore',
   cat: 'speciale',
@@ -1876,7 +1932,107 @@ function LibroMagico({
     className: "book-intro-icon"
   }, "🌙"), React.createElement("p", {
     className: "book-intro-text"
-  }, "In questo grimorio sono custodite le anime di ogni personaggio.", React.createElement("br", null), React.createElement("br", null), "Ogni ruolo ha la sua storia, il suo potere, il suo destino.", React.createElement("br", null), React.createElement("br", null), "Scorri le pagine e impara a conoscere le forze che si contendono la notte."), React.createElement(D, null)), list.map(r => {
+  }, "In questo grimorio sono custodite le anime di ogni personaggio.", React.createElement("br", null), React.createElement("br", null), "Ogni ruolo ha la sua storia, il suo potere, il suo destino.", React.createElement("br", null), React.createElement("br", null), "Scorri le pagine e impara a conoscere le forze che si contendono la notte."), React.createElement("div", {
+    style: {
+      background: 'rgba(201,162,39,.05)',
+      border: '1px solid rgba(201,162,39,.15)',
+      borderRadius: 12,
+      padding: '12px 14px',
+      margin: '14px 0 4px'
+    }
+  }, React.createElement("p", {
+    style: {
+      fontFamily: 'Cinzel,serif',
+      fontSize: '.6rem',
+      letterSpacing: '.14em',
+      color: '#a08056',
+      marginBottom: 12,
+      textAlign: 'center'
+    }
+  }, "STILE DELLE ICONE — ESEMPI ALTERNATIVI"), React.createElement("div", {
+    style: {
+      display: 'flex',
+      justifyContent: 'space-around',
+      alignItems: 'flex-start',
+      gap: 8
+    }
+  }, React.createElement("div", {
+    style: {
+      textAlign: 'center',
+      flex: 1
+    }
+  }, React.createElement("svg", {
+    width: "42",
+    height: "42",
+    viewBox: "0 0 24 24",
+    fill: "#e74c3c",
+    dangerouslySetInnerHTML: {
+      __html: ROLE_ICONS.lupo
+    }
+  }), React.createElement("div", {
+    style: {
+      fontSize: '.58rem',
+      color: '#9a8a5a',
+      marginTop: 5,
+      fontFamily: 'Cinzel,serif',
+      lineHeight: 1.3
+    }
+  }, "Piene a colori", React.createElement("br", null), React.createElement("span", {
+    style: {
+      color: '#c9a227'
+    }
+  }, "(attuale)"))), React.createElement("div", {
+    style: {
+      textAlign: 'center',
+      flex: 1
+    }
+  }, React.createElement("svg", {
+    width: "42",
+    height: "42",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "#c9a227",
+    strokeWidth: "1.1",
+    strokeLinejoin: "round",
+    dangerouslySetInnerHTML: {
+      __html: ROLE_ICONS.lupo
+    }
+  }), React.createElement("div", {
+    style: {
+      fontSize: '.58rem',
+      color: '#9a8a5a',
+      marginTop: 5,
+      fontFamily: 'Cinzel,serif'
+    }
+  }, "Linee dorate")), React.createElement("div", {
+    style: {
+      textAlign: 'center',
+      flex: 1
+    }
+  }, React.createElement("svg", {
+    width: "42",
+    height: "42",
+    viewBox: "0 0 44 44",
+    dangerouslySetInnerHTML: {
+      __html: '<circle cx="22" cy="22" r="20" fill="#141019" stroke="#c9a227" stroke-width="1.6"/><g transform="translate(7,7) scale(1.25)" fill="#e74c3c">' + ROLE_ICONS.lupo + '</g>'
+    }
+  }), React.createElement("div", {
+    style: {
+      fontSize: '.58rem',
+      color: '#9a8a5a',
+      marginTop: 5,
+      fontFamily: 'Cinzel,serif'
+    }
+  }, "Medaglione"))), React.createElement("p", {
+    style: {
+      fontSize: '.62rem',
+      color: '#7a6a4a',
+      fontStyle: 'italic',
+      textAlign: 'center',
+      marginTop: 12,
+      lineHeight: 1.5
+    }
+  }, "Le icone attuali sono \"piene a colori\". Se preferisci uno degli altri due stili, dimmelo e converto tutte le icone.")), React.createElement(D, null)), list.map(r => {
     const wb = r.cat === 'lupi' ? 'rgba(231,76,60,.15)' : r.cat === 'neutri' ? 'rgba(243,156,18,.12)' : 'rgba(46,204,113,.1)';
     const wbr = r.cat === 'lupi' ? 'rgba(231,76,60,.3)' : r.cat === 'neutri' ? 'rgba(243,156,18,.25)' : 'rgba(46,204,113,.25)';
     return React.createElement("div", {
@@ -1885,8 +2041,17 @@ function LibroMagico({
     }, React.createElement("div", {
       className: "book-role-header"
     }, React.createElement("span", {
-      className: "book-role-emoji"
-    }, r.emoji), React.createElement("div", null, React.createElement("div", {
+      className: "book-role-emoji",
+      style: {
+        display: 'inline-flex',
+        alignItems: 'center'
+      }
+    }, React.createElement(RoleIcon, {
+      role: r.key,
+      fallbackEmoji: r.emoji,
+      size: 30,
+      color: r.color
+    })), React.createElement("div", null, React.createElement("div", {
       className: "book-role-name",
       style: {
         color: r.color
@@ -2689,9 +2854,13 @@ function RoleModal({
     }
   }, React.createElement("span", {
     style: {
-      fontSize: '3rem'
+      display: 'inline-flex'
     }
-  }, r.emoji), React.createElement("div", {
+  }, React.createElement(RoleIcon, {
+    role: roleKey,
+    size: 48,
+    color: r.color
+  })), React.createElement("div", {
     style: {
       fontFamily: 'Cinzel,serif',
       fontSize: '1.1rem',
@@ -3615,6 +3784,7 @@ function App() {
           const rk = effRole(p);
           return {
             name: p.name,
+            role: rk,
             roleName: ROLES[rk]?.name,
             emoji: ROLES[rk]?.emoji,
             color: ROLES[rk]?.color,
@@ -4258,20 +4428,40 @@ function App() {
       const VN = src && src.vName || vName;
       const PS = src && src.players ? src.players.map(p => ({
         name: p.name,
+        role: p.role,
         emoji: p.emoji || '❓',
         color: p.color || '#8a7040',
         roleName: p.roleName || '',
         alive: p.alive
       })) : players.map(p => {
-        const R = ROLES[effRole(p)] || ROLES.villico;
+        const rk = effRole(p);
+        const R = ROLES[rk] || ROLES.villico;
         return {
           name: p.name,
+          role: rk,
           emoji: R.emoji,
           color: R.color,
           roleName: R.name,
           alive: p.alive
         };
       });
+      const iconImgs = {};
+      await Promise.all(PS.map(p => new Promise(res => {
+        const inner = ROLE_ICONS[p.role];
+        if (!inner) {
+          res();
+          return;
+        }
+        const key = p.role + '|' + p.color;
+        const svgStr = '<svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="' + p.color + '">' + inner + '</svg>';
+        const img = new Image();
+        img.onload = () => {
+          iconImgs[key] = img;
+          res();
+        };
+        img.onerror = () => res();
+        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
+      })));
       const nights = LOG.length || 1;
       const winMap = {
         lupi: {
@@ -4430,9 +4620,14 @@ function App() {
           ctx.fillRect(x0, ry, tableW, rowH);
         }
         ctx.textAlign = 'left';
-        ctx.font = '22px serif';
-        ctx.fillStyle = '#000';
-        ctx.fillText(p.emoji, x0 + 10, ry + rowH / 2);
+        const _ii = iconImgs[p.role + '|' + p.color];
+        if (_ii) {
+          ctx.drawImage(_ii, x0 + 8, ry + rowH / 2 - 13, 26, 26);
+        } else {
+          ctx.font = '22px serif';
+          ctx.fillStyle = '#000';
+          ctx.fillText(p.emoji, x0 + 10, ry + rowH / 2);
+        }
         ctx.font = 'bold 15px Georgia,serif';
         ctx.fillStyle = p.alive ? '#2a1d0c' : '#7a5636';
         ctx.fillText(trunc(p.name, 12), x0 + 42, ry + rowH / 2 - 9);
@@ -5815,9 +6010,14 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
     }
   }, React.createElement("span", {
     style: {
-      fontSize: '1rem'
+      display: 'inline-flex'
     }
-  }, p.emoji), React.createElement("span", {
+  }, React.createElement(RoleIcon, {
+    role: p.role,
+    fallbackEmoji: p.emoji,
+    size: 18,
+    color: p.color
+  })), React.createElement("span", {
     style: {
       flex: 1,
       fontSize: '.82rem',
@@ -5926,9 +6126,13 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
         }
       }, React.createElement("span", {
         style: {
-          fontSize: '1.1rem'
+          display: 'inline-flex'
         }
-      }, ROLES[er]?.emoji), React.createElement("span", {
+      }, React.createElement(RoleIcon, {
+        role: er,
+        size: 20,
+        color: ROLES[er]?.color
+      })), React.createElement("span", {
         style: {
           fontFamily: 'Cinzel,serif',
           fontSize: '.9rem',
@@ -6311,7 +6515,11 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
       className: "pt-dead-x"
     }, "✕"), React.createElement("span", {
       className: "pt-em"
-    }, revealRole ? r.emoji : '👤'), React.createElement("span", {
+    }, revealRole ? React.createElement(RoleIcon, {
+      role: effRk,
+      size: 22,
+      color: r.color
+    }) : '👤'), React.createElement("span", {
       className: "pt-name"
     }, p.name), revealRole && React.createElement("span", {
       className: "pt-role",
@@ -6320,10 +6528,16 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
       }
     }, r.name, isMimic && React.createElement("span", {
       style: {
-        opacity: .45,
-        fontSize: '.8em'
+        opacity: .55,
+        marginLeft: 3,
+        display: 'inline-flex',
+        verticalAlign: 'middle'
       }
-    }, " (", ROLES[rawRk].emoji, ")")));
+    }, "(", React.createElement(RoleIcon, {
+      role: rawRk,
+      size: 11,
+      color: ROLES[rawRk].color
+    }), ")")));
   })), React.createElement("div", {
     className: "div"
   }), gameMode === 'narrator' && React.createElement("button", {
@@ -7908,9 +8122,14 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
       }
     }, React.createElement("span", {
       style: {
-        fontSize: '1.1rem'
+        display: 'inline-flex'
       }
-    }, p.emoji || '❓'), React.createElement("span", {
+    }, React.createElement(RoleIcon, {
+      role: p.role,
+      fallbackEmoji: p.emoji,
+      size: 19,
+      color: p.color
+    })), React.createElement("span", {
       style: {
         fontFamily: 'Cinzel,serif',
         fontSize: '.82rem',
@@ -8187,12 +8406,15 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
         }
       }, "Il tuo ruolo"), React.createElement("div", {
         style: {
-          fontSize: '3.4rem',
           marginBottom: 8,
           display: 'inline-block',
           animation: 'emojiBurst .7s cubic-bezier(.2,.9,.3,1) both'
         }
-      }, R2.emoji || '❓'), React.createElement("div", {
+      }, React.createElement(RoleIcon, {
+        role: myRole.role === 'mentalista' ? 'villico' : myRole.role,
+        size: 54,
+        color: R2.color
+      })), React.createElement("div", {
         style: {
           fontFamily: 'Cinzel Decorative,serif',
           fontSize: '1.25rem',
@@ -8378,7 +8600,11 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
         style: {
           fontSize: '1.5rem'
         }
-      }, R2.emoji || '❓'), React.createElement("div", null, React.createElement("div", {
+      }, React.createElement(RoleIcon, {
+        role: myRole.role === 'mentalista' ? 'villico' : myRole.role,
+        size: 26,
+        color: R2.color
+      })), React.createElement("div", null, React.createElement("div", {
         style: {
           fontFamily: 'Cinzel,serif',
           fontSize: '.7rem',
@@ -8518,10 +8744,13 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
         }
       }, React.createElement("div", {
         style: {
-          fontSize: '1.3rem',
           marginBottom: 4
         }
-      }, R2.emoji || '👤'), React.createElement("div", {
+      }, React.createElement(RoleIcon, {
+        role: myRole.role === 'mentalista' ? 'villico' : myRole.role,
+        size: 22,
+        color: R2.color
+      })), React.createElement("div", {
         style: {
           fontFamily: 'Cinzel,serif',
           fontSize: '.78rem',
@@ -9294,7 +9523,12 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
         className: "nlog-name-cell"
       }, React.createElement("span", {
         className: "nlog-name-em"
-      }, p.emoji), React.createElement("div", null, React.createElement("span", {
+      }, React.createElement(RoleIcon, {
+        role: p.role,
+        fallbackEmoji: p.emoji,
+        size: 17,
+        color: p.color
+      })), React.createElement("div", null, React.createElement("span", {
         className: "nlog-name-txt"
       }, p.name), React.createElement("span", {
         className: "nlog-name-role",
@@ -9451,9 +9685,13 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
       }
     }, React.createElement("span", {
       style: {
-        fontSize: mpPhase ? '2rem' : '3rem'
+        display: 'inline-flex'
       }
-    }, R?.emoji || '❓'), React.createElement("div", null, React.createElement("p", {
+    }, React.createElement(RoleIcon, {
+      role: myRole.role,
+      size: mpPhase ? 32 : 48,
+      color: R?.color
+    })), React.createElement("div", null, React.createElement("p", {
       style: {
         color: '#a08056',
         fontSize: '.65rem',
@@ -9834,6 +10072,7 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
     }, vName, " — ", n, " giocatori"), (() => {
       const isDefault = !modalitaSpeciale && JSON.stringify(dist) === JSON.stringify(getSuggestedDist(n, difficulty));
       const chips = ROLE_ORDER.filter(k => k !== 'villico' && (dist[k] || 0) > 0).map(k => ({
+        key: k,
         emoji: ROLES[k].emoji,
         name: ROLES[k].name,
         cnt: dist[k],
@@ -9888,11 +10127,11 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
           fontSize: '.8rem',
           color: '#d8c8a8'
         }
-      }, React.createElement("span", {
-        style: {
-          fontSize: '1rem'
-        }
-      }, c.emoji), c.name, c.cnt > 1 && React.createElement("span", {
+      }, React.createElement(RoleIcon, {
+        role: c.key,
+        size: 17,
+        color: c.color
+      }), c.name, c.cnt > 1 && React.createElement("span", {
         style: {
           fontFamily: 'Cinzel,serif',
           fontWeight: 700,
@@ -10082,11 +10321,16 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
           }
         }, React.createElement("span", {
           style: {
-            fontSize: '1.2rem',
             marginRight: 8,
+            display: 'inline-flex',
+            alignItems: 'center',
             filter: locked ? 'grayscale(1) opacity(.5)' : 'none'
           }
-        }, r.emoji), React.createElement("span", {
+        }, React.createElement(RoleIcon, {
+          role: key,
+          size: 20,
+          color: r.color
+        })), React.createElement("span", {
           style: {
             flex: 1,
             fontSize: '.88rem',
@@ -10893,10 +11137,13 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
         }
       }, "IL TUO RUOLO"), React.createElement("div", {
         style: {
-          fontSize: '2.6rem',
           marginBottom: 4
         }
-      }, HR.emoji || '❓'), React.createElement("div", {
+      }, React.createElement(RoleIcon, {
+        role: myRole.role === 'mentalista' ? 'villico' : myRole.role,
+        size: 44,
+        color: HR.color
+      })), React.createElement("div", {
         style: {
           fontFamily: 'Cinzel Decorative,serif',
           fontSize: '1.25rem',
@@ -11049,7 +11296,11 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
       }
     }, React.createElement("span", {
       className: "re"
-    }, r.emoji), React.createElement("div", {
+    }, React.createElement(RoleIcon, {
+      role: p.role === 'mentalista' ? 'villico' : p.role,
+      size: 60,
+      color: r.color
+    })), React.createElement("div", {
       className: "rn",
       style: {
         color: r.color
@@ -11241,9 +11492,13 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
         }
       }, React.createElement("span", {
         style: {
-          fontSize: '1.4rem'
+          display: 'inline-flex'
         }
-      }, R3.emoji || '👤'), React.createElement("div", null, React.createElement("div", {
+      }, React.createElement(RoleIcon, {
+        role: myRole.role,
+        size: 24,
+        color: R3.color
+      })), React.createElement("div", null, React.createElement("div", {
         style: {
           fontFamily: 'Cinzel,serif',
           fontSize: '.7rem',
@@ -12155,10 +12410,13 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
       }
     }, players[negR.idx].name), " era..."), React.createElement("div", {
       style: {
-        fontSize: '2rem',
         marginBottom: 6
       }
-    }, ROLES[negR.role].emoji), React.createElement("div", {
+    }, React.createElement(RoleIcon, {
+      role: negR.role,
+      size: 32,
+      color: ROLES[negR.role].color
+    })), React.createElement("div", {
       style: {
         color: ROLES[negR.role].color,
         fontFamily: 'Cinzel,serif',
@@ -13402,9 +13660,16 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
       }, p.name), React.createElement("span", {
         style: {
           color: ROLES[ek]?.color || '#8a7860',
-          fontFamily: 'Cinzel,serif'
+          fontFamily: 'Cinzel,serif',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 5
         }
-      }, ROLES[ek]?.emoji, " ", ROLES[ek]?.name));
+      }, React.createElement(RoleIcon, {
+        role: ek,
+        size: 15,
+        color: ROLES[ek]?.color
+      }), ROLES[ek]?.name));
     })), React.createElement("button", {
       className: "btn btn-outline",
       style: {
@@ -14516,19 +14781,31 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
         style: {
           fontSize: '.52rem',
           color: ROLES[mutRole]?.color,
-          display: 'block',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 2,
           marginTop: 1,
           fontFamily: 'Cinzel,serif'
         }
-      }, "🔄 ", ROLES[mutRole]?.emoji, ROLES[mutRole]?.name), revealRole && p.role === 'condor' && conRole && React.createElement("span", {
+      }, "🔄 ", React.createElement(RoleIcon, {
+        role: mutRole,
+        size: 9,
+        color: ROLES[mutRole]?.color
+      }), ROLES[mutRole]?.name), revealRole && p.role === 'condor' && conRole && React.createElement("span", {
         style: {
           fontSize: '.52rem',
           color: ROLES[conRole]?.color,
-          display: 'block',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 2,
           marginTop: 1,
           fontFamily: 'Cinzel,serif'
         }
-      }, "🦅 ", ROLES[conRole]?.emoji, ROLES[conRole]?.name));
+      }, "🦅 ", React.createElement(RoleIcon, {
+        role: conRole,
+        size: 9,
+        color: ROLES[conRole]?.color
+      }), ROLES[conRole]?.name));
     })), React.createElement("div", {
       className: "div"
     }), gameMode === 'narrator' && React.createElement("button", {
@@ -14710,9 +14987,13 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
           }
         }, React.createElement("span", {
           style: {
-            fontSize: '1rem'
+            display: 'inline-flex'
           }
-        }, er.emoji), React.createElement("span", {
+        }, React.createElement(RoleIcon, {
+          role: ek,
+          size: 18,
+          color: er.color
+        })), React.createElement("span", {
           style: {
             textDecoration: !p.alive ? 'line-through' : 'none',
             opacity: !p.alive ? .7 : 1
@@ -14747,7 +15028,15 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
       return React.createElement("div", {
         key: p.id,
         className: `fr${!p.alive ? ' fdead' : ''}`
-      }, React.createElement("span", null, ROLES[ek2].emoji), React.createElement("span", {
+      }, React.createElement("span", {
+        style: {
+          display: 'inline-flex'
+        }
+      }, React.createElement(RoleIcon, {
+        role: ek2,
+        size: 18,
+        color: ROLES[ek2].color
+      })), React.createElement("span", {
         className: "fn",
         style: {
           textDecoration: !p.alive ? 'line-through' : 'none'
@@ -14918,7 +15207,11 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
           className: "nlog-name-cell"
         }, React.createElement("span", {
           className: "nlog-name-em"
-        }, R2.emoji), React.createElement("div", null, React.createElement("span", {
+        }, React.createElement(RoleIcon, {
+          role: ek,
+          size: 17,
+          color: R2.color
+        })), React.createElement("div", null, React.createElement("span", {
           className: "nlog-name-txt"
         }, p.name), React.createElement("span", {
           className: "nlog-name-role",
@@ -14942,8 +15235,17 @@ Non rivelare chi ha compiuto le azioni notturne, solo i risultati visibili. Nien
               }, icon), React.createElement("span", {
                 className: "nlog-choice"
               }, tName, React.createElement("span", {
-                className: "nlog-role-seen"
-              }, tr2.emoji)));
+                className: "nlog-role-seen",
+                style: {
+                  display: 'inline-flex',
+                  verticalAlign: 'middle',
+                  marginLeft: 2
+                }
+              }, React.createElement(RoleIcon, {
+                role: action.seerRole,
+                size: 11,
+                color: tr2.color
+              }))));
             } else if (action.type === 'alch') {
               choiceEl = React.createElement(React.Fragment, null, React.createElement("span", {
                 className: "nlog-action-icon"
