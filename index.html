@@ -877,23 +877,27 @@ const ROLES = {
     desc: 'Crede di essere un semplice Villico e non agisce di notte. Quando muore (o a fine partita) prova a indovinare il ruolo di tutti i sopravvissuti: se li azzecca tutti ottiene 1,5 punti e non viene eliminato; se sbaglia 0,5 punti. Vince con il Villaggio.'
   }
 };
+const FLAT_LUPO = '<path fill-rule="evenodd" d="M3.5 3.5 L9 7.2 C10.9 6.6 13.1 6.6 15 7.2 L20.5 3.5 L18.7 9.8 C20.3 11.7 20.2 14.4 18.4 16.2 L13.8 20.4 C12.7 21.4 11.3 21.4 10.2 20.4 L5.6 16.2 C3.8 14.4 3.7 11.7 5.3 9.8 Z M8 12 a1.15 1.15 0 1 0 2.3 0 a1.15 1.15 0 1 0 -2.3 0 Z M13.7 12 a1.15 1.15 0 1 0 2.3 0 a1.15 1.15 0 1 0 -2.3 0 Z"/>';
 const ROLE_ICONS = {
-  lupo: '<path fill-rule="evenodd" d="M3.5 3.5 L9 7.2 C10.9 6.6 13.1 6.6 15 7.2 L20.5 3.5 L18.7 9.8 C20.3 11.7 20.2 14.4 18.4 16.2 L13.8 20.4 C12.7 21.4 11.3 21.4 10.2 20.4 L5.6 16.2 C3.8 14.4 3.7 11.7 5.3 9.8 Z M8 12 a1.15 1.15 0 1 0 2.3 0 a1.15 1.15 0 1 0 -2.3 0 Z M13.7 12 a1.15 1.15 0 1 0 2.3 0 a1.15 1.15 0 1 0 -2.3 0 Z"/>',
-  cucciolo: '<path fill-rule="evenodd" d="M5.5 5 L9 8 C10.7 7.4 13.3 7.4 15 8 L18.5 5 L17.4 10 C18.7 11.4 18.7 14.2 17 16 C14.7 18.5 9.3 18.5 7 16 C5.3 14.2 5.3 11.4 6.6 10 Z M8.4 12.3 a1.4 1.4 0 1 0 2.8 0 a1.4 1.4 0 1 0 -2.8 0 Z M12.8 12.3 a1.4 1.4 0 1 0 2.8 0 a1.4 1.4 0 1 0 -2.8 0 Z"/>',
-  lupoAlpha: '<path d="M12 12.8 C8.8 12.8 6.2 15.1 6.2 17.6 C6.2 19.5 8 20.4 9.9 19.8 C10.6 19.6 11.3 19.5 12 19.5 C12.7 19.5 13.4 19.6 14.1 19.8 C16 20.4 17.8 19.5 17.8 17.6 C17.8 15.1 15.2 12.8 12 12.8 Z"/><ellipse cx="6" cy="10.2" rx="1.7" ry="2.2"/><ellipse cx="18" cy="10.2" rx="1.7" ry="2.2"/><ellipse cx="9.5" cy="7.2" rx="1.6" ry="2.1"/><ellipse cx="14.5" cy="7.2" rx="1.6" ry="2.1"/>',
-  villico: '<rect x="11.1" y="8.5" width="1.8" height="12.5" rx="0.8"/><path d="M12 2 C13.5 4 13.5 6.2 12 8.2 C10.5 6.2 10.5 4 12 2 Z"/><path d="M11.6 5.6 C11.6 8 10.3 9.7 8 10.4 C7 8.4 7.8 6.2 9.8 5 C10.5 5.1 11.2 5.3 11.6 5.6 Z"/><path d="M12.4 5.6 C12.4 8 13.7 9.7 16 10.4 C17 8.4 16.2 6.2 14.2 5 C13.5 5.1 12.8 5.3 12.4 5.6 Z"/><path d="M11.6 9.4 C11.6 11.8 10.3 13.5 8 14.2 C7 12.2 7.8 10 9.8 8.8 C10.5 8.9 11.2 9.1 11.6 9.4 Z"/><path d="M12.4 9.4 C12.4 11.8 13.7 13.5 16 14.2 C17 12.2 16.2 10 14.2 8.8 C13.5 8.9 12.8 9.1 12.4 9.4 Z"/><path d="M11.6 13.2 C11.6 15.6 10.3 17.3 8 18 C7 16 7.8 13.8 9.8 12.6 C10.5 12.7 11.2 12.9 11.6 13.2 Z"/><path d="M12.4 13.2 C12.4 15.6 13.7 17.3 16 18 C17 16 16.2 13.8 14.2 12.6 C13.5 12.7 12.8 12.9 12.4 13.2 Z"/>',
-  veggente: '<circle cx="12" cy="10" r="6.2"/><path d="M6 15.6 h12 l-1.4 3.8 h-9.2 Z"/><circle cx="9.6" cy="7.7" r="1.4" fill="rgba(255,255,255,.5)"/>',
-  guardia: '<path d="M12 2.4 L20 5 V11 C20 16.2 16.5 19.6 12 21.6 C7.5 19.6 4 16.2 4 11 V5 Z"/>',
-  meretrice: '<path fill-rule="evenodd" d="M12 9.4 C10 6.6 5.3 6.4 3.8 9 C6 9.6 7 10.6 12 10.6 C17 10.6 18 9.6 20.2 9 C18.7 6.4 14 6.6 12 9.4 Z M3.8 10.3 C5 13.4 8.9 15.6 12 15.6 C15.1 15.6 19 13.4 20.2 10.3 C18 11.2 15.8 11.7 12 11.7 C8.2 11.7 6 11.2 3.8 10.3 Z"/>',
-  arciere: '<path d="M5.5 2.5 C12 6 12 18 5.5 21.5 C7.6 21.5 9.8 18.6 10.8 14.4 C11.1 12.8 11.1 11.2 10.8 9.6 C9.8 5.4 7.6 2.5 5.5 2.5 Z"/><rect x="6.4" y="2.6" width="1.1" height="18.8" rx="0.5"/><rect x="4.5" y="11.35" width="14" height="1.3" rx="0.4"/><path d="M16 9.3 L20.5 12 L16 14.7 Z"/>',
-  negromante: '<path fill-rule="evenodd" d="M12 3 C7.3 3 4 6.4 4 10.8 C4 13.6 5.4 15.6 7 16.6 L7 19.4 a1.4 1.4 0 0 0 1.4 1.4 L9.5 20.8 L9.5 18.2 h1 L10.5 20.8 h3 L13.5 18.2 h1 L14.5 20.8 L15.6 20.8 a1.4 1.4 0 0 0 1.4 -1.4 L17 16.6 C18.6 15.6 20 13.6 20 10.8 C20 6.4 16.7 3 12 3 Z M7.7 10.6 a2.15 2.15 0 1 0 4.3 0 a2.15 2.15 0 1 0 -4.3 0 Z M12 10.6 a2.15 2.15 0 1 0 4.3 0 a2.15 2.15 0 1 0 -4.3 0 Z M12 13.2 l-1.3 2.2 h2.6 Z"/>',
-  custode: '<path d="M7.5 9.5 V7.5 a4.5 4.5 0 0 1 9 0 V9.5 h-2 V7.5 a2.5 2.5 0 0 0 -5 0 V9.5 Z"/><path fill-rule="evenodd" d="M6 9.4 h12 a1.6 1.6 0 0 1 1.6 1.6 v7.4 a1.6 1.6 0 0 1 -1.6 1.6 h-12 a1.6 1.6 0 0 1 -1.6 -1.6 v-7.4 a1.6 1.6 0 0 1 1.6 -1.6 Z M12 12.8 a1.5 1.5 0 0 0 -0.8 2.8 L11 18.2 h2 L12.8 15.6 A1.5 1.5 0 0 0 12 12.8 Z"/>',
-  piromane: '<path d="M12 2 C13 6 17 8 17 13 C17 16.3 14.8 19 12 19 C9.2 19 7 16.3 7 13 C7 11 8 9.6 8.6 9 C8.6 11 9.6 12 10.6 12 C11.1 8 12 5 12 2 Z"/>',
-  accusatore: '<path fill-rule="evenodd" d="M12 3 L22 20.5 H2 Z M11 8.5 h2 l-0.35 6 h-1.3 Z M12 16.2 a1.2 1.2 0 1 0 0.01 0 Z"/>',
-  mutaforma: '<path fill-rule="evenodd" d="M3.5 8 C3.5 6.5 5 6 12 6 C19 6 20.5 6.5 20.5 8 C20.5 12 18 16.2 14.4 16.2 C12.9 16.2 12.5 14.6 12 14.6 C11.5 14.6 11.1 16.2 9.6 16.2 C6 16.2 3.5 12 3.5 8 Z M6.4 9.4 a1.7 1.7 0 1 0 3.4 0 a1.7 1.7 0 1 0 -3.4 0 Z M14.2 9.4 a1.7 1.7 0 1 0 3.4 0 a1.7 1.7 0 1 0 -3.4 0 Z"/>',
-  gesu: '<path d="M10 3 h4 v5 h5 v4 h-5 v9 h-4 v-9 h-5 v-4 h5 Z"/>',
-  vampiro: '<path d="M12 8.2 C11.2 6.6 10.6 6 10.6 4.6 C9.6 5.6 9.2 6.6 9.3 7.7 C7.2 6 4 6 2 7.6 C3.6 7.7 4.1 8.7 4 9.8 C3 9.6 2.3 10 1.9 10.7 C3.7 10.9 5.2 11.9 6.2 13.4 C7.1 12.1 8.7 11.9 9.7 13 C10.2 13.6 11 14.2 12 15.6 C13 14.2 13.8 13.6 14.3 13 C15.3 11.9 16.9 12.1 17.8 13.4 C18.8 11.9 20.3 10.9 22.1 10.7 C21.7 10 21 9.6 20 9.8 C19.9 8.7 20.4 7.7 22 7.6 C20 6 16.8 6 14.7 7.7 C14.8 6.6 14.4 5.6 13.4 4.6 C13.4 6 12.8 6.6 12 8.2 Z"/>'
+  lupo: '<defs><linearGradient id="lw1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d95445"/><stop offset="1" stop-color="#9c3227"/></linearGradient></defs><path d="M12 5 L20 10.5 L14.5 16.5 Z" fill="#7e261d" stroke="#3c110c" stroke-width="1.2" stroke-linejoin="round"/><path d="M36 5 L28 10.5 L33.5 16.5 Z" fill="#7e261d" stroke="#3c110c" stroke-width="1.2" stroke-linejoin="round"/><path d="M13.8 7.6 L18.3 10.7 L15.2 14 Z" fill="#3c110c"/><path d="M34.2 7.6 L29.7 10.7 L32.8 14 Z" fill="#3c110c"/><path d="M24 8 C18.5 8 14 11 12.8 15.6 L9.5 18 L12.4 20.8 C12.2 26.5 14.2 31.6 18 35.4 L15.8 38.8 L20.2 37.6 C22.2 40.6 25.8 40.6 27.8 37.6 L32.2 38.8 L30 35.4 C33.8 31.6 35.8 26.5 35.6 20.8 L38.5 18 L35.2 15.6 C34 11 29.5 8 24 8 Z" fill="url(#lw1)" stroke="#3c110c" stroke-width="1.4" stroke-linejoin="round"/><path d="M24 8 C19.5 8 15.6 10 13.8 13.2 C17.2 11.2 20.6 10.4 24 10.4 C27.4 10.4 30.8 11.2 34.2 13.2 C32.4 10 28.5 8 24 8 Z" fill="#7e261d"/><path d="M24 21 C20.6 24.4 19.1 28.2 19.7 32.4 C21 35.7 22.4 37.2 24 37.2 C25.6 37.2 27 35.7 28.3 32.4 C28.9 28.2 27.4 24.4 24 21 Z" fill="#e59a74"/><path d="M21.7 31.2 C22.7 30.2 25.3 30.2 26.3 31.2 C26 32.9 25.2 33.7 24 33.7 C22.8 33.7 22 32.9 21.7 31.2 Z" fill="#2a0d09"/><path d="M21.3 33.8 L22.2 37 L23.3 34.2 Z" fill="#f5ead8" stroke="#3c110c" stroke-width=".5" stroke-linejoin="round"/><path d="M26.7 33.8 L25.8 37 L24.7 34.2 Z" fill="#f5ead8" stroke="#3c110c" stroke-width=".5" stroke-linejoin="round"/><path d="M14.4 19.2 L20.6 21 L19.9 23.1 C17.6 23.3 15.4 21.9 14.4 19.2 Z" fill="#f6c445" stroke="#3c110c" stroke-width=".6" stroke-linejoin="round"/><path d="M33.6 19.2 L27.4 21 L28.1 23.1 C30.4 23.3 32.6 21.9 33.6 19.2 Z" fill="#f6c445" stroke="#3c110c" stroke-width=".6" stroke-linejoin="round"/><circle cx="17.9" cy="21.1" r=".9" fill="#1c0a07"/><circle cx="30.1" cy="21.1" r=".9" fill="#1c0a07"/><path d="M13.8 17 L20.6 19" fill="none" stroke="#3c110c" stroke-width="1.2" stroke-linecap="round"/><path d="M34.2 17 L27.4 19" fill="none" stroke="#3c110c" stroke-width="1.2" stroke-linecap="round"/>',
+  cucciolo: '<defs><linearGradient id="cb1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0913a"/><stop offset="1" stop-color="#c2661a"/></linearGradient></defs><path d="M13 7 L20.5 11.5 L14.5 17 Z" fill="#a3541a" stroke="#4a2408" stroke-width="1.2" stroke-linejoin="round"/><path d="M35 7 L27.5 11.5 L33.5 17 Z" fill="#a3541a" stroke="#4a2408" stroke-width="1.2" stroke-linejoin="round"/><path d="M14.6 9.4 L18.7 11.9 L15.4 14.8 Z" fill="#4a2408"/><path d="M33.4 9.4 L29.3 11.9 L32.6 14.8 Z" fill="#4a2408"/><path d="M24 9 C17.2 9 12.6 13.6 12.6 19.8 C12.6 26.4 15.4 31.6 19.4 33.9 C22.3 35.6 25.7 35.6 28.6 33.9 C32.6 31.6 35.4 26.4 35.4 19.8 C35.4 13.6 30.8 9 24 9 Z" fill="url(#cb1)" stroke="#4a2408" stroke-width="1.4" stroke-linejoin="round"/><path d="M24 9 C19.6 9 16 11 14.4 14.2 C17.4 12.2 20.8 11.3 24 11.3 C27.2 11.3 30.6 12.2 33.6 14.2 C32 11 28.4 9 24 9 Z" fill="#a3541a"/><ellipse cx="24" cy="28" rx="5.4" ry="4.6" fill="#f4bd85"/><path d="M22.2 25.6 C22.9 24.9 25.1 24.9 25.8 25.6 C25.5 27 24.9 27.6 24 27.6 C23.1 27.6 22.5 27 22.2 25.6 Z" fill="#2e1206"/><path d="M21 29.6 C22 30.8 23 30.8 24 29.9 C25 30.8 26 30.8 27 29.6" fill="none" stroke="#2e1206" stroke-width="1" stroke-linecap="round"/><circle cx="19" cy="20.2" r="2.7" fill="#f6c445" stroke="#4a2408" stroke-width=".7"/><circle cx="29" cy="20.2" r="2.7" fill="#f6c445" stroke="#4a2408" stroke-width=".7"/><circle cx="19.3" cy="20.5" r="1.4" fill="#1c0a07"/><circle cx="29.3" cy="20.5" r="1.4" fill="#1c0a07"/><circle cx="18.6" cy="19.6" r=".55" fill="#fff"/><circle cx="28.6" cy="19.6" r=".55" fill="#fff"/>',
+  lupoAlpha: '<defs><radialGradient id="la1" cx="0.38" cy="0.32" r="0.95"><stop offset="0" stop-color="#efe4fa"/><stop offset="1" stop-color="#b394d4"/></radialGradient><linearGradient id="la2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a566c6"/><stop offset="1" stop-color="#6d3391"/></linearGradient></defs><circle cx="24" cy="15.5" r="11.5" fill="url(#la1)" stroke="#3e1d54" stroke-width="1.3"/><circle cx="20" cy="11.5" r="2.1" fill="#a583c4" opacity=".55"/><circle cx="28.5" cy="18" r="2.6" fill="#a583c4" opacity=".5"/><circle cx="23" cy="21" r="1.3" fill="#a583c4" opacity=".5"/><ellipse cx="13.6" cy="29.4" rx="2.6" ry="3.6" transform="rotate(-18 13.6 29.4)" fill="url(#la2)" stroke="#341448" stroke-width="1"/><ellipse cx="20.4" cy="27.2" rx="2.7" ry="3.8" transform="rotate(-6 20.4 27.2)" fill="url(#la2)" stroke="#341448" stroke-width="1"/><ellipse cx="27.6" cy="27.2" rx="2.7" ry="3.8" transform="rotate(6 27.6 27.2)" fill="url(#la2)" stroke="#341448" stroke-width="1"/><ellipse cx="34.4" cy="29.4" rx="2.6" ry="3.6" transform="rotate(18 34.4 29.4)" fill="url(#la2)" stroke="#341448" stroke-width="1"/><path d="M24 32 C18.6 32 14.6 35.4 14.6 39 C14.6 41.8 17.4 43.4 20.6 42.5 C21.8 42.2 22.9 42 24 42 C25.1 42 26.2 42.2 27.4 42.5 C30.6 43.4 33.4 41.8 33.4 39 C33.4 35.4 29.4 32 24 32 Z" fill="url(#la2)" stroke="#341448" stroke-width="1.2"/>',
+  villico: '<defs><linearGradient id="vl1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#edb944"/><stop offset="1" stop-color="#c08a26"/></linearGradient></defs><path d="M24 44 V22" stroke="#8a5a20" stroke-width="2.2" stroke-linecap="round"/><path d="M24 44 C24 35 18.5 31 16.5 23" stroke="#8a5a20" stroke-width="1.9" stroke-linecap="round" fill="none"/><path d="M24 44 C24 35 29.5 31 31.5 23" stroke="#8a5a20" stroke-width="1.9" stroke-linecap="round" fill="none"/><g stroke="#7a4e16" stroke-width=".7"><ellipse cx="21.4" cy="18.5" rx="2.5" ry="3.8" transform="rotate(-24 21.4 18.5)" fill="url(#vl1)"/><ellipse cx="26.6" cy="18.5" rx="2.5" ry="3.8" transform="rotate(24 26.6 18.5)" fill="url(#vl1)"/><ellipse cx="21.6" cy="13.4" rx="2.4" ry="3.6" transform="rotate(-24 21.6 13.4)" fill="url(#vl1)"/><ellipse cx="26.4" cy="13.4" rx="2.4" ry="3.6" transform="rotate(24 26.4 13.4)" fill="url(#vl1)"/><ellipse cx="24" cy="8.2" rx="2.3" ry="3.5" fill="url(#vl1)"/><ellipse cx="15.4" cy="19.6" rx="1.9" ry="3" transform="rotate(-30 15.4 19.6)" fill="url(#vl1)"/><ellipse cx="14" cy="14.8" rx="1.8" ry="2.8" transform="rotate(-34 14 14.8)" fill="url(#vl1)"/><ellipse cx="32.6" cy="19.6" rx="1.9" ry="3" transform="rotate(30 32.6 19.6)" fill="url(#vl1)"/><ellipse cx="34" cy="14.8" rx="1.8" ry="2.8" transform="rotate(34 34 14.8)" fill="url(#vl1)"/></g><path d="M24 5.4 V2 M20.6 6.4 L18.6 3.4 M27.4 6.4 L29.4 3.4" stroke="#c08a26" stroke-width=".9" stroke-linecap="round"/><path d="M19.6 32.6 h8.8 l-1 4.4 h-6.8 Z" fill="#b07b1e" stroke="#6e4a12" stroke-width="1" stroke-linejoin="round"/><path d="M20.6 34.8 h6.8" stroke="#6e4a12" stroke-width=".7" opacity=".6"/>',
+  veggente: '<defs><radialGradient id="vg1" cx="0.35" cy="0.3" r="0.9"><stop offset="0" stop-color="#e3c2ff"/><stop offset="0.45" stop-color="#a45fd0"/><stop offset="1" stop-color="#5c2287"/></radialGradient></defs><circle cx="24" cy="20" r="13.5" fill="url(#vg1)" stroke="#2e1046" stroke-width="1.4"/><path d="M14.5 22 C18 25 30 25 33.5 22 C31 28 17 28 14.5 22 Z" fill="#7a35ab" opacity=".55"/><path d="M16.2 13.2 C18 10.8 21 9.4 24 9.4 C21.4 11 19.4 13 18.4 15.6 C17.4 15 16.6 14.2 16.2 13.2 Z" fill="#f3e3ff" opacity=".75"/><path d="M27 13.5 l1 2.2 2.2 1 -2.2 1 -1 2.2 -1-2.2 -2.2-1 2.2-1 Z" fill="#fff" opacity=".95"/><circle cx="31.5" cy="21.5" r=".9" fill="#fff" opacity=".8"/><circle cx="20" cy="24.5" r=".7" fill="#f3e3ff" opacity=".7"/><path d="M17 32.5 h14 l1.6 3.4 h-17.2 Z" fill="#c9a227" stroke="#5a3c0e" stroke-width="1.1" stroke-linejoin="round"/><path d="M13.5 36 h21 l2.4 5 h-25.8 Z" fill="#a8801e" stroke="#5a3c0e" stroke-width="1.2" stroke-linejoin="round"/><path d="M16 38.4 h16" stroke="#5a3c0e" stroke-width=".8" opacity=".55"/><circle cx="24" cy="34.2" r="1" fill="#5a3c0e"/>',
+  guardia: '<defs><linearGradient id="gd1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4f9fd6"/><stop offset="1" stop-color="#175a8c"/></linearGradient></defs><path d="M24 3.5 L41 9 V22 C41 32.5 33.5 40 24 44.8 C14.5 40 7 32.5 7 22 V9 Z" fill="url(#gd1)" stroke="#0c2b45" stroke-width="1.6" stroke-linejoin="round"/><path d="M24 7.4 L37.4 11.8 V22 C37.4 30.4 31.6 36.6 24 40.9 C16.4 36.6 10.6 30.4 10.6 22 V11.8 Z" fill="none" stroke="#e0bf5a" stroke-width="1.5"/><path d="M10.5 12.5 L18 9.6 L13.6 27 C11.6 22.8 10.5 17.8 10.5 12.5 Z" fill="#ffffff" opacity=".14"/><path d="M22.7 14 h2.6 v6.4 H31 v2.6 h-5.7 V32 h-2.6 v-9 H17 v-2.6 h5.7 Z" fill="#e8c84a" stroke="#7a5c14" stroke-width=".9" stroke-linejoin="round"/><circle cx="24" cy="9.6" r="1" fill="#e0bf5a"/><circle cx="12.8" cy="13.4" r="1" fill="#e0bf5a"/><circle cx="35.2" cy="13.4" r="1" fill="#e0bf5a"/>',
+  meretrice: '<defs><linearGradient id="mr1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e0554a"/><stop offset="1" stop-color="#b02c22"/></linearGradient><linearGradient id="mr2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c73a2e"/><stop offset="1" stop-color="#8e1d15"/></linearGradient></defs><path d="M24 20 C21.5 16.6 16 16.4 12.4 19.2 C10.7 20.6 9.7 22.3 9.4 23.4 C14 24.7 19 25.3 24 25.3 C29 25.3 34 24.7 38.6 23.4 C38.3 22.3 37.3 20.6 35.6 19.2 C32 16.4 26.5 16.6 24 20 Z" fill="url(#mr1)" stroke="#4a0f0a" stroke-width="1.3" stroke-linejoin="round"/><path d="M9.4 25 C11.4 30.2 17 33.9 24 33.9 C31 33.9 36.6 30.2 38.6 25 C34 26.4 29 27 24 27 C19 27 14 26.4 9.4 25 Z" fill="url(#mr2)" stroke="#4a0f0a" stroke-width="1.3" stroke-linejoin="round"/><path d="M10.5 24.2 C15 25.4 19.5 26 24 26 C28.5 26 33 25.4 37.5 24.2" fill="none" stroke="#4a0f0a" stroke-width="1.1"/><ellipse cx="17" cy="29.4" rx="3.2" ry="1.4" transform="rotate(-10 17 29.4)" fill="#fff" opacity=".3"/><path d="M20.5 18.2 C21.6 17.4 23 17.2 24 18 C25 17.2 26.4 17.4 27.5 18.2" fill="none" stroke="#f0897c" stroke-width=".9" opacity=".8"/>',
+  arciere: '<path d="M14 5 L26 24 L14 43" fill="none" stroke="#e8e0c8" stroke-width="1.1"/><path d="M14 5 C22 12 22 36 14 43" fill="none" stroke="#8a5a26" stroke-width="2.8" stroke-linecap="round"/><path d="M14.6 7.5 C20.4 13.6 20.4 34.4 14.6 40.5" fill="none" stroke="#b98c4a" stroke-width="1" opacity=".8"/><rect x="12.9" y="21" width="3.6" height="6" rx="1.6" fill="#5a3a14" stroke="#2e1c08" stroke-width=".8"/><path d="M26 24 H39.5" stroke="#9c7844" stroke-width="1.8" stroke-linecap="round"/><path d="M39 20.9 L45 24 L39 27.1 Z" fill="#c3ced2" stroke="#3a4448" stroke-width=".9" stroke-linejoin="round"/><path d="M26.2 24 L22.4 20.2 L27.4 21.4 Z" fill="#2ecc71" stroke="#0f5c34" stroke-width=".6" stroke-linejoin="round"/><path d="M26.2 24 L22.4 27.8 L27.4 26.6 Z" fill="#2ecc71" stroke="#0f5c34" stroke-width=".6" stroke-linejoin="round"/><circle cx="26" cy="24" r="1.1" fill="#5a3a14"/>',
+  negromante: '<defs><linearGradient id="ng1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eae6dc"/><stop offset="1" stop-color="#b2ac9e"/></linearGradient></defs><path d="M24 6 C15.8 6 10 11.8 10 19.4 C10 24 12 27.6 15 29.6 L15 34 C15 35.4 16 36.4 17.4 36.4 L18.6 36.4 L18.6 33 L20.4 33 L20.4 36.4 L23 36.4 L23 33 L25 33 L25 36.4 L27.6 36.4 L27.6 33 L29.4 33 L29.4 36.4 L30.6 36.4 C32 36.4 33 35.4 33 34 L33 29.6 C36 27.6 38 24 38 19.4 C38 11.8 32.2 6 24 6 Z" fill="url(#ng1)" stroke="#2e2a24" stroke-width="1.4" stroke-linejoin="round"/><circle cx="17.9" cy="19.6" r="4" fill="#1c1a16"/><circle cx="30.1" cy="19.6" r="4" fill="#1c1a16"/><circle cx="17.9" cy="19.6" r="1.5" fill="#58e88a" opacity=".95"/><circle cx="30.1" cy="19.6" r="1.5" fill="#58e88a" opacity=".95"/><circle cx="17.5" cy="19.1" r=".5" fill="#d8ffe8"/><circle cx="29.7" cy="19.1" r=".5" fill="#d8ffe8"/><path d="M24 23.2 L21.9 27.2 L26.1 27.2 Z" fill="#1c1a16"/><path d="M28 8.4 L30 11.8 L28.6 14" fill="none" stroke="#8a847a" stroke-width=".9" stroke-linecap="round"/><path d="M13.4 24.6 C14.6 26.8 16.2 28.2 18.2 29" fill="none" stroke="#8a847a" stroke-width=".8" opacity=".6"/>',
+  custode: '<defs><linearGradient id="cs1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fa2a6"/><stop offset="1" stop-color="#59696d"/></linearGradient><linearGradient id="cs2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d3dadc"/><stop offset="1" stop-color="#93a0a4"/></linearGradient></defs><path d="M16.5 21 V15.5 C16.5 10.4 19.8 7 24 7 C28.2 7 31.5 10.4 31.5 15.5 V21 H27.7 V15.5 C27.7 12.6 26.2 10.8 24 10.8 C21.8 10.8 20.3 12.6 20.3 15.5 V21 Z" fill="url(#cs2)" stroke="#37474b" stroke-width="1.3" stroke-linejoin="round"/><rect x="11.5" y="20.5" width="25" height="20.5" rx="3.6" fill="url(#cs1)" stroke="#2c3a3e" stroke-width="1.5"/><rect x="13.6" y="22.6" width="4" height="16.3" rx="2" fill="#ffffff" opacity=".1"/><circle cx="14.6" cy="23.7" r=".9" fill="#d9b23a"/><circle cx="33.4" cy="23.7" r=".9" fill="#d9b23a"/><circle cx="14.6" cy="37.9" r=".9" fill="#d9b23a"/><circle cx="33.4" cy="37.9" r=".9" fill="#d9b23a"/><circle cx="24" cy="29" r="3.5" fill="none" stroke="#d9b23a" stroke-width="1.1"/><circle cx="24" cy="29" r="2.4" fill="#1e2a2e"/><path d="M22.9 30.6 L21.9 36 H26.1 L25.1 30.6 Z" fill="#1e2a2e"/>',
+  piromane: '<defs><linearGradient id="pr1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f5a03a"/><stop offset="1" stop-color="#d95b16"/></linearGradient></defs><path d="M12 39 L34 35.4 L34.8 37.9 L12.8 41.5 Z" fill="#7a4c1e" stroke="#46280c" stroke-width="1" stroke-linejoin="round"/><path d="M36 39 L14 35.4 L13.2 37.9 L35.2 41.5 Z" fill="#8d5a24" stroke="#46280c" stroke-width="1" stroke-linejoin="round"/><path d="M24 3.5 C25.8 9.2 30.4 12 32.6 17 C34.6 21.7 34.2 27.3 31.2 31.5 C29 34.6 26 36.4 24 36.4 C22 36.4 19 34.6 16.8 31.5 C13.8 27.3 13.4 21.7 15.4 17 C16.4 14.8 17.8 13.2 18.9 11.5 C18.8 14.3 19.8 16.1 21.4 16.9 C21.9 12.1 23 7.9 24 3.5 Z" fill="url(#pr1)" stroke="#6e2a08" stroke-width="1.3" stroke-linejoin="round"/><path d="M24 14.5 C25 18.2 27.6 20.2 28.6 23.4 C29.6 26.6 28.8 29.6 26.8 31.8 C25.8 32.9 24.8 33.4 24 33.4 C23.2 33.4 22.2 32.9 21.2 31.8 C19.2 29.6 18.4 26.6 19.4 23.4 C19.9 21.8 20.8 20.6 21.6 19.4 C21.7 21.2 22.4 22.4 23.4 22.8 C23.5 20 23.7 17.2 24 14.5 Z" fill="#f6ce4a"/><path d="M24 23.6 C24.8 25.6 25.8 26.8 25.8 28.6 C25.8 30.6 25 31.8 24 31.8 C23 31.8 22.2 30.6 22.2 28.6 C22.2 26.8 23.2 25.6 24 23.6 Z" fill="#fdf3d0"/><circle cx="33.5" cy="9.5" r="1" fill="#f5a03a" opacity=".85"/><circle cx="14.8" cy="8.6" r=".8" fill="#f5a03a" opacity=".7"/>',
+  accusatore: '<defs><linearGradient id="ac1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d6483a"/><stop offset="1" stop-color="#9c2a1e"/></linearGradient></defs><path d="M24 4.5 L45 41.5 H3 Z" fill="url(#ac1)" stroke="#4a0f0a" stroke-width="1.6" stroke-linejoin="round"/><path d="M24 10.4 L40.2 38.6 H7.8 Z" fill="none" stroke="#f0c25a" stroke-width="1.4" stroke-linejoin="round"/><rect x="22.3" y="16.5" width="3.4" height="12.5" rx="1.7" fill="#f8ecd8" stroke="#4a0f0a" stroke-width=".6"/><circle cx="24" cy="34" r="2.1" fill="#f8ecd8" stroke="#4a0f0a" stroke-width=".6"/>',
+  mutaforma: '<defs><linearGradient id="mt1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#dde3e6"/><stop offset="1" stop-color="#aab4ba"/></linearGradient></defs><path d="M24 6 C15 6 9.5 9 8.5 13 C7.5 20 10 28 15 33 C18 36 21 37.5 24 37.5 C27 37.5 30 36 33 33 C38 28 40.5 20 39.5 13 C38.5 9 33 6 24 6 Z" fill="url(#mt1)" stroke="#333b40" stroke-width="1.5" stroke-linejoin="round"/><path d="M24 6 C33 6 38.5 9 39.5 13 C40.5 20 38 28 33 33 C30 36 27 37.5 24 37.5 Z" fill="#79868d"/><path d="M24 6 V37.5" stroke="#333b40" stroke-width=".8" opacity=".5"/><path d="M13.8 17.6 C15.8 15.8 19 15.8 20.8 18 C19 20.2 15.6 20.2 13.8 17.6 Z" fill="#23292c"/><path d="M34.2 17.6 C32.2 15.8 29 15.8 27.2 18 C29 20.2 32.4 20.2 34.2 17.6 Z" fill="#101416"/><path d="M15 25.6 C17.6 29.2 21 30.3 24 28.5" fill="none" stroke="#23292c" stroke-width="1.8" stroke-linecap="round"/><path d="M24 28.5 C26.6 26.4 30.2 26.6 33 29.2" fill="none" stroke="#101416" stroke-width="1.8" stroke-linecap="round"/>',
+  gesu: '<defs><linearGradient id="gs1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f2cf52"/><stop offset="1" stop-color="#c99b18"/></linearGradient></defs><circle cx="24" cy="18.6" r="10.5" fill="none" stroke="#f6dc7a" stroke-width="3" opacity=".35"/><circle cx="24" cy="18.6" r="10.5" fill="none" stroke="#fae9a8" stroke-width="1.3" opacity=".9"/><rect x="21" y="7" width="6" height="31" rx="1.5" fill="url(#gs1)" stroke="#6e5008" stroke-width="1.2"/><rect x="11" y="14.6" width="26" height="6" rx="1.5" fill="url(#gs1)" stroke="#6e5008" stroke-width="1.2"/><rect x="22" y="8" width="1.3" height="28.5" rx=".6" fill="#fae9a8" opacity=".85"/><rect x="12" y="15.6" width="24" height="1.3" rx=".6" fill="#fae9a8" opacity=".85"/><path d="M15 41.5 C18 38.3 30 38.3 33 41.5 Z" fill="#c99b18" stroke="#6e5008" stroke-width="1.1" stroke-linejoin="round"/>',
+  vampiro: '<defs><linearGradient id="vp1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a06cc0"/><stop offset="1" stop-color="#6d3d8c"/></linearGradient></defs><path d="M19.6 20 C14 14 6.5 12.5 2 15.5 C5.4 16.3 7 18.4 6.8 21.2 C9.6 20.2 12 21 13.4 23.6 C15.8 22.4 18.2 23.2 19.6 25.6 Z" fill="url(#vp1)" stroke="#2e1440" stroke-width="1.2" stroke-linejoin="round"/><path d="M28.4 20 C34 14 41.5 12.5 46 15.5 C42.6 16.3 41 18.4 41.2 21.2 C38.4 20.2 36 21 34.6 23.6 C32.2 22.4 29.8 23.2 28.4 25.6 Z" fill="url(#vp1)" stroke="#2e1440" stroke-width="1.2" stroke-linejoin="round"/><path d="M18.8 21 C14.8 17.4 10.4 16 5.6 16.4" fill="none" stroke="#2e1440" stroke-width=".7" opacity=".55"/><path d="M29.2 21 C33.2 17.4 37.6 16 42.4 16.4" fill="none" stroke="#2e1440" stroke-width=".7" opacity=".55"/><path d="M20.6 13.6 L19.2 7.6 L23.4 11.2 Z" fill="url(#vp1)" stroke="#2e1440" stroke-width="1" stroke-linejoin="round"/><path d="M27.4 13.6 L28.8 7.6 L24.6 11.2 Z" fill="url(#vp1)" stroke="#2e1440" stroke-width="1" stroke-linejoin="round"/><circle cx="24" cy="16.8" r="5" fill="url(#vp1)" stroke="#2e1440" stroke-width="1.2"/><ellipse cx="24" cy="27" rx="5" ry="7.2" fill="url(#vp1)" stroke="#2e1440" stroke-width="1.2"/><path d="M21.5 31.5 C22.3 33.3 22.3 35.1 21.5 36.9 M24 32.5 C24.8 34.3 24.8 36.1 24 37.9 M26.5 31.5 C27.3 33.3 27.3 35.1 26.5 36.9" fill="none" stroke="#2e1440" stroke-width=".8" opacity=".6"/><circle cx="22.1" cy="16.2" r="1.05" fill="#ff5a4a"/><circle cx="25.9" cy="16.2" r="1.05" fill="#ff5a4a"/><path d="M22.3 20.4 L23 22.6 L23.7 20.7 Z" fill="#f5ead8"/><path d="M25.7 20.4 L25 22.6 L24.3 20.7 Z" fill="#f5ead8"/>'
 };
+const ICON_BASE = 'icons/';
+const ICON_PNG = new Set(['narratore', 'villico', 'lupo', 'cucciolo', 'guardia', 'veggente', 'meretrice', 'lupoAlpha', 'arciere', 'mutaforma', 'criceto', 'condor', 'avvocato', 'incompreso', 'misantropo', 'negromante', 'gesu', 'cappuccetto', 'contaminato', 'suicida', 'vampiro', 'piromane', 'accusatore', 'funambolo', 'custode', 'alchimista', 'romeo', 'giulietta']);
+const iconUrl = role => ICON_BASE + role + '.png';
 const RoleIcon = ({
   role,
   size = 24,
@@ -902,6 +906,24 @@ const RoleIcon = ({
   style,
   fallbackEmoji
 }) => {
+  const [imgErr, setImgErr] = useState(false);
+  if (ICON_PNG.has(role) && !imgErr) {
+    return React.createElement("img", {
+      src: iconUrl(role),
+      width: size,
+      height: size,
+      alt: "",
+      onError: () => setImgErr(true),
+      className: className,
+      style: {
+        display: 'inline-block',
+        verticalAlign: 'middle',
+        flexShrink: 0,
+        objectFit: 'contain',
+        ...style
+      }
+    });
+  }
   const inner = ROLE_ICONS[role];
   if (!inner) {
     const em = fallbackEmoji || (ROLES[role] || {}).emoji || '❓';
@@ -919,7 +941,7 @@ const RoleIcon = ({
   return React.createElement("svg", {
     width: size,
     height: size,
-    viewBox: "0 0 24 24",
+    viewBox: "0 0 48 48",
     fill: col,
     className: className,
     style: {
@@ -1949,7 +1971,7 @@ function LibroMagico({
       marginBottom: 12,
       textAlign: 'center'
     }
-  }, "STILE DELLE ICONE — ESEMPI ALTERNATIVI"), React.createElement("div", {
+  }, "STILE DELLE ICONE"), React.createElement("div", {
     style: {
       display: 'flex',
       justifyContent: 'space-around',
@@ -1961,14 +1983,9 @@ function LibroMagico({
       textAlign: 'center',
       flex: 1
     }
-  }, React.createElement("svg", {
-    width: "42",
-    height: "42",
-    viewBox: "0 0 24 24",
-    fill: "#e74c3c",
-    dangerouslySetInnerHTML: {
-      __html: ROLE_ICONS.lupo
-    }
+  }, React.createElement(RoleIcon, {
+    role: "lupo",
+    size: 46
   }), React.createElement("div", {
     style: {
       fontSize: '.58rem',
@@ -1977,7 +1994,7 @@ function LibroMagico({
       fontFamily: 'Cinzel,serif',
       lineHeight: 1.3
     }
-  }, "Piene a colori", React.createElement("br", null), React.createElement("span", {
+  }, "Medaglioni", React.createElement("br", null), React.createElement("span", {
     style: {
       color: '#c9a227'
     }
@@ -1989,11 +2006,7 @@ function LibroMagico({
   }, React.createElement("svg", {
     width: "42",
     height: "42",
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "#c9a227",
-    strokeWidth: "1.1",
-    strokeLinejoin: "round",
+    viewBox: "0 0 48 48",
     dangerouslySetInnerHTML: {
       __html: ROLE_ICONS.lupo
     }
@@ -2004,7 +2017,7 @@ function LibroMagico({
       marginTop: 5,
       fontFamily: 'Cinzel,serif'
     }
-  }, "Linee dorate")), React.createElement("div", {
+  }, "Strutturate")), React.createElement("div", {
     style: {
       textAlign: 'center',
       flex: 1
@@ -2012,9 +2025,10 @@ function LibroMagico({
   }, React.createElement("svg", {
     width: "42",
     height: "42",
-    viewBox: "0 0 44 44",
+    viewBox: "0 0 24 24",
+    fill: "#e74c3c",
     dangerouslySetInnerHTML: {
-      __html: '<circle cx="22" cy="22" r="20" fill="#141019" stroke="#c9a227" stroke-width="1.6"/><g transform="translate(7,7) scale(1.25)" fill="#e74c3c">' + ROLE_ICONS.lupo + '</g>'
+      __html: FLAT_LUPO
     }
   }), React.createElement("div", {
     style: {
@@ -2023,7 +2037,7 @@ function LibroMagico({
       marginTop: 5,
       fontFamily: 'Cinzel,serif'
     }
-  }, "Medaglione"))), React.createElement("p", {
+  }, "Piene a colori"))), React.createElement("p", {
     style: {
       fontSize: '.62rem',
       color: '#7a6a4a',
@@ -2032,7 +2046,7 @@ function LibroMagico({
       marginTop: 12,
       lineHeight: 1.5
     }
-  }, "Le icone attuali sono \"piene a colori\". Se preferisci uno degli altri due stili, dimmelo e converto tutte le icone.")), React.createElement(D, null)), list.map(r => {
+  }, "Le icone attuali sono i \"medaglioni\" illustrati. Se preferisci un altro stile, dimmelo.")), React.createElement(D, null)), list.map(r => {
     const wb = r.cat === 'lupi' ? 'rgba(231,76,60,.15)' : r.cat === 'neutri' ? 'rgba(243,156,18,.12)' : 'rgba(46,204,113,.1)';
     const wbr = r.cat === 'lupi' ? 'rgba(231,76,60,.3)' : r.cat === 'neutri' ? 'rgba(243,156,18,.25)' : 'rgba(46,204,113,.25)';
     return React.createElement("div", {
@@ -4447,20 +4461,31 @@ function App() {
       });
       const iconImgs = {};
       await Promise.all(PS.map(p => new Promise(res => {
-        const inner = ROLE_ICONS[p.role];
-        if (!inner) {
-          res();
-          return;
-        }
         const key = p.role + '|' + p.color;
-        const svgStr = '<svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="' + p.color + '">' + inner + '</svg>';
-        const img = new Image();
-        img.onload = () => {
-          iconImgs[key] = img;
-          res();
+        const inner = ROLE_ICONS[p.role];
+        const drawSvg = () => {
+          if (!inner) {
+            res();
+            return;
+          }
+          const svgStr = '<svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 48 48" fill="' + p.color + '">' + inner + '</svg>';
+          const im2 = new Image();
+          im2.onload = () => {
+            iconImgs[key] = im2;
+            res();
+          };
+          im2.onerror = () => res();
+          im2.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
         };
-        img.onerror = () => res();
-        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
+        if (ICON_PNG.has(p.role)) {
+          const img = new Image();
+          img.onload = () => {
+            iconImgs[key] = img;
+            res();
+          };
+          img.onerror = drawSvg;
+          img.src = iconUrl(p.role);
+        } else drawSvg();
       })));
       const nights = LOG.length || 1;
       const winMap = {
